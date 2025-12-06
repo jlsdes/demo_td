@@ -29,7 +29,9 @@ glad_add_library(glad_gl_core_46 STATIC REPRODUCIBLE LOADER API gl:core=4.6)
 # Build the main executable
 add_executable(demo_td src/main.cpp
         src/graphics/window.cpp
-        src/graphics/window.hpp)
+        src/graphics/window.hpp
+        src/graphics/shader.cpp
+        src/graphics/shader.hpp)
 
 # Link the necessary libraries
 target_link_libraries(demo_td PRIVATE glfw)
