@@ -27,7 +27,9 @@ FetchContent_MakeAvailable(glad)
 glad_add_library(glad_gl_core_46 STATIC REPRODUCIBLE LOADER API gl:core=4.6)
 
 # Build the main executable
-add_executable(demo_td main.cpp)
+add_executable(demo_td src/main.cpp
+        src/graphics/window.cpp
+        src/graphics/window.hpp)
 
 # Link the necessary libraries
 target_link_libraries(demo_td PRIVATE glfw)
