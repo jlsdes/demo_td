@@ -31,13 +31,19 @@ Window::Window( unsigned int const width, unsigned int const height, char const 
     if ( !gladLoadGL( glfwGetProcAddress ))
         throw std::runtime_error( "Failed to initialise GLAD." );
 
-    // Set a background colour if nothing gets drawn
+    // General setup for OpenGL
     glClearColor( 0.1f, 0.1f, 0.1f, 1.0f );
+    glDepthFunc( GL_LESS );
+    glEnable( GL_DEPTH_TEST );
+    glEnable( GL_CULL_FACE );
+    glCullFace( GL_BACK );
+    glFrontFace( GL_CW );
 
     // The window user pointer will allow us to retrieve this object from the GLFW window object; useful for callbacks
+    // TODO move this to separate classes at some point
     glfwSetWindowUserPointer( m_window, this );
     glfwSetFramebufferSizeCallback( m_window, resize_callback );
-    glfwSetKeyCallback( m_window, keyboard_callback );  // TODO move this to a separate class probably
+    glfwSetKeyCallback( m_window, keyboard_callback );
 }
 
 Window::~Window()

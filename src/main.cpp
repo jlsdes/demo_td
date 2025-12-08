@@ -21,20 +21,38 @@ int main()
 
         // Create a simple mesh
         float vertices[] {
-            -0.5f, -0.5f, 0.f,
-            0.f, 0.5f, 0.f,
-            0.5f, -0.5f, 0.f
+            -0.5f, -0.5f, 0,
+            -0.5f, 0.5f, 0,
+            0.5f, 0.5f, 0,
+            -0.5f, -0.5f, 0,
+            0.5f, 0.5f, 0,
+            0.5f, -0.5f, 0
         };
-        Mesh const triangle { vertices, 3 };
+        Mesh const mesh { vertices, 6 };
+
+        // Timekeeping setup
+        double interval_start { glfwGetTime() };
+        unsigned int frame_counter { 0 };
+        double report_interval { 1. };
 
         // Main program loop
         while ( !window.is_closing() ) {
             glfwPollEvents();
-
-            triangle.draw();
-
+            shader.set_uniform( "time", static_cast<float>(glfwGetTime()) );
+            mesh.draw();
             window.render();
+
+            // Timekeeping
+            ++frame_counter;
+            double const current_time { glfwGetTime() };
+            double const elapsed_time { current_time - interval_start };
+            if ( elapsed_time >= report_interval ) {
+                std::cout << "\rFPS: " << frame_counter / elapsed_time << std::flush;
+                frame_counter = 0;
+                interval_start = current_time;
+            }
         }
+        std::cout << std::string( 100, ' ' ) << std::endl;
     }
     glfwTerminate();
     return 0;

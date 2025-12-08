@@ -23,6 +23,37 @@ void Shader::use() const
     glUseProgram( m_program );
 }
 
+void Shader::set_uniform( char const * name, bool const value ) const
+{
+    glUniform1i( get_uniform_location( name ), static_cast<int>( value ) );
+}
+
+void Shader::set_uniform( char const * name, int const value ) const
+{
+    glUniform1i( get_uniform_location( name ), value );
+}
+
+void Shader::set_uniform( char const * name, unsigned int const value ) const
+{
+    glUniform1ui( get_uniform_location( name ), value );
+}
+
+void Shader::set_uniform( char const * name, float const value ) const
+{
+    glUniform1f( get_uniform_location( name ), value );
+}
+
+void Shader::set_uniform( char const * name, double const value ) const
+{
+    glUniform1d( get_uniform_location( name ), value );
+}
+
+int Shader::get_uniform_location( char const * name ) const
+{
+    use();
+    return glGetUniformLocation( m_program, name );
+}
+
 GraphicsShader::GraphicsShader( char const * vertex_path, char const * fragment_path )
     : Shader {}
 {

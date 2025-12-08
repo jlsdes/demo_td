@@ -16,6 +16,17 @@ public:
     /** Activates the shader. */
     void use() const;
 
+    /** Sets a uniform value, implemented for a selection of types. */
+    void set_uniform( char const * name, bool value ) const;
+    void set_uniform( char const * name, int value ) const;
+    void set_uniform( char const * name, unsigned int value ) const;
+    void set_uniform( char const * name, float value ) const;
+    void set_uniform( char const * name, double value ) const;
+
+private:
+    /** Returns the location of the uniform. */
+    int get_uniform_location( char const * name ) const;
+
 protected:
     /// The underlying GL shader program.
     unsigned int const m_program;
