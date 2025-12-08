@@ -21,14 +21,12 @@ int main()
 
         // Create a simple mesh
         float vertices[] {
-            -0.5f, -0.5f, 0,
             -0.5f, 0.5f, 0,
             0.5f, 0.5f, 0,
             -0.5f, -0.5f, 0,
-            0.5f, 0.5f, 0,
             0.5f, -0.5f, 0
         };
-        Mesh const mesh { vertices, 6 };
+        Mesh const mesh { vertices, 4, GL_TRIANGLE_STRIP };
 
         // Timekeeping setup
         double interval_start { glfwGetTime() };

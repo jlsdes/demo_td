@@ -2,9 +2,11 @@
 
 #include <glad/gl.h>
 
+#include <cassert>
 
-Mesh::Mesh( float const * const vertices, unsigned int const nr_vertices )
-    : m_vertex_buffer {}, m_vertex_array {}, m_nr_vertices {nr_vertices}
+
+Mesh::Mesh( float const * const vertices, unsigned int const nr_vertices, int const draw_mode )
+    : m_vertex_buffer {}, m_vertex_array {}, m_nr_vertices { nr_vertices }, m_default_mode { draw_mode }
 {
     // Initialise the vertex buffer
     glGenBuffers( 1, &m_vertex_buffer );
@@ -24,8 +26,19 @@ Mesh::~Mesh()
     glDeleteBuffers( 1, &m_vertex_buffer );
 }
 
-void Mesh::draw() const
+void Mesh::set_draw_mode( int const mode )
 {
+    assert( mode >= 0 && mode <= 6 );
+    m_default_mode = mode;
+}
+
+
+void Mesh::draw( int mode ) const
+{
+    if ( mode == -1 )
+        mode = m_default_mode;
+    assert( mode >= 0 && mode <= 6 );
+
     glBindVertexArray( m_vertex_array );
-    glDrawArrays( GL_TRIANGLES, 0, static_cast<int>( m_nr_vertices ) );
+    glDrawArrays( mode, 0, static_cast<int>(m_nr_vertices) );
 }
