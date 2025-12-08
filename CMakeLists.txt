@@ -31,7 +31,9 @@ add_executable(demo_td src/main.cpp
         src/graphics/window.cpp
         src/graphics/window.hpp
         src/graphics/shader.cpp
-        src/graphics/shader.hpp)
+        src/graphics/shader.hpp
+        src/graphics/mesh.cpp
+        src/graphics/mesh.hpp)
 
 # Link the necessary libraries
 target_link_libraries(demo_td PRIVATE glfw)

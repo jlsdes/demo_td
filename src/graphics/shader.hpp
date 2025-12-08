@@ -10,7 +10,7 @@ protected:
     Shader();
 
     /** Destructor. */
-    ~Shader() = default;
+    ~Shader();
 
 public:
     /** Activates the shader. */
@@ -27,7 +27,7 @@ class GraphicsShader : public Shader
 {
 public:
     /** Constructor. */
-    GraphicsShader(char const * vertex_path, char const * fragment_path);
+    GraphicsShader( char const * vertex_path, char const * fragment_path );
 
     /** Destructor. */
     ~GraphicsShader() = default;
