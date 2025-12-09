@@ -36,10 +36,6 @@ public:
     /** Returns whether the mesh has an index array configured. */
     [[nodiscard]] bool has_index() const;
 
-    /** Adds an index to the mesh. */
-    void set_index( unsigned int const * indices,
-                    unsigned int nr_indices );
-
     /** Sets a new default mode for drawing the mesh. */
     void set_draw_mode( int mode );
 
@@ -53,11 +49,9 @@ private:
     unsigned int m_vertex_array;
     unsigned int m_element_buffer;
 
-    /// The vertex data.
-    std::unique_ptr<float[]> m_vertices;
-    unsigned long m_nr_vertices;
-    std::unique_ptr<unsigned int[]> m_indices;
-    unsigned long m_nr_indices;
+    /// The number of vertices used when drawing the mesh. If no indices are used, then this is simply the number of
+    /// vertices (times 3), and otherwise this is the number of indices.
+    unsigned long m_nr_drawn_vertices;
 
     /// The current default mode for drawing this mesh.
     int m_default_mode;
@@ -66,24 +60,24 @@ private:
      * array. */
     template <typename ElementType>
     static unsigned int create_buffer( GLenum buffer_type,
-                                       std::vector<ElementType> const & data,
-                                       ElementType * internal_data );
+                                       std::vector<ElementType> const & data);
 };
 
 
 // Template implementation
 template <typename ElementType>
 unsigned int Mesh::create_buffer( GLenum const buffer_type,
-                                  std::vector<ElementType> const & data,
-                                  ElementType * internal_data )
+                                  std::vector<ElementType> const & data)
 {
-    std::ranges::copy( data.begin(), data.end(), internal_data );
+    // Copy the data into a basic array for OpenGL
+    ElementType data_array[data.size()];
+    std::ranges::copy( data.cbegin(), data.cend(), data_array );
 
     // Create and fill a new OpenGL buffer object
     unsigned int buffer;
     glGenBuffers( 1, &buffer );
     glBindBuffer( buffer_type, buffer );
-    glBufferData( buffer_type, static_cast<long>(data.size()) * sizeof( ElementType ), internal_data, GL_STATIC_DRAW );
+    glBufferData( buffer_type, static_cast<long>(data.size()) * sizeof( ElementType ), data_array, GL_STATIC_DRAW );
 
     return buffer;
 }

@@ -29,7 +29,7 @@ int main()
         std::vector<unsigned int> const indices {
             0, 1, 2, 3
         };
-        Mesh const mesh { vertices, indices, GL_TRIANGLE_STRIP };
+        Mesh const mesh { vertices, GL_TRIANGLE_STRIP };
 
         // Timekeeping setup
         double interval_start { glfwGetTime() };
