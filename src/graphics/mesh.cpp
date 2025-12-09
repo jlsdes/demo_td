@@ -5,33 +5,60 @@
 #include <cassert>
 
 
-Mesh::Mesh( float const * const vertices, unsigned int const nr_vertices, int const draw_mode )
-    : m_vertex_buffer {}, m_vertex_array {}, m_nr_vertices { nr_vertices }, m_default_mode { draw_mode }
+Mesh::Mesh( std::vector<float> const & vertices,
+            int const draw_mode )
+    : m_vertex_buffer { 0 }, m_vertex_array { 0 }, m_element_buffer { 0 },
+      m_vertices { std::make_unique<float[]>( vertices.size() ) }, m_nr_vertices { vertices.size() },
+      m_indices { nullptr }, m_nr_indices { 0 }, m_default_mode { draw_mode }
 {
-    // Initialise the vertex buffer
-    glGenBuffers( 1, &m_vertex_buffer );
-    glBindBuffer( GL_ARRAY_BUFFER, m_vertex_buffer );
-    glBufferData( GL_ARRAY_BUFFER, static_cast<long>(3 * nr_vertices * sizeof( float )), vertices, GL_STATIC_DRAW );
-
-    // Initialise the vertex array object
     glGenVertexArrays( 1, &m_vertex_array );
     glBindVertexArray( m_vertex_array );
+    m_vertex_buffer = create_buffer<float>( GL_ARRAY_BUFFER, vertices, m_vertices.get() );
+    glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof( float ), nullptr );
     glEnableVertexAttribArray( 0 );
-    glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, 0, nullptr );
+}
+
+Mesh::Mesh( std::vector<float> const & vertices,
+            std::vector<unsigned int> const & indices,
+            int const draw_mode )
+    : m_vertex_buffer { 0 }, m_vertex_array { 0 }, m_element_buffer { 0 },
+      m_vertices { std::make_unique<float[]>( vertices.size() ) }, m_nr_vertices { vertices.size() },
+      m_indices { std::make_unique<unsigned int[]>( indices.size() ) }, m_nr_indices { indices.size() },
+      m_default_mode { draw_mode }
+{
+    glGenVertexArrays( 1, &m_vertex_array );
+    glBindVertexArray( m_vertex_array );
+    m_vertex_buffer = create_buffer<float>( GL_ARRAY_BUFFER, vertices, m_vertices.get() );
+    m_element_buffer = create_buffer<unsigned int>( GL_ELEMENT_ARRAY_BUFFER, indices, m_indices.get() );
+    glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof( float ), nullptr );
+    glEnableVertexAttribArray( 0 );
 }
 
 Mesh::~Mesh()
 {
     glDeleteVertexArrays( 1, &m_vertex_array );
     glDeleteBuffers( 1, &m_vertex_buffer );
+    if ( has_index() )
+        glDeleteBuffers( 1, &m_element_buffer );
 }
+
+bool Mesh::has_index() const
+{
+    return m_element_buffer != 0;
+}
+
+void Mesh::set_index( unsigned int const * const indices,
+                      unsigned int const nr_indices )
+{
+    // TODO
+}
+
 
 void Mesh::set_draw_mode( int const mode )
 {
     assert( mode >= 0 && mode <= 6 );
     m_default_mode = mode;
 }
-
 
 void Mesh::draw( int mode ) const
 {
@@ -40,5 +67,8 @@ void Mesh::draw( int mode ) const
     assert( mode >= 0 && mode <= 6 );
 
     glBindVertexArray( m_vertex_array );
-    glDrawArrays( mode, 0, static_cast<int>(m_nr_vertices) );
+    if ( has_index() )
+        glDrawElements( mode, static_cast<int>(m_nr_indices), GL_UNSIGNED_INT, nullptr );
+    else
+        glDrawArrays( mode, 0, static_cast<int>(m_nr_vertices) );
 }

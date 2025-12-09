@@ -20,13 +20,16 @@ int main()
         shader.use();
 
         // Create a simple mesh
-        float vertices[] {
-            -0.5f, 0.5f, 0,
-            0.5f, 0.5f, 0,
-            -0.5f, -0.5f, 0,
-            0.5f, -0.5f, 0
+        std::vector<float> const vertices {
+            -0.5, 0.5, 0,
+            0.5, 0.5, 0,
+            -0.5, -0.5, 0,
+            0.5, -0.5, 0
         };
-        Mesh const mesh { vertices, 4, GL_TRIANGLE_STRIP };
+        std::vector<unsigned int> const indices {
+            0, 1, 2, 3
+        };
+        Mesh const mesh { vertices, indices, GL_TRIANGLE_STRIP };
 
         // Timekeeping setup
         double interval_start { glfwGetTime() };
