@@ -1,6 +1,8 @@
 #ifndef DEMO_TD_SHADER_HPP
 #define DEMO_TD_SHADER_HPP
 
+#include <filesystem>
+
 
 /** A basic shader handler that builds and runs shaders. */
 class Shader
@@ -22,6 +24,9 @@ public:
     void set_uniform( char const * name, unsigned int value ) const;
     void set_uniform( char const * name, float value ) const;
     void set_uniform( char const * name, double value ) const;
+
+    /** Returns a path to the directory containing this project's shader files. */
+    static std::filesystem::path get_shader_directory();
 
 private:
     /** Returns the location of the uniform. */

@@ -48,6 +48,11 @@ void Shader::set_uniform( char const * name, double const value ) const
     glUniform1d( get_uniform_location( name ), value );
 }
 
+std::filesystem::path Shader::get_shader_directory()
+{
+    return (std::filesystem::path(__FILE__) / "../../shader").lexically_normal();
+}
+
 int Shader::get_uniform_location( char const * name ) const
 {
     use();
