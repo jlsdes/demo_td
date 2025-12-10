@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 26)
 # Using FetchContent to download some dependencies
 include(FetchContent)
 
-# Download GLFW automatically
+# Fetch GLFW
 # GLFW may still require some dev packages, e.g. xorg-dev
 FetchContent_Declare(
         glfw
@@ -26,6 +26,14 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(glad)
 glad_add_library(glad_gl_core_46 STATIC REPRODUCIBLE LOADER API gl:core=4.6)
 
+# Fetch GLM
+FetchContent_Declare(
+        glm
+        GIT_REPOSITORY  https://github.com/g-truc/glm.git
+        GIT_TAG         1.0.2
+)
+FetchContent_MakeAvailable(glm)
+
 # Build the main executable
 add_executable(demo_td src/main.cpp
         src/graphics/window.cpp
@@ -38,3 +46,4 @@ add_executable(demo_td src/main.cpp
 # Link the necessary libraries
 target_link_libraries(demo_td PRIVATE glfw)
 target_link_libraries(demo_td PRIVATE glad_gl_core_46)
+target_link_libraries(demo_td PRIVATE glm)
