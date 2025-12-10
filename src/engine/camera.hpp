@@ -25,6 +25,9 @@ public:
     void set_position( glm::vec3 const & position );
     void set_position( glm::vec3 const & position, glm::vec3 const & target );
 
+    /** Moves the camera in the given direction, for a distance derived from its speed. */
+    void move( glm::vec3 const & direction );
+
     /** Updates the view matrix in the attached shader. */
     void update() const;
 

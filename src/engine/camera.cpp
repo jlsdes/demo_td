@@ -13,6 +13,8 @@ glm::vec3 get_up( glm::vec3 const & forward )
 }
 
 
+// Camera parameters
+float constexpr camera_speed { 1.f };
 glm::vec3 constexpr world_up { 0.f, 1.f, 0.f };
 
 
@@ -42,9 +44,14 @@ void Camera::set_position( glm::vec3 const & position,
     update();
 }
 
+void Camera::move( glm::vec3 const & direction )
+{
+    // TODO take elapsed time into account
+    m_position += camera_speed * glm::normalize( direction );
+    update();
+}
+
 void Camera::update() const
 {
-    glm::vec3 const target { m_position + m_forward };
-    glm::mat4 const transformation { glm::lookAt( m_position, target, m_up ) };
-    m_shader->set_uniform( "view", transformation );
+    m_shader->set_uniform( "view", glm::lookAt( m_position, m_position + m_forward, m_up ) );
 }

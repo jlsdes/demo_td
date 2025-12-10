@@ -36,14 +36,16 @@ FetchContent_MakeAvailable(glm)
 
 # Build the main executable
 add_executable(demo_td src/main.cpp
-        src/graphics/window.cpp
-        src/graphics/window.hpp
-        src/graphics/shader.cpp
-        src/graphics/shader.hpp
-        src/graphics/mesh.cpp
-        src/graphics/mesh.hpp
-        src/graphics/camera.cpp
-        src/graphics/camera.hpp)
+        src/engine/window.cpp
+        src/engine/window.hpp
+        src/engine/shader.cpp
+        src/engine/shader.hpp
+        src/engine/mesh.cpp
+        src/engine/mesh.hpp
+        src/engine/camera.cpp
+        src/engine/camera.hpp
+        src/engine/input_manager.cpp
+        src/engine/input_manager.hpp)
 
 # Link the necessary libraries
 target_link_libraries(demo_td PRIVATE glfw)
