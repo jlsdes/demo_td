@@ -1,12 +1,15 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
+#include "graphics/camera.hpp"
 #include "graphics/mesh.hpp"
 #include "graphics/shader.hpp"
 #include "graphics/window.hpp"
 
 #include <filesystem>
 #include <iostream>
+
+#include <glm/gtc/matrix_transform.hpp>
 
 
 /** Reports the framerate of the program at regular intervals; to be called after rendering each frame. */
@@ -37,7 +40,7 @@ int main()
 
         // Find and build the main graphics shader
         auto const shader_dir { Shader::get_shader_directory() };
-        GraphicsShader const shader { (shader_dir / "main.vert").c_str(), (shader_dir / "main.frag").c_str() };
+        GraphicsShader shader { (shader_dir / "main.vert").c_str(), (shader_dir / "main.frag").c_str() };
         shader.use();
 
         // Create a simple mesh
@@ -52,11 +55,22 @@ int main()
         };
         Mesh const mesh { vertices, GL_TRIANGLE_STRIP };
 
+        // Create a camera object and attach it to the shader
+        glm::vec3 const & camera_position { 0.f, 0.f, 3.f };
+        glm::vec3 const & camera_target { 0.f, 0.f, 0.f };
+        Camera camera { camera_position, camera_target, &shader };
+
+        shader.set_uniform( "model", glm::identity<glm::mat4>() );
+        shader.set_uniform( "projection", glm::perspective( glm::radians( 45.f ), 600.f / 400.f, 0.1f, 100.f ) );
+
         // Main program loop
         while ( !window.is_closing() ) {
             glfwPollEvents();
-            shader.set_uniform( "time", static_cast<float>(glfwGetTime()) );
             mesh.draw();
+
+            float const time { static_cast<float>(glfwGetTime()) };
+            camera.set_position( glm::vec3( 3 * cos(time), 0.f, 3 * sin(time) ), camera_target );
+
             window.render();
 
             keep_time();

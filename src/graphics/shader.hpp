@@ -1,6 +1,8 @@
 #ifndef DEMO_TD_SHADER_HPP
 #define DEMO_TD_SHADER_HPP
 
+#include <glm/glm.hpp>
+
 #include <filesystem>
 
 
@@ -24,6 +26,8 @@ public:
     void set_uniform( char const * name, unsigned int value ) const;
     void set_uniform( char const * name, float value ) const;
     void set_uniform( char const * name, double value ) const;
+
+    void set_uniform( char const * name, glm::mat4 const & value ) const;
 
     /** Returns a path to the directory containing this project's shader files. */
     static std::filesystem::path get_shader_directory();
