@@ -19,12 +19,11 @@ void keep_time() {
     double constexpr report_interval { 1. };
 
     // The function's memory
-    static Time & timer { Time::get_instance() };
-    static double interval_start { timer.get_time() };
+    static double interval_start { Time::get_time() };
     static unsigned int frame_counter { 0 };
 
     ++frame_counter;
-    double const current_time { timer.get_time() };
+    double const current_time { Time::get_time() };
     double const elapsed_time { current_time - interval_start };
     if ( elapsed_time >= report_interval ) {
         std::cout << "\rFPS: " << frame_counter / elapsed_time << std::flush;
@@ -69,6 +68,8 @@ int main() {
 
         // Main program loop
         while ( !window.is_closing() ) {
+            Time::loop_start();
+
             glfwPollEvents();
             mesh.draw();
             camera.update();

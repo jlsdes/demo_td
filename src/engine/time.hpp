@@ -11,7 +11,6 @@ using Timestamp = std::chrono::time_point<Clock>;
 
 /** A singleton that provides time-keeping features for other objects. */
 class Time {
-private:
     /// Private constructor and destructor; use Time::get_instance() instead.
     Time();
     ~Time() = default;
@@ -24,17 +23,17 @@ public:
     Time & operator=( Time && ) = delete;
 
     /** Returns a reference to the same Time object every time. */
-    static Time & get_instance();
+    inline static Time & get_instance();
 
     /** Returns the current time in seconds since the initialisation of the Time class. */
-    double get_time() const;
+    [[nodiscard]] static double get_time();
 
     /** Keeps track of when the main program loop starts, and how much time has elapsed. This function is to be called
      *  at the start of the main loop, such that get_elapsed_time() is correct. */
-    void loop_start();
+    static void loop_start();
 
     /** Returns the time in seconds that has elapsed since the last main loop. */
-    [[nodiscard]] double get_elapsed_time() const;
+    [[nodiscard]] static double get_elapsed_time();
 
 private:
     /// The timestamp of the approximate start of the program.

@@ -44,10 +44,8 @@ Window::Window( unsigned int const width, unsigned int const height, char const 
 
     // The input manager can only be set up once GLFW has been initialised
     InputManager::initialise( m_window );
-    m_input_manager.observe_keyboard( GLFW_KEY_ESCAPE, [this]( int const key, int const action ) {
-        if ( key == GLFW_KEY_ESCAPE && action == GLFW_PRESS )
-            this->close();
-    } );
+    auto close_callback = [this]( int, int ) { this->close(); };
+    m_input_manager.observe_keyboard( { GLFW_KEY_ESCAPE, GLFW_KEY_CAPS_LOCK }, close_callback );
 }
 
 Window::~Window() {

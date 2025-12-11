@@ -1,5 +1,6 @@
 #include "camera.hpp"
 #include "shader.hpp"
+#include "time.hpp"
 
 #include <GLFW/glfw3.h>
 #include <glm/gtc/matrix_transform.hpp>
@@ -57,8 +58,8 @@ void Camera::set_position( glm::vec3 const & position,
 }
 
 void Camera::move( glm::vec3 const & direction ) {
-    // TODO take elapsed time into account
-    m_position += camera_speed * glm::normalize( direction );
+    auto const elapsed_time { static_cast<float>(Time::get_elapsed_time()) };
+    m_position += camera_speed * elapsed_time * glm::normalize( direction );
 }
 
 void Camera::toggle_movement( int key, int action ) {
