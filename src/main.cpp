@@ -38,7 +38,7 @@ int main() {
     // This code block ensures that all objects go out of scope, and thus have their destructors called with glDelete()
     // calls, before glfwTerminate() at the end of this function
     {
-        Window const window { 600, 480, "Demo TD" };
+        Window window { 600, 480, "Demo TD" };
 
         // Find and build the main graphics shader
         auto const shader_dir { Shader::get_shader_directory() };
@@ -61,6 +61,7 @@ int main() {
         glm::vec3 const & camera_position { 0.f, 0.f, 3.f };
         glm::vec3 const & camera_target { 0.f, 0.f, 0.f };
         Camera camera { camera_position, camera_target, &shader };
+        camera.set_free_view( window.get_input_manager() );
 
         shader.set_uniform( "model", glm::identity<glm::mat4>() );
         shader.set_uniform( "projection", glm::perspective( glm::radians( 45.f ), 600.f / 400.f, 0.1f, 100.f ) );
@@ -69,9 +70,10 @@ int main() {
         while ( !window.is_closing() ) {
             glfwPollEvents();
             mesh.draw();
+            camera.update();
 
             window.render();
-            keep_time();
+            // keep_time();
         }
         // The keep_time function has been overwriting the same line, finally go to the next line
         std::cout << std::endl;
