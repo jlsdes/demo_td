@@ -1,5 +1,7 @@
 #include "input_manager.hpp"
 
+#include "window.hpp"
+
 #include <GLFW/glfw3.h>
 
 #include <format>
@@ -7,44 +9,31 @@
 #include <stdexcept>
 
 
-InputManager::InputManager()
-    : m_keyboard_observers {}, m_mouse_observers {}, m_next_id { 1 }
-{
+InputManager::InputManager( GLFWwindow * const glfw_window )
+    : m_keyboard_observers {}, m_mouse_observers {}, m_next_id { 1 } {
+    if ( glfw_window != nullptr )
+        initialise( glfw_window );
 }
 
-InputManager & InputManager::get_instance()
-{
-    static InputManager instance;
-    return instance;
-}
-
-void InputManager::initialise( GLFWwindow * glfw_window )
-{
+void InputManager::initialise( GLFWwindow * const glfw_window ) {
     glfwSetKeyCallback( glfw_window, handle_keyboard );
     glfwSetCursorPosCallback( glfw_window, handle_mouse );
 }
 
-unsigned int InputManager::observe_keyboard( int const key, std::function<void( int, int )> const & callback )
-{
-    if ( !m_keyboard_observers.contains( key ) )
-        m_keyboard_observers.emplace();
-    m_keyboard_observers.at( key ).emplace( m_next_id, callback );
+unsigned int InputManager::observe_keyboard( int const key, std::function<void( int, int )> const & callback ) {
+    // operator[] automatically inserts the key if it isn't present yet
+    m_keyboard_observers[key].emplace( m_next_id, callback );
     return m_next_id++;
 }
 
 unsigned int InputManager::observe_keyboard( std::set<int> const & keys,
-                                             std::function<void( int, int )> const & callback )
-{
-    for ( auto const & key : keys ) {
-        if ( !m_keyboard_observers.contains( key ) )
-            m_keyboard_observers.emplace();
-        m_keyboard_observers.at( key ).emplace( m_next_id, callback );
-    }
+                                             std::function<void( int, int )> const & callback ) {
+    for ( auto const & key : keys )
+        m_keyboard_observers[key].emplace( m_next_id, callback );
     return m_next_id++;
 }
 
-void InputManager::forget_keyboard( int const key, unsigned int const callback_id )
-{
+void InputManager::forget_keyboard( int const key, unsigned int const callback_id ) {
     if ( !m_keyboard_observers.contains( key ) )
         throw std::invalid_argument( std::format( "No callbacks were registered for key '{}'.", key ) );
     if ( !m_keyboard_observers.at( key ).contains( callback_id ) )
@@ -52,42 +41,39 @@ void InputManager::forget_keyboard( int const key, unsigned int const callback_i
     m_keyboard_observers.at( key ).erase( callback_id );
 }
 
-void InputManager::forget_keyboard( std::set<int> const & keys, unsigned int const callback_id )
-{
+void InputManager::forget_keyboard( std::set<int> const & keys, unsigned int const callback_id ) {
     for ( auto const & key : keys )
         forget_keyboard( key, callback_id );
 }
 
-unsigned int InputManager::observe_mouse( std::function<void( int, int )> const & callback )
-{
+unsigned int InputManager::observe_mouse( std::function<void( int, int )> const & callback ) {
     m_mouse_observers.emplace( m_next_id, callback );
     return m_next_id++;
 }
 
-void InputManager::forget_mouse( unsigned int const callback_id )
-{
+void InputManager::forget_mouse( unsigned int const callback_id ) {
     if ( !m_mouse_observers.contains( callback_id ) )
         throw std::out_of_range( std::format( "Callback {} was not registered for the mouse.", callback_id ) );
     m_mouse_observers.erase( callback_id );
 }
 
-void InputManager::handle_keyboard( GLFWwindow * const window,
+void InputManager::handle_keyboard( GLFWwindow * const glfw_window,
                                     int const key,
                                     int const scancode,
                                     int const action,
-                                    int const mods )
-{
-    InputManager & input_manager { get_instance() };
+                                    int const mods ) {
+    // Get the InputManager object from GLFW's stored Window object
+    auto const window { static_cast<Window *>(glfwGetWindowUserPointer( glfw_window )) };
+    InputManager & input_manager { window->get_input_manager() };
 
     if ( input_manager.m_keyboard_observers.contains( key ) ) {
-        auto const & callbacks { input_manager.m_keyboard_observers.at(key) };
+        auto const & callbacks { input_manager.m_keyboard_observers.at( key ) };
         for ( auto const & callback : callbacks | std::views::values )
             callback( key, action );
     }
 }
 
-void InputManager::handle_mouse( GLFWwindow * const window,
+void InputManager::handle_mouse( GLFWwindow * const glfw_window,
                                  double const x,
-                                 double const y )
-{
+                                 double const y ) {
 }

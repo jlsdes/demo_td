@@ -14,8 +14,7 @@
 
 
 /** Reports the framerate of the program at regular intervals; to be called after rendering each frame. */
-void keep_time()
-{
+void keep_time() {
     // Time between each print in seconds
     double constexpr report_interval { 1. };
 
@@ -34,12 +33,12 @@ void keep_time()
 }
 
 
-int main()
-{
+int main() {
+    // If any glDelete...() function is called after glfwTerminate() has been called, a segfault occurs
+    // This code block ensures that all objects go out of scope, and thus have their destructors called with glDelete()
+    // calls, before glfwTerminate() at the end of this function
     {
-        // Initialise the window and the input manager
         Window const window { 600, 480, "Demo TD" };
-        InputManager & input_manager { InputManager::get_instance() };
 
         // Find and build the main graphics shader
         auto const shader_dir { Shader::get_shader_directory() };
@@ -70,10 +69,6 @@ int main()
         while ( !window.is_closing() ) {
             glfwPollEvents();
             mesh.draw();
-
-            // Rotate the camera around the y-axis, i.e. the vertical axis
-            float const time { static_cast<float>(glfwGetTime()) };
-            camera.set_position( glm::vec3( 3 * cos( time ), 0.f, 3 * sin( time ) ), camera_target );
 
             window.render();
             keep_time();

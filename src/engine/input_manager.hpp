@@ -4,7 +4,6 @@
 #include <functional>
 #include <map>
 #include <set>
-#include <vector>
 
 
 class GLFWwindow;
@@ -13,20 +12,12 @@ class GLFWwindow;
 /** Manages inputs from the user, i.e. keyboard and mouse inputs. */
 class InputManager
 {
-    /** Private constructor and destructor, use InputManager::get_instance() instead. */
-    InputManager();
+public:
+    /** Constructor and destructor. */
+    explicit InputManager( GLFWwindow * glfw_window = nullptr );
     ~InputManager() = default;
 
-public:
-    InputManager( InputManager const & ) = delete;
-    InputManager & operator=( InputManager const & ) = delete;
-    InputManager( InputManager && ) = delete;
-    InputManager & operator=( InputManager && ) = delete;
-
-    /** Returns the only instance of the InputManager class. */
-    static InputManager & get_instance();
-
-    /** Initialises the input manager by letting it register its own callback functions with GLFW. */
+    /** Registers the object's callback function with OpenGL. */
     static void initialise( GLFWwindow * glfw_window );
 
     /** Registers the callback function as an observer of a key action. Whenever that key is pressed/released/... the
@@ -50,10 +41,10 @@ public:
     void forget_mouse( unsigned int callback_id );
 
     /** The callback function that handles keyboard inputs. */
-    static void handle_keyboard( GLFWwindow * window, int key, int scancode, int action, int mods );
+    static void handle_keyboard( GLFWwindow * glfw_window, int key, int scancode, int action, int mods );
 
     /** The callback function that handles mouse inputs. */
-    static void handle_mouse( GLFWwindow * window, double x, double y );
+    static void handle_mouse( GLFWwindow * glfw_window, double x, double y );
 
 private:
     /// A mapping of received inputs to interested objects/callback functions. Each registered callback function is

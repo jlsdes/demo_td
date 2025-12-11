@@ -4,6 +4,8 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
+#include "input_manager.hpp"
+
 
 /** A simple window class. */
 class Window
@@ -30,15 +32,18 @@ public:
     /** Returns whether the window is closing. */
     [[nodiscard]] bool is_closing() const;
 
+    /** Returns the window's input manager. */
+    InputManager & get_input_manager();
+
     /** Resizing callback function. */
     static void resize_callback( GLFWwindow * glfw_window, int width, int height );
-
-    /** Keyboard actions callback function. */
-    static void keyboard_callback( GLFWwindow * glfw_window, int key, int scancode, int action, int mods );
 
 private:
     /// The underlying GLFW window object.
     GLFWwindow * m_window;
+
+    /// The attached input manager for this window.
+    InputManager m_input_manager;
 };
 
 
