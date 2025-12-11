@@ -2,9 +2,9 @@
 #include <GLFW/glfw3.h>
 
 #include "engine/camera.hpp"
-#include "engine/input_manager.hpp"
 #include "engine/mesh.hpp"
 #include "engine/shader.hpp"
+#include "engine/time.hpp"
 #include "engine/window.hpp"
 
 #include <filesystem>
@@ -19,11 +19,12 @@ void keep_time() {
     double constexpr report_interval { 1. };
 
     // The function's memory
-    static double interval_start { glfwGetTime() };
+    static Time & timer { Time::get_instance() };
+    static double interval_start { timer.get_time() };
     static unsigned int frame_counter { 0 };
 
     ++frame_counter;
-    double const current_time { glfwGetTime() };
+    double const current_time { timer.get_time() };
     double const elapsed_time { current_time - interval_start };
     if ( elapsed_time >= report_interval ) {
         std::cout << "\rFPS: " << frame_counter / elapsed_time << std::flush;
@@ -73,7 +74,7 @@ int main() {
             camera.update();
 
             window.render();
-            // keep_time();
+            keep_time();
         }
         // The keep_time function has been overwriting the same line, finally go to the next line
         std::cout << std::endl;

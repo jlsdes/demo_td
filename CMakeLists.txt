@@ -45,7 +45,9 @@ add_executable(demo_td src/main.cpp
         src/engine/camera.cpp
         src/engine/camera.hpp
         src/engine/input_manager.cpp
-        src/engine/input_manager.hpp)
+        src/engine/input_manager.hpp
+        src/engine/time.cpp
+        src/engine/time.hpp)
 
 # Link the necessary libraries
 target_link_libraries(demo_td PRIVATE glfw)
