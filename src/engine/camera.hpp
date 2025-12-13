@@ -41,8 +41,16 @@ public:
     void set_position( glm::vec3 const & position );
     void set_position( glm::vec3 const & position, glm::vec3 const & target );
 
+    /** Sets the rotation of the camera. */
+    void set_rotation( glm::vec3 const & rotation );
+    void set_rotation( float yaw, float pitch );
+
     /** Moves the camera in the given direction, for a distance derived from its speed. */
     void move( glm::vec3 const & direction );
+
+    /** Rotates the camera toward the given direction (which is relative to the camera's current forward direction),
+     *  depending on the camera's speed. */
+    void rotate( glm::vec2 const & direction );
 
     /** Updates the view matrix in the attached shader. */
     void update();
@@ -55,11 +63,14 @@ public:
      *  specific key and whether it's being pressed or released. This function is used as a callback function registered
      *  to an InputManager object. */
     void toggle_movement( int key, int action );
-    // TODO Separate ^this^ into a subclass so multiple types of cameras can exist
+    // TODO Separate ^this^ into a subclass so multiple types of cameras can exist or something that achieves this
 
 private:
     /// The current position of the camera.
     glm::vec3 m_position;
+    /// The yaw and pitch of the camera, i.e. horizontal and vertical rotation resp.
+    float m_yaw;
+    float m_pitch;
     /// Some vectors related to the current rotation of the camera.
     glm::vec3 m_forward;
     glm::vec3 m_right;

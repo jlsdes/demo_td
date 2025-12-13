@@ -57,14 +57,17 @@ void InputManager::forget_mouse( unsigned int const callback_id ) {
     m_mouse_observers.erase( callback_id );
 }
 
+/// Helper function for the callbacks that returns the InputManager associated with a GLFW window.
+inline InputManager & get_input_manager( GLFWwindow * const glfw_window ) {
+    return static_cast<Window *>(glfwGetWindowUserPointer( glfw_window ))->get_input_manager();
+}
+
 void InputManager::handle_keyboard( GLFWwindow * const glfw_window,
                                     int const key,
                                     int const scancode,
                                     int const action,
                                     int const mods ) {
-    // Get the InputManager object from GLFW's stored Window object
-    auto const window { static_cast<Window *>(glfwGetWindowUserPointer( glfw_window )) };
-    InputManager & input_manager { window->get_input_manager() };
+    InputManager & input_manager {get_input_manager( glfw_window )};
 
     if ( input_manager.m_keyboard_observers.contains( key ) ) {
         auto const & callbacks { input_manager.m_keyboard_observers.at( key ) };
@@ -76,4 +79,7 @@ void InputManager::handle_keyboard( GLFWwindow * const glfw_window,
 void InputManager::handle_mouse( GLFWwindow * const glfw_window,
                                  double const x,
                                  double const y ) {
+    InputManager & input_manager {get_input_manager( glfw_window )};
+    for ( auto const & callback : input_manager.m_mouse_observers | std::views::values )
+        callback( x, y );
 }

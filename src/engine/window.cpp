@@ -25,10 +25,13 @@ Window::Window( unsigned int const width, unsigned int const height, char const 
 
     // Set the newly created window as active
     focus();
+    glfwSetInputMode( m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED );
 
     // Initialise GLAD
-    if ( !gladLoadGL( glfwGetProcAddress ) )
+    if ( !gladLoadGL( glfwGetProcAddress ) ) {
+        glfwTerminate();
         throw std::runtime_error( "Failed to initialise GLAD." );
+    }
 
     // General setup for OpenGL
     glClearColor( 0.1f, 0.1f, 0.1f, 1.0f );
