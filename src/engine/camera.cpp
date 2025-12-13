@@ -8,12 +8,13 @@
 #include <cassert>
 #include <ranges>
 #include <set>
-#include <stdexcept>
+
+#include <iostream>
 
 
 // Camera parameters
 float constexpr camera_speed { 1.f };
-float constexpr camera_sensitivity { 0.1f };
+float constexpr camera_sensitivity { 0.002f };
 glm::vec3 constexpr world_up { 0.f, 1.f, 0.f };
 
 
@@ -31,9 +32,10 @@ inline glm::vec3 compute_up( glm::vec3 const & forward, glm::vec3 const & right 
 Camera::Camera( glm::vec3 const & position,
                 glm::vec3 const & target,
                 GraphicsShader * const shader )
-    : m_position { position }, m_yaw { -90.f }, m_pitch { 0.f }, m_forward { glm::normalize( target - position ) },
+    : m_position { position }, m_yaw {}, m_pitch {}, m_forward { glm::normalize( target - position ) },
       m_right { compute_right( m_forward ) }, m_up { compute_up( m_forward, m_right ) }, m_shader { shader },
       m_directions {}, m_controls {} {
+    set_rotation( target - position );
     update();
 
     // Default keybinds for free-view camera
@@ -60,18 +62,23 @@ void Camera::set_rotation( glm::vec3 const & rotation ) {
     m_right = compute_right( m_forward );
     m_up = compute_up( m_forward, m_right );
 
-    // TODO finish
-    m_pitch = asin( m_pitch );
+    m_pitch = glm::degrees( asin( m_forward.y ) );
+    // Using only one of the x and z components does not give enough information to determine the yaw with certainty
+    // They can be used to compute either the sine or the cosine (resp.), which together do determine the correct yaw
+    float const yaw_sin = m_forward.z / cos(m_pitch);
+    float const yaw_cos = m_forward.x / cos(m_pitch);
+    m_yaw = (yaw_sin > 0 ? 0.f : glm::pi<float>()) + acos( yaw_cos );
 }
 
 void Camera::set_rotation( float const yaw, float const pitch ) {
     m_yaw = yaw;
-    m_pitch = std::clamp( pitch, -89.f, 89.f );
+    constexpr float upper { glm::half_pi<float>() - 0.01f };
+    m_pitch = std::clamp( pitch, -upper, upper );
 
     m_forward = glm::normalize( glm::vec3 {
-        cos( glm::radians( m_yaw ) ) * cos( glm::radians( m_pitch ) ),
-        sin( glm::radians( m_pitch ) ),
-        sin( glm::radians( m_yaw ) ) * cos( glm::radians( m_pitch ) )
+        cos( m_yaw ) * cos( m_pitch ),
+        sin( m_pitch ),
+        sin( m_yaw ) * cos( m_pitch )
     } );
     m_right = compute_right( m_forward );
     m_up = compute_up( m_forward, m_right );
