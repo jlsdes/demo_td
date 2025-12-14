@@ -8,10 +8,11 @@
 
 
 /** A simple window class. */
-class Window
-{
+class Window {
 public:
-    /** The main constructor. */
+    /** Constructors; if no parameters are provided, then the value will be taken from Config. If this fails, an
+     *  exception will be thrown. */
+    Window();
     Window( unsigned int width, unsigned int height, char const * title );
 
     /** Destructor. */

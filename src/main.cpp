@@ -36,16 +36,15 @@ void keep_time() {
 
 
 int main() {
-    auto const main_dir { (std::filesystem::path(__FILE__) / "../../").lexically_normal() };
+    auto const main_dir { (std::filesystem::path( __FILE__ ) / "../../").lexically_normal() };
 
-    Config config {};
-    config.load_config( main_dir / "config.ini" );
+    Config::load_config( main_dir / "config.ini" );
 
     // If any glDelete...() function is called after glfwTerminate() has been called, a segfault occurs
     // This code block ensures that all objects go out of scope, and thus have their destructors called with glDelete()
     // calls, before glfwTerminate() at the end of this function
     {
-        Window window { 1200, 880, "Demo TD" };
+        Window window {};
 
         // Find and build the main graphics shader
         auto const shader_dir { Shader::get_shader_directory() };

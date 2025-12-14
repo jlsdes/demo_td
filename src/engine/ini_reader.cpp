@@ -45,6 +45,11 @@ std::string IniSection::get<std::string>( std::string const & key ) const {
     return data.at( key );
 }
 
+template <>
+char const * IniSection::get<char const *>( std::string const & key ) const {
+    return data.at( key ).c_str();
+}
+
 /** Helper function for IniReader::read(); initialises a new IniSection object, and adds the old one to the IniReader's
  *  data if necessary. */
 void start_new_section( std::istream & stream, IniReader & reader, IniSection & current_section ) {

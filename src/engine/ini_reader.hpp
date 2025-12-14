@@ -33,6 +33,8 @@ template <>
 [[nodiscard]] double IniSection::get<double>( std::string const & key ) const;
 template <>
 [[nodiscard]] std::string IniSection::get<std::string>( std::string const & key ) const;
+template <>
+[[nodiscard]] char const * IniSection::get<char const *>( std::string const & key ) const;
 
 
 /// The data structure used for storing (a) .ini file(s).

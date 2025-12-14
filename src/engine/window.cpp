@@ -1,10 +1,19 @@
 #include "window.hpp"
+#include "config.hpp"
 
 #include <stdexcept>
 
 
+Window::Window()
+    : Window(
+        Config::get_value<unsigned int>( "Window", "width" ),
+        Config::get_value<unsigned int>( "Window", "height" ),
+        Config::get_value<char const *>( "Window", "title" )
+    ) {
+}
+
 Window::Window( unsigned int const width, unsigned int const height, char const * const title )
-    : m_window { nullptr }, m_input_manager {} {
+    : m_window { nullptr } {
     // Initialise GLFW
     if ( !glfwInit() ) {
         glfwTerminate();
