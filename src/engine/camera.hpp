@@ -4,6 +4,7 @@
 #include "input_manager.hpp"
 
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 #include <array>
 #include <map>
@@ -12,8 +13,7 @@
 class GraphicsShader;
 
 
-/** The directions the camera can move in.
- *  TODO make a dedicated class maybe? */
+/** The directions the camera can move in. */
 enum Direction {
     Forward = 0,
     Backward = 1,
@@ -39,14 +39,13 @@ public:
 
     /** Sets the position of the camera, optionally while changing the direction it's facing as well. */
     void set_position( glm::vec3 const & position );
-    void set_position( glm::vec3 const & position, glm::vec3 const & target );
 
     /** Sets the rotation of the camera. */
-    void set_rotation( glm::vec3 const & rotation );
+    void set_rotation( glm::vec3 const & look_in_direction );
     void set_rotation( float yaw, float pitch );
 
     /** Moves the camera in the given direction, for a distance derived from its speed. */
-    void move( glm::vec3 const & direction );
+    void translate( glm::vec3 const & direction );
 
     /** Rotates the camera toward the given direction (which is relative to the camera's current forward direction),
      *  depending on the camera's speed. */
@@ -69,7 +68,7 @@ private:
     /// The current position of the camera.
     glm::vec3 m_position;
     /// The yaw and pitch of the camera, i.e. horizontal and vertical rotation resp.
-    float m_yaw;
+    float m_yaw;    // TODO Change to quaternions
     float m_pitch;
     /// Some vectors related to the current rotation of the camera.
     glm::vec3 m_forward;

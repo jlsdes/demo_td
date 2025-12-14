@@ -67,11 +67,11 @@ void InputManager::handle_keyboard( GLFWwindow * const glfw_window,
                                     int const scancode,
                                     int const action,
                                     int const mods ) {
-    InputManager & input_manager {get_input_manager( glfw_window )};
+    InputManager & input_manager { get_input_manager( glfw_window ) };
 
     if ( input_manager.m_keyboard_observers.contains( key ) ) {
         auto const & callbacks { input_manager.m_keyboard_observers.at( key ) };
-        for ( auto const & callback : callbacks | std::views::values )
+        for ( auto const & callback : std::views::values( callbacks ) )
             callback( key, action );
     }
 }
@@ -79,7 +79,7 @@ void InputManager::handle_keyboard( GLFWwindow * const glfw_window,
 void InputManager::handle_mouse( GLFWwindow * const glfw_window,
                                  double const x,
                                  double const y ) {
-    InputManager & input_manager {get_input_manager( glfw_window )};
-    for ( auto const & callback : input_manager.m_mouse_observers | std::views::values )
+    InputManager & input_manager { get_input_manager( glfw_window ) };
+    for ( auto const & callback : std::views::values( input_manager.m_mouse_observers ) )
         callback( x, y );
 }

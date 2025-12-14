@@ -9,8 +9,6 @@
 #include <ranges>
 #include <set>
 
-#include <iostream>
-
 
 // Camera parameters
 float constexpr camera_speed { 1.f };
@@ -51,14 +49,8 @@ void Camera::set_position( glm::vec3 const & position ) {
     m_position = position;
 }
 
-void Camera::set_position( glm::vec3 const & position,
-                           glm::vec3 const & target ) {
-    set_position( position );
-    set_rotation( target - position );
-}
-
-void Camera::set_rotation( glm::vec3 const & rotation ) {
-    m_forward = glm::normalize( rotation );
+void Camera::set_rotation( glm::vec3 const & look_in_direction ) {
+    m_forward = glm::normalize( look_in_direction );
     m_right = compute_right( m_forward );
     m_up = compute_up( m_forward, m_right );
 
@@ -84,7 +76,7 @@ void Camera::set_rotation( float const yaw, float const pitch ) {
     m_up = compute_up( m_forward, m_right );
 }
 
-void Camera::move( glm::vec3 const & direction ) {
+void Camera::translate( glm::vec3 const & direction ) {
     auto const elapsed_time { static_cast<float>(Time::get_elapsed_time()) };
     m_position += camera_speed * elapsed_time * glm::normalize( direction );
 }
@@ -125,7 +117,7 @@ void Camera::update() {
         if ( moving_bf ) direction += m_directions.at( Direction::Forward ) ? m_forward : -m_forward;
         if ( moving_rl ) direction += m_directions.at( Direction::Right ) ? m_right : -m_right;
         if ( moving_ud ) direction += m_directions.at( Direction::Up ) ? m_up : -m_up;
-        move( direction );
+        translate( direction );
     }
     m_shader->set_uniform( "view", glm::lookAt( m_position, m_position + m_forward, m_up ) );
 }

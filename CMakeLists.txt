@@ -47,7 +47,11 @@ add_executable(demo_td src/main.cpp
         src/engine/input_manager.cpp
         src/engine/input_manager.hpp
         src/engine/time.cpp
-        src/engine/time.hpp)
+        src/engine/time.hpp
+        src/engine/config.cpp
+        src/engine/config.hpp
+        src/engine/ini_reader.cpp
+        src/engine/ini_reader.hpp)
 
 # Link the necessary libraries
 target_link_libraries(demo_td PRIVATE glfw)
