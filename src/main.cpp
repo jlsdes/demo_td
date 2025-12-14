@@ -2,7 +2,7 @@
 #include <GLFW/glfw3.h>
 
 #include "engine/camera.hpp"
-#include "engine/ini_reader.hpp"
+#include "engine/config.hpp"
 #include "engine/mesh.hpp"
 #include "engine/shader.hpp"
 #include "engine/time.hpp"
@@ -36,19 +36,10 @@ void keep_time() {
 
 
 int main() {
-    IniReader ini_reader;
-    auto const file_path { std::filesystem::path( __FILE__ ) / "../../config.ini" };
-    std::ifstream file {};
+    auto const main_dir { (std::filesystem::path(__FILE__) / "../../").lexically_normal() };
 
-    file.open( file_path.lexically_normal() );
-    ini_reader.read( file );
-    file.close();
-
-    auto const & section { ini_reader.get_section( "Window" ) };
-    for ( auto const & [key, value] : section.data )
-        std::cout << key << ": " << value << std::endl;
-
-    return 0;
+    Config config {};
+    config.load_config( main_dir / "config.ini" );
 
     // If any glDelete...() function is called after glfwTerminate() has been called, a segfault occurs
     // This code block ensures that all objects go out of scope, and thus have their destructors called with glDelete()

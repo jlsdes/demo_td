@@ -14,11 +14,29 @@ struct IniSection {
 
     /** Returns the value of a key-value pair as a specific type. Throws an exception if the value cannot be converted,
      *  or if the key isn't present. */
-    [[nodiscard]] long get_int( std::string const & key ) const;
-    [[nodiscard]] unsigned long get_uint( std::string const & key ) const;
-    [[nodiscard]] float get_float( std::string const & key ) const;
-    [[nodiscard]] double get_double( std::string const & key ) const;
+    template <typename Value>
+    [[nodiscard]] Value get( std::string const & key ) const;
 };
+
+// The IniSection::get() function will be available for the following types by default
+template <>
+[[nodiscard]] int IniSection::get<int>( std::string const & key ) const;
+template <>
+[[nodiscard]] unsigned int IniSection::get<unsigned int>( std::string const & key ) const;
+template <>
+[[nodiscard]] long IniSection::get<long>( std::string const & key ) const;
+template <>
+[[nodiscard]] unsigned long IniSection::get<unsigned long>( std::string const & key ) const;
+template <>
+[[nodiscard]] float IniSection::get<float>( std::string const & key ) const;
+template <>
+[[nodiscard]] double IniSection::get<double>( std::string const & key ) const;
+template <>
+[[nodiscard]] std::string IniSection::get<std::string>( std::string const & key ) const;
+
+
+/// The data structure used for storing (a) .ini file(s).
+using IniData = std::map<std::string, IniSection>;
 
 
 /** Reads .ini files and provides access to the contents through maps. Multiple files can be read, but their data will
@@ -35,9 +53,8 @@ public:
     IniReader() = default;
     ~IniReader() = default;
 
-    /** Reads the contents of the stream and parses it in the INI format. */
-    std::istream & read( std::istream & stream );
-    std::istream & operator>>( std::istream & stream );
+    /** Reads the contents of the stream and parses it as a .ini file. */
+    IniData const & read( std::istream & stream );
 
     /** Returns the data of the entire section as a string-to-string map. No type conversion will be performed by this
      *  function. */
@@ -53,7 +70,7 @@ public:
 
 private:
     /// The contents of the files that have been read, grouped per section.
-    std::map<std::string, IniSection> m_data;
+    IniData m_data;
 };
 
 

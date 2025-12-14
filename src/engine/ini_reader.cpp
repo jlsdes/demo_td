@@ -9,21 +9,40 @@
 auto constexpr max_read_size { std::numeric_limits<std::streamsize>::max() };
 
 
-long IniSection::get_int( std::string const & key ) const {
+template <>
+int IniSection::get<int>( std::string const & key ) const {
+    return std::stoi( data.at( key ) );
+}
+
+template <>
+unsigned int IniSection::get<unsigned int>( std::string const & key ) const {
+    return static_cast<unsigned int>(std::stoul( data.at( key ) ));
+}
+
+template <>
+long IniSection::get<long>( std::string const & key ) const {
     // Relying on .at() and stol() to throw exceptions if the key cannot be found or the value not converted
     return std::stol( data.at( key ) );
 }
 
-unsigned long IniSection::get_uint( std::string const & key ) const {
+template <>
+unsigned long IniSection::get<unsigned long>( std::string const & key ) const {
     return std::stoul( data.at( key ) );
 }
 
-float IniSection::get_float( std::string const & key ) const {
+template <>
+float IniSection::get<float>( std::string const & key ) const {
     return std::stof( data.at( key ) );
 }
 
-double IniSection::get_double( std::string const & key ) const {
+template <>
+double IniSection::get<double>( std::string const & key ) const {
     return std::stod( data.at( key ) );
+}
+
+template <>
+std::string IniSection::get<std::string>( std::string const & key ) const {
+    return data.at( key );
 }
 
 /** Helper function for IniReader::read(); initialises a new IniSection object, and adds the old one to the IniReader's
@@ -95,7 +114,7 @@ void read_key_value( std::istream & stream, IniSection & current_section ) {
     current_section.data.emplace( key, value );
 }
 
-std::istream & IniReader::read( std::istream & stream ) {
+IniData const & IniReader::read( std::istream & stream ) {
     IniSection current_section { "", {} };
     char c;
     while ( stream >> c ) {
@@ -115,11 +134,7 @@ std::istream & IniReader::read( std::istream & stream ) {
         }
     }
     add_section( current_section );
-    return stream;
-}
-
-std::istream & IniReader::operator>>( std::istream & stream ) {
-    return read( stream );
+    return m_data;
 }
 
 IniSection const & IniReader::get_section( std::string const & section ) const {
