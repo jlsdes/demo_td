@@ -3,6 +3,7 @@
 
 #include "engine/camera.hpp"
 #include "engine/config.hpp"
+#include "engine/log.hpp"
 #include "engine/mesh.hpp"
 #include "engine/shader.hpp"
 #include "engine/time.hpp"
@@ -37,16 +38,18 @@ void keep_time() {
 
 int main() {
     auto const main_dir { (std::filesystem::path( __FILE__ ) / "../../").lexically_normal() };
-
     Config::load_config( main_dir / "config.ini" );
 
     // If any glDelete...() function is called after glfwTerminate() has been called, a segfault occurs
     // This code block ensures that all objects go out of scope, and thus have their destructors called with glDelete()
     // calls, before glfwTerminate() at the end of this function
     {
+        Log main_log { std::cout };
+
         Window window {};
 
         // Find and build the main graphics shader
+        main_log.log( "Compiling shaders" );
         auto const vertex_shader { main_dir / Config::get<std::string>( "Shader", "vertex_shader" ) };
         auto const fragment_shader { main_dir / Config::get<std::string>( "Shader", "fragment_shader" ) };
         GraphicsShader shader { vertex_shader.c_str(), fragment_shader.c_str() };
@@ -82,7 +85,7 @@ int main() {
             camera.update();
 
             window.render();
-            keep_time();
+            // keep_time();
         }
         // The keep_time function has been overwriting the same line, finally go to the next line
         std::cout << std::endl;

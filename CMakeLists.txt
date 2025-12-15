@@ -51,7 +51,9 @@ add_executable(demo_td src/main.cpp
         src/engine/config.cpp
         src/engine/config.hpp
         src/engine/ini_reader.cpp
-        src/engine/ini_reader.hpp)
+        src/engine/ini_reader.hpp
+        src/engine/log.cpp
+        src/engine/log.hpp)
 
 # Link the necessary libraries
 target_link_libraries(demo_td PRIVATE glfw)
