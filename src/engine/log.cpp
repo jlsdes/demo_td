@@ -4,32 +4,62 @@
 
 #include <fstream>
 #include <iostream>
-#include <memory>
 
+
+Log::Log()
+    : m_target { std::make_unique<Target>( std::cout ) }, m_enable_colours { true } {
+}
 
 Log::Log( std::ostream & stream )
-    : m_output { stream } {
+    : m_target { std::make_unique<Target>( stream ) }, m_enable_colours { true } {
 }
 
-Log * Log::main_log() {
-    static std::unique_ptr<Log> log { nullptr };
-    if (log == nullptr)
-        log = std::make_unique<Log>( std::cout );
-    return log.get();
+Log::Log( std::string const & filename )
+    : m_target { std::make_unique<FileTarget>( filename ) }, m_enable_colours { false } {
 }
 
-void Log::write_type( Type const type ) const {
-    std::string const tags[4] {
-        "[\033[96m Debug \033[0m]",
-        "[\033[97m Info  \033[0m]",
-        "[\033[93mWarning\033[0m]",
-        "[\033[91m Error \033[0m]",
+void Log::set_colours( bool const enable_colours ) {
+    m_enable_colours = enable_colours;
+}
+
+void Log::write_type( MessageType const type ) const {
+    char constexpr tags[37] {
+        "[Debug  ]"
+        "[Info   ]"
+        "[Warning]"
+        "[Error  ]"
     };
-    m_output << tags[type];
+    unsigned int constexpr tag_size { sizeof(tags) / 4 };
+    char constexpr colour_tags[73] {
+        "[\033[96mDebug  \033[0m]"
+        "[\033[97mInfo   \033[0m]"
+        "[\033[93mWarning\033[0m]"
+        "[\033[91mError  \033[0m]"
+    };
+    unsigned int constexpr colour_tag_size { sizeof(colour_tags) / 4 };
+    if ( m_enable_colours )
+        m_target->stream->write( colour_tags + colour_tag_size * type, colour_tag_size );
+    else
+        m_target->stream->write( tags + tag_size * type, tag_size );
 }
 
 void Log::write_time() const {
-    auto const precision { m_output.precision() };
-    m_output << '[' << std::fixed << std::setprecision( 7 ) << Time::get_time() << ']';
-    m_output << precision << std::defaultfloat;
+    auto const precision { m_target->stream->precision() };
+    *m_target->stream << '[' << std::fixed << std::setprecision( 7 ) << Time::get_time() << ']';
+    *m_target->stream << std::setprecision( static_cast<int>(precision) ) << std::defaultfloat;
 }
+
+Log::Target::Target( std::ostream * stream )
+    : stream { stream } {
+}
+
+Log::Target::Target( std::ostream & stream )
+    : stream { &stream } {
+}
+
+Log::FileTarget::FileTarget( std::string const & filename )
+    : Target { nullptr }, file { std::make_unique<std::ofstream>( filename ) } {
+    stream = file.get();
+}
+
+Log::FileTarget::~FileTarget() = default;

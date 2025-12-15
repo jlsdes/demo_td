@@ -2,7 +2,8 @@
 #define DEMO_TD_LOG_HPP
 
 #include <format>
-#include <ostream>
+#include <iostream>
+#include <memory>
 #include <string>
 
 
@@ -10,15 +11,21 @@
 class Log {
 public:
     /** Constructor and destructor. */
+    Log();
     explicit Log( std::ostream & stream );
+    explicit Log( std::string const & filename );
     ~Log() = default;;
 
     /** Deleted copy constructor and assignment operator, to avoid multiple loggers interfering with each other. */
     Log( Log const & ) = delete;
     Log & operator=( Log const & ) = delete;
 
+    /** Moving Log objects shouldn't do anything special. */
+    Log( Log && ) = default;
+    Log & operator=( Log && ) = default;
+
     /// The types of log message.
-    enum Type {
+    enum MessageType {
         Debug = 0,
         Info = 1,
         Warning = 2,
@@ -32,7 +39,7 @@ public:
      * @param args The values being logged.
      */
     template <typename... Args>
-    void log( Type type, Args... args );
+    void log( MessageType type, Args... args );
     template <typename... Args>
     void log( Args... args );
 
@@ -44,33 +51,51 @@ public:
      * @param args The format arguments, to be used internally with std::format().
      */
     template <typename... Args>
-    void logf( Type type, std::string const & message, Args const &... args );
+    void logf( MessageType type, std::string const & message, Args const &... args );
     template <typename... Args>
     void logf( std::string const & message, Args const &... args );
 
-    /** Returns a Log object to be used as the main logger. */
-    inline static Log * main_log();
+    /** Sets the toggle for coloured tag types. */
+    void set_colours( bool enable_colours );
 
 private:
     /** Writes a message type to the log; to be used at the start of every log message. */
-    void write_type( Type type ) const;
+    void write_type( MessageType type ) const;
 
     /** Writes a timestamp to the log. */
     void write_time() const;
 
+    /**  */
+    struct Target {
+        std::ostream * stream;
+
+        explicit Target( std::ostream * stream );
+        explicit Target( std::ostream & stream );
+        virtual ~Target() = default;
+    };
+    struct FileTarget : Target {
+        std::unique_ptr<std::ofstream> file;
+
+        explicit FileTarget( std::string const & filename );
+        ~FileTarget() override;
+    };
+
 private:
-    /// The output stream.
-    std::ostream & m_output;
+    /// The output target.
+    std::unique_ptr<Target> m_target;
+    /// Whether colours are enabled when writing logs. The default behaviour for this parameter is to set it to true
+    /// unless the target is a file.
+    bool m_enable_colours;
 };
 
 
 // Template implementations
 
 template <typename... Args>
-void Log::log( Type const type, Args... args ) {
+void Log::log( MessageType const type, Args... args ) {
     write_time();
     write_type( type );
-    (((m_output << ' ') << std::forward<Args>( args )), ...) << '\n';
+    (((*m_target->stream << ' ') << std::forward<Args>( args )), ...) << '\n';
 }
 
 template <typename... Args>
@@ -79,16 +104,15 @@ void Log::log( Args... args ) {
 }
 
 template <typename... Args>
-void Log::logf( Type const type, std::string const & message, Args const &... args ) {
+void Log::logf( MessageType const type, std::string const & message, Args const &... args ) {
     write_time();
     write_type( type );
-    m_output << ' ' << std::format( message, args... ) << '\n';
+    *m_target->stream << ' ' << std::format( std::runtime_format( message ), args... ) << '\n';
 }
 
 template <typename... Args>
 void Log::logf( std::string const & message, Args const &... args ) {
     logf( Info, message, args... );
 }
-
 
 #endif //DEMO_TD_LOG_HPP
