@@ -47,8 +47,9 @@ int main() {
         Window window {};
 
         // Find and build the main graphics shader
-        auto const shader_dir { Shader::get_shader_directory() };
-        GraphicsShader shader { (shader_dir / "main.vert").c_str(), (shader_dir / "main.frag").c_str() };
+        auto const vertex_shader { main_dir / Config::get<std::string>( "Shader", "vertex_shader" ) };
+        auto const fragment_shader { main_dir / Config::get<std::string>( "Shader", "fragment_shader" ) };
+        GraphicsShader shader { vertex_shader.c_str(), fragment_shader.c_str() };
         shader.use();
 
         // Create a simple mesh

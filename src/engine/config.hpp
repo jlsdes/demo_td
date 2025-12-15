@@ -41,9 +41,9 @@ public:
      * @param key The key being requested.
      */
     template <typename Value>
-    [[nodiscard]] static Value get_value( std::string const & section, std::string const & key );
+    [[nodiscard]] static Value get( std::string const & section, std::string const & key );
     template <typename Value>
-    [[nodiscard]] static Value get_value( std::string const & key );
+    [[nodiscard]] static Value get( std::string const & key );
 
 private:
     /// The .ini reader object.
@@ -58,7 +58,7 @@ private:
 // Template implementation(s)
 
 template <typename Value>
-Value Config::get_value( std::string const & section, std::string const & key ) {
+Value Config::get( std::string const & section, std::string const & key ) {
     Config const & config { get_instance() };
     if ( config.m_data == nullptr )
         throw std::logic_error( "No config files have been read yet." );
@@ -66,7 +66,7 @@ Value Config::get_value( std::string const & section, std::string const & key ) 
 }
 
 template <typename Value>
-Value Config::get_value( std::string const & key ) {
+Value Config::get( std::string const & key ) {
     Config const & config { get_instance() };
     if ( config.m_data == nullptr )
         throw std::logic_error( "No config files have been read yet." );

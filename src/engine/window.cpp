@@ -6,9 +6,9 @@
 
 Window::Window()
     : Window(
-        Config::get_value<unsigned int>( "Window", "width" ),
-        Config::get_value<unsigned int>( "Window", "height" ),
-        Config::get_value<char const *>( "Window", "title" )
+        Config::get<unsigned int>( "Window", "width" ),
+        Config::get<unsigned int>( "Window", "height" ),
+        Config::get<char const *>( "Window", "title" )
     ) {
 }
 

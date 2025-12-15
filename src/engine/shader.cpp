@@ -1,13 +1,12 @@
 #include "shader.hpp"
 
 #include <glad/gl.h>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <format>
 #include <fstream>
 #include <string>
 #include <stdexcept>
-
-#include "glm/gtc/type_ptr.hpp"
 
 
 Shader::Shader()

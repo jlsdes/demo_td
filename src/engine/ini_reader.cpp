@@ -106,7 +106,7 @@ std::string read_value( std::istream & stream ) {
     bool const single_quotes { value.starts_with( '\'' ) && value.ends_with( '\'' ) };
     bool const double_quotes { value.starts_with( '"' ) && value.ends_with( '"' ) };
     if ( single_quotes || double_quotes )
-        value = value.substr( 1, value.size() - 1 );
+        value = value.substr( 1, value.size() - 2 );
     return value;
 }
 
