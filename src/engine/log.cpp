@@ -3,23 +3,44 @@
 #include "time.hpp"
 
 #include <fstream>
-#include <iostream>
 
-
-Log::Log()
-    : m_target { std::make_unique<Target>( std::cout ) }, m_enable_colours { true } {
-}
 
 Log::Log( std::ostream & stream )
-    : m_target { std::make_unique<Target>( stream ) }, m_enable_colours { true } {
+    : m_target { std::make_unique<Target>( &stream ) }, m_enable_colours { true } {
+    log( "Starting log." );
 }
 
 Log::Log( std::string const & filename )
     : m_target { std::make_unique<FileTarget>( filename ) }, m_enable_colours { false } {
+    log( "Starting log." );
+}
+
+Log::~Log() {
+    log( "Closing log." );
+}
+
+Log & Log::get_main( std::string const & filename ) {
+    static std::unique_ptr<Log> main_log { nullptr };
+    if ( main_log == nullptr )
+        main_log = filename.empty() ? std::make_unique<Log>( std::cout ) : std::make_unique<Log>( filename );
+    return *main_log;
 }
 
 void Log::set_colours( bool const enable_colours ) {
     m_enable_colours = enable_colours;
+}
+
+void Log::set_output( std::ostream & stream ) {
+    // Still not sure if changing the output stream should be allowed; at the very least write a warning to both
+    log( Warning, "Changing output stream." );
+    m_target = std::make_unique<Target>( &stream );
+    log( Warning, "Changed output stream." );
+}
+
+void Log::set_output( std::string const & filename ) {
+    log( Warning, "Changing output stream to file '", filename, "'." );
+    m_target = std::make_unique<FileTarget>( filename );
+    log( Warning, "Changed output stream." );
 }
 
 void Log::write_type( MessageType const type ) const {
@@ -51,10 +72,6 @@ void Log::write_time() const {
 
 Log::Target::Target( std::ostream * stream )
     : stream { stream } {
-}
-
-Log::Target::Target( std::ostream & stream )
-    : stream { &stream } {
 }
 
 Log::FileTarget::FileTarget( std::string const & filename )

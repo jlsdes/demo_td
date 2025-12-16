@@ -10,11 +10,12 @@
 /** Logging utility class. */
 class Log {
 public:
-    /** Constructor and destructor. */
-    Log();
-    explicit Log( std::ostream & stream );
+    /** Constructors and destructor. Each Log object can write to either an existing output stream, or a file. If an
+     *  output stream is passed to the Log, then it must be kept open while the Log exists. If a filename is given, then
+     *  the Log will maintain its own output stream. */
+    explicit Log( std::ostream & stream = std::cout );
     explicit Log( std::string const & filename );
-    ~Log() = default;;
+    ~Log();;
 
     /** Deleted copy constructor and assignment operator, to avoid multiple loggers interfering with each other. */
     Log( Log const & ) = delete;
@@ -58,6 +59,13 @@ public:
     /** Sets the toggle for coloured tag types. */
     void set_colours( bool enable_colours );
 
+    /** Changes the output stream of the Log. */
+    void set_output( std::ostream & stream );
+    void set_output( std::string const & filename );
+
+    /** Returns the same Log object every time to be used as the main log of the program. */
+    static Log & get_main( std::string const & filename = "" );
+
 private:
     /** Writes a message type to the log; to be used at the start of every log message. */
     void write_type( MessageType type ) const;
@@ -65,14 +73,16 @@ private:
     /** Writes a timestamp to the log. */
     void write_time() const;
 
-    /**  */
+    /** A struct wrapping an output stream. This mainly exists to use inheritance for different types of targets. */
     struct Target {
         std::ostream * stream;
 
         explicit Target( std::ostream * stream );
-        explicit Target( std::ostream & stream );
         virtual ~Target() = default;
     };
+
+    /** A target for output files. FileTarget owns its own output stream through its member 'file'. The Target::stream
+     *  member will also point to this output stream. */
     struct FileTarget : Target {
         std::unique_ptr<std::ofstream> file;
 
@@ -80,13 +90,18 @@ private:
         ~FileTarget() override;
     };
 
-private:
     /// The output target.
     std::unique_ptr<Target> m_target;
     /// Whether colours are enabled when writing logs. The default behaviour for this parameter is to set it to true
     /// unless the target is a file.
     bool m_enable_colours;
 };
+
+// Macros for logging with the main Log object returned by get_main()
+#define DEBUG( ... ) Log::get_main().log( Log::Debug, __VA_ARGS__ )
+#define INFO( ... ) Log::get_main().log( Log::Info, __VA_ARGS__ )
+#define WARNING( ... ) Log::get_main().log( Log::Warning, __VA_ARGS__ )
+#define ERROR( ... ) Log::get_main().log( Log::Error, __VA_ARGS__ )
 
 
 // Template implementations

@@ -44,16 +44,14 @@ int main() {
     // This code block ensures that all objects go out of scope, and thus have their destructors called with glDelete()
     // calls, before glfwTerminate() at the end of this function
     {
-        Log main_log {};
-
         Window window {};
 
         // Find and build the main graphics shader
         auto const vertex_shader { main_dir / Config::get<std::string>( "Shader", "vertex_shader" ) };
         auto const fragment_shader { main_dir / Config::get<std::string>( "Shader", "fragment_shader" ) };
-        main_log.log( "Compiling shaders '", vertex_shader, "' & '", fragment_shader, "'" );
+        INFO( "Compiling shaders ", vertex_shader, " & ", fragment_shader );
         GraphicsShader shader { vertex_shader.c_str(), fragment_shader.c_str() };
-        main_log.log( "Compilation successful!" );
+        INFO( "Compilation successful!" );
         shader.use();
 
         // Create a simple mesh
@@ -89,7 +87,7 @@ int main() {
             // keep_time();
         }
         // The keep_time function has been overwriting the same line, finally go to the next line
-        std::cout << std::endl;
+        // std::cout << std::endl;
     }
     glfwTerminate();
     return 0;
