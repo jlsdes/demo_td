@@ -2,17 +2,27 @@
 #define DEMO_TD_MESH_HPP
 
 #include <glad/gl.h>
-#include <glm/glm.hpp>
 
 #include <memory>
 #include <vector>
 
 
-struct Vertex {
+struct Vector3 {
     float x = 0.f;
     float y = 0.f;
     float z = 0.f;
 };
+
+std::ostream & operator<<( std::ostream & stream, Vector3 const & vector );
+
+struct Vertex {
+    Vector3 position;
+    Vector3 normal;
+    Vector3 colour;
+    // TODO add texture coordinates? Although I might not use them in this project
+};
+
+std::ostream & operator<<( std::ostream & stream, Vertex const & vertex );
 
 
 /** A basic mesh. */
@@ -28,10 +38,10 @@ public:
     /** Constructor with vertex indices.
      *
      * @param vertices The coordinates of the vertices of the mesh.
-     * @param faces The faces of the mesh, each face is defined by the indices of its vertices.
+     * @param indices The faces of the mesh, each face is defined by the indices of its vertices.
      * @param draw_mode The default draw mode for the mesh.
      */
-    Mesh( std::vector<Vertex> const & vertices, std::vector<unsigned int> const & faces, int draw_mode = GL_TRIANGLES );
+    Mesh( std::vector<Vertex> const & vertices, std::vector<unsigned int> const & indices, int draw_mode = GL_TRIANGLES );
 
     /** Destructor. */
     ~Mesh();
@@ -51,7 +61,7 @@ private:
     std::unique_ptr<Vertex[]> m_vertices;
     unsigned long m_nr_vertices;
     std::unique_ptr<unsigned int[]> m_indices;
-    unsigned long m_nr_faces;
+    unsigned long m_nr_indices;
 
     /// OpenGL object IDs.
     unsigned int m_vertex_buffer;

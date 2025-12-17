@@ -51,17 +51,37 @@ int main() {
         GraphicsShader shader { vertex_shader.c_str(), fragment_shader.c_str() };
         shader.use();
 
-        // Create a simple mesh
-        std::vector<Vertex> const vertices {
-            { -0.5f, 0.5f, 0.f },
-            { 0.5, 0.5, 0 },
-            { -0.5, -0.5, 0 },
-            { 0.5, -0.5, 0 }
-        };
-        std::vector<unsigned int> const indices {
-            0, 1, 2, 3
-        };
-        Mesh const mesh { vertices, GL_TRIANGLE_STRIP };
+        // Create a circle
+        std::vector<Vertex> vertices { 101 };
+        std::vector indices { 0u }; // A vector of unsigned ints with a single element 0
+        vertices.at( 0 ) = { { 0.f, 0.f, 0.f }, {}, { 0.f, 0.f, 0.f } };
+        for ( unsigned int i { 1 }; i < vertices.size(); ++i ) {
+            double const angle { (100. - i) / 100. * glm::two_pi<double>() };
+            Vertex & vertex { vertices.at( i ) };
+            vertex.position = { static_cast<float>(cos( angle )), static_cast<float>(sin( angle )), 0.f };
+
+            // Draw a colour circle
+            float const angle_div { static_cast<float>(angle / (glm::pi<double>() / 3)) };
+            switch ( static_cast<int>(std::floor( angle_div )) ) {
+            case 0: vertex.colour = { 1, (1 - std::abs( angle_div - 1 )), 0 };
+                break;
+            case 1: vertex.colour = { (1 - std::abs( angle_div - 1 )), 1, 0 };
+                break;
+            case 2: vertex.colour = { 0, 1, (1 - std::abs( angle_div - 3 )) };
+                break;
+            case 3: vertex.colour = { 0, (1 - std::abs( angle_div - 3 )), 1 };
+                break;
+            case 4: vertex.colour = { (1 - std::abs( angle_div - 5 )), 0, 1 };
+                break;
+            case 5: vertex.colour = { 1, 0, (1 - std::abs( angle_div - 5 )) };
+                break;
+            default: // Shouldn't happen
+                break;
+            }
+            indices.emplace_back( i );
+        }
+        indices.emplace_back( 1 );
+        Mesh const mesh { vertices, indices, GL_TRIANGLE_FAN };
 
         // Create a camera object and attach it to the shader
         glm::vec3 const & camera_position { 0.f, 0.f, 3.f };
