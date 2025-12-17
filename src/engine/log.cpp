@@ -2,21 +2,22 @@
 #include "log.hpp"
 #include "time.hpp"
 
+#include <chrono>
 #include <fstream>
 
 
 Log::Log( std::ostream & stream )
     : m_target { std::make_unique<Target>( &stream ) }, m_enable_colours { true } {
-    log( "Starting log." );
+    log( "Starting log at (UTC)", std::chrono::system_clock::now(), "." );
 }
 
 Log::Log( std::string const & filename )
     : m_target { std::make_unique<FileTarget>( filename ) }, m_enable_colours { false } {
-    log( "Starting log." );
+    log( "Starting log at (UTC)", std::chrono::system_clock::now(), "." );
 }
 
 Log::~Log() {
-    log( "Closing log." );
+    log( "Closing log at (UTC)", std::chrono::system_clock::now(), "." );
 }
 
 Log & Log::get_main( std::string const & filename ) {

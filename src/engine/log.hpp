@@ -98,7 +98,11 @@ private:
 };
 
 // Macros for logging with the main Log object returned by get_main()
+#ifndef NDEBUG  // Completely ignore debugging statements if needed
 #define DEBUG( ... ) Log::get_main().log( Log::Debug, __VA_ARGS__ )
+#else
+#define DEBUG( ... ) do {} while(0)     // Avoids empty statements
+#endif
 #define INFO( ... ) Log::get_main().log( Log::Info, __VA_ARGS__ )
 #define WARNING( ... ) Log::get_main().log( Log::Warning, __VA_ARGS__ )
 #define ERROR( ... ) Log::get_main().log( Log::Error, __VA_ARGS__ )

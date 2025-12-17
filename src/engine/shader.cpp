@@ -1,4 +1,5 @@
 #include "shader.hpp"
+#include "log.hpp"
 
 #include <glad/gl.h>
 #include <glm/gtc/type_ptr.hpp>
@@ -10,64 +11,51 @@
 
 
 Shader::Shader()
-    : m_program { glCreateProgram() }
-{
+    : m_program { glCreateProgram() } {
 }
 
-Shader::~Shader()
-{
+Shader::~Shader() {
     glDeleteProgram( m_program );
 }
 
-void Shader::use() const
-{
+void Shader::use() const {
     glUseProgram( m_program );
 }
 
-void Shader::set_uniform( char const * name, bool const value ) const
-{
-    glUniform1i( get_uniform_location( name ), static_cast<int>( value ) );
+void Shader::set_uniform( char const * name, bool const value ) const {
+    glUniform1i( get_uniform_location( name ), static_cast<int>(value) );
 }
 
-void Shader::set_uniform( char const * name, int const value ) const
-{
+void Shader::set_uniform( char const * name, int const value ) const {
     glUniform1i( get_uniform_location( name ), value );
 }
 
-void Shader::set_uniform( char const * name, unsigned int const value ) const
-{
+void Shader::set_uniform( char const * name, unsigned int const value ) const {
     glUniform1ui( get_uniform_location( name ), value );
 }
 
-void Shader::set_uniform( char const * name, float const value ) const
-{
+void Shader::set_uniform( char const * name, float const value ) const {
     glUniform1f( get_uniform_location( name ), value );
 }
 
-void Shader::set_uniform( char const * name, double const value ) const
-{
+void Shader::set_uniform( char const * name, double const value ) const {
     glUniform1d( get_uniform_location( name ), value );
 }
 
-void Shader::set_uniform( char const * name, glm::mat4 const & value ) const
-{
+void Shader::set_uniform( char const * name, glm::mat4 const & value ) const {
     glUniformMatrix4fv( get_uniform_location( name ), 1, GL_FALSE, glm::value_ptr( value ) );
 }
 
-std::filesystem::path Shader::get_shader_directory()
-{
-    return (std::filesystem::path(__FILE__) / "../../shader").lexically_normal();
+std::filesystem::path Shader::get_shader_directory() {
+    return (std::filesystem::path( __FILE__ ) / "../../shader").lexically_normal();
 }
 
-int Shader::get_uniform_location( char const * name ) const
-{
+int Shader::get_uniform_location( char const * name ) const {
     use();
     return glGetUniformLocation( m_program, name );
 }
 
-GraphicsShader::GraphicsShader( char const * vertex_path, char const * fragment_path )
-    : Shader {}
-{
+GraphicsShader::GraphicsShader( std::string const & vertex_path, std::string const & fragment_path ) {
     unsigned int const vertex_shader { compile_shader( GL_VERTEX_SHADER, vertex_path ) };
     unsigned int const fragment_shader { compile_shader( GL_FRAGMENT_SHADER, fragment_path ) };
 
@@ -84,16 +72,17 @@ GraphicsShader::GraphicsShader( char const * vertex_path, char const * fragment_
         glGetProgramInfoLog( m_program, 1024, nullptr, log );
         throw std::runtime_error( std::format( "Failed to link shader program\n{}", log ) );
     }
+    INFO("Shader program built");
 
     glDeleteShader( fragment_shader );
     glDeleteShader( vertex_shader );
 }
 
-unsigned int compile_shader( unsigned int const type, char const * const file_name )
-{
+unsigned int compile_shader( unsigned int const type, std::string const & filename ) {
+    INFO( "Building shader", filename );
     // Load the entire shader file into memory
-    std::ifstream file { file_name };
-    std::string const shader_string { std::istreambuf_iterator<char>( file ), std::istreambuf_iterator<char>() };
+    std::ifstream file { filename };
+    std::string const shader_string { std::istreambuf_iterator( file ), std::istreambuf_iterator<char>() };
     char const * const shader_source { shader_string.c_str() };
     file.close();
 
@@ -108,7 +97,7 @@ unsigned int compile_shader( unsigned int const type, char const * const file_na
     glGetShaderiv( shader, GL_COMPILE_STATUS, &success );
     if ( !success ) {
         glGetShaderInfoLog( shader, 1024, nullptr, log );
-        throw std::runtime_error( std::format( "Failed to compile shader '{}'.\n{}", file_name, log ) );
+        throw std::runtime_error( std::format( "Failed to compile shader '{}'.\n{}", filename, log ) );
     }
 
     return shader;

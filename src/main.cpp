@@ -10,8 +10,6 @@
 #include "engine/window.hpp"
 
 #include <filesystem>
-#include <fstream>
-#include <iostream>
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -29,7 +27,7 @@ void keep_time() {
     double const current_time { Time::get_time() };
     double const elapsed_time { current_time - interval_start };
     if ( elapsed_time >= report_interval ) {
-        std::cout << "\rFPS: " << frame_counter / elapsed_time << std::flush;
+        DEBUG( "Current average FPS: ", frame_counter/elapsed_time );
         frame_counter = 0;
         interval_start = current_time;
     }
@@ -39,6 +37,7 @@ void keep_time() {
 int main() {
     auto const main_dir { (std::filesystem::path( __FILE__ ) / "../../").lexically_normal() };
     Config::load_config( main_dir / "config.ini" );
+    INFO( "Loaded config", main_dir / "config.ini" );
 
     // If any glDelete...() function is called after glfwTerminate() has been called, a segfault occurs
     // This code block ensures that all objects go out of scope, and thus have their destructors called with glDelete()
@@ -49,17 +48,15 @@ int main() {
         // Find and build the main graphics shader
         auto const vertex_shader { main_dir / Config::get<std::string>( "Shader", "vertex_shader" ) };
         auto const fragment_shader { main_dir / Config::get<std::string>( "Shader", "fragment_shader" ) };
-        INFO( "Compiling shaders ", vertex_shader, " & ", fragment_shader );
         GraphicsShader shader { vertex_shader.c_str(), fragment_shader.c_str() };
-        INFO( "Compilation successful!" );
         shader.use();
 
         // Create a simple mesh
-        std::vector<float> const vertices {
-            -0.5, 0.5, 0,
-            0.5, 0.5, 0,
-            -0.5, -0.5, 0,
-            0.5, -0.5, 0
+        std::vector<Vertex> const vertices {
+            { -0.5f, 0.5f, 0.f },
+            { 0.5, 0.5, 0 },
+            { -0.5, -0.5, 0 },
+            { 0.5, -0.5, 0 }
         };
         std::vector<unsigned int> const indices {
             0, 1, 2, 3
@@ -86,8 +83,6 @@ int main() {
             window.render();
             // keep_time();
         }
-        // The keep_time function has been overwriting the same line, finally go to the next line
-        // std::cout << std::endl;
     }
     glfwTerminate();
     return 0;

@@ -47,7 +47,7 @@ class GraphicsShader : public Shader
 {
 public:
     /** Constructor. */
-    GraphicsShader( char const * vertex_path, char const * fragment_path );
+    GraphicsShader( std::string const & vertex_path, std::string const & fragment_path );
 
     /** Destructor. */
     ~GraphicsShader() = default;
@@ -55,7 +55,7 @@ public:
 
 
 /** Compiles a single shader script. */
-unsigned int compile_shader( unsigned int type, char const * file_name );
+unsigned int compile_shader( unsigned int type, std::string const & filename );
 
 
 #endif //DEMO_TD_SHADER_HPP
