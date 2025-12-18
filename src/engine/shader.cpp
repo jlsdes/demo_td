@@ -72,14 +72,14 @@ GraphicsShader::GraphicsShader( std::string const & vertex_path, std::string con
         glGetProgramInfoLog( m_program, 1024, nullptr, log );
         throw std::runtime_error( std::format( "Failed to link shader program\n{}", log ) );
     }
-    INFO("Shader program built");
+    Log::info("Shader program built");
 
     glDeleteShader( fragment_shader );
     glDeleteShader( vertex_shader );
 }
 
 unsigned int compile_shader( unsigned int const type, std::string const & filename ) {
-    INFO( "Building shader", filename );
+    Log::info( "Building shader", filename );
     // Load the entire shader file into memory
     std::ifstream file { filename };
     std::string const shader_string { std::istreambuf_iterator( file ), std::istreambuf_iterator<char>() };

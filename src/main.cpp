@@ -27,7 +27,7 @@ void keep_time() {
     double const current_time { Time::get_time() };
     double const elapsed_time { current_time - interval_start };
     if ( elapsed_time >= report_interval ) {
-        DEBUG( "Current average FPS: ", frame_counter/elapsed_time );
+        Log::debug( "Current average FPS: ", frame_counter/elapsed_time );
         frame_counter = 0;
         interval_start = current_time;
     }
@@ -37,7 +37,7 @@ void keep_time() {
 int main() {
     auto const main_dir { (std::filesystem::path( __FILE__ ) / "../../").lexically_normal() };
     Config::load_config( main_dir / "config.ini" );
-    INFO( "Loaded config", main_dir / "config.ini" );
+    Log::info( "Loaded config", main_dir / "config.ini" );
 
     // If any glDelete...() function is called after glfwTerminate() has been called, a segfault occurs
     // This code block ensures that all objects go out of scope, and thus have their destructors called with glDelete()

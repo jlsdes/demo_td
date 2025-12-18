@@ -66,6 +66,16 @@ public:
     /** Returns the same Log object every time to be used as the main log of the program. */
     static Log & get_main( std::string const & filename = "" );
 
+    /** Utility functions for writing to the main Log instance. */
+    template <typename... Args>
+    static void debug( Args... args );
+    template <typename... Args>
+    static void info( Args... args );
+    template <typename... Args>
+    static void warning( Args... args );
+    template <typename... Args>
+    static void error( Args... args );
+
 private:
     /** Writes a message type to the log; to be used at the start of every log message. */
     void write_type( MessageType type ) const;
@@ -97,16 +107,6 @@ private:
     bool m_enable_colours;
 };
 
-// Macros for logging with the main Log object returned by get_main()
-#ifndef NDEBUG  // Completely ignore debugging statements if needed
-#define DEBUG( ... ) Log::get_main().log( Log::Debug, __VA_ARGS__ )
-#else
-#define DEBUG( ... ) do {} while(0)     // Avoids empty statements
-#endif
-#define INFO( ... ) Log::get_main().log( Log::Info, __VA_ARGS__ )
-#define WARNING( ... ) Log::get_main().log( Log::Warning, __VA_ARGS__ )
-#define ERROR( ... ) Log::get_main().log( Log::Error, __VA_ARGS__ )
-
 
 // Template implementations
 
@@ -133,5 +133,29 @@ template <typename... Args>
 void Log::logf( std::string const & message, Args const &... args ) {
     logf( Info, message, args... );
 }
+
+template <typename... Args>
+void Log::debug( Args... args ) {
+    // Implementing this function as a macro, might be more efficient
+#ifndef NDEBUG  // Ignore debug logs entirely if NDEBUG is defined
+    get_main().log( Debug, args... );
+#endif
+}
+
+template <typename... Args>
+void Log::info( Args... args ) {
+    get_main().log( Info, args... );
+}
+
+template <typename... Args>
+void Log::warning( Args... args ) {
+    get_main().log( Warning, args... );
+}
+
+template <typename... Args>
+void Log::error( Args... args ) {
+    get_main().log( Error, args... );
+}
+
 
 #endif //DEMO_TD_LOG_HPP
