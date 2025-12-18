@@ -48,32 +48,35 @@ void set_vertex_attributes() {
     glEnableVertexAttribArray( 2 );
 }
 
-Mesh::Mesh( std::vector<Vertex> const & vertices, int const draw_mode )
-    : m_vertices { vector_to_array( vertices ) }, m_nr_vertices { vertices.size() }, m_indices { nullptr },
-      m_nr_indices { 0 }, m_vertex_buffer { 0 }, m_vertex_array { 0 }, m_element_buffer { 0 },
-      m_default_mode { draw_mode } {
-    glGenVertexArrays( 1, &m_vertex_array );
-    glBindVertexArray( m_vertex_array );
-    m_vertex_buffer = create_buffer<Vertex>( GL_ARRAY_BUFFER, m_vertices.get(), m_nr_vertices );
-    set_vertex_attributes();
-}
-
 Mesh::Mesh( std::vector<Vertex> const & vertices, std::vector<unsigned int> const & indices, int const draw_mode )
     : m_vertices { vector_to_array( vertices ) }, m_nr_vertices { vertices.size() },
-      m_indices { vector_to_array( indices ) }, m_nr_indices { indices.size() }, m_vertex_buffer { 0 },
-      m_vertex_array { 0 }, m_element_buffer { 0 }, m_default_mode { draw_mode } {
+      m_indices { indices.empty() ? nullptr : vector_to_array( indices ) }, m_nr_indices { indices.size() },
+      m_vertex_buffer { 0 }, m_vertex_array { 0 }, m_element_buffer { 0 }, m_default_mode { draw_mode } {
     glGenVertexArrays( 1, &m_vertex_array );
     glBindVertexArray( m_vertex_array );
     m_vertex_buffer = create_buffer<Vertex>( GL_ARRAY_BUFFER, m_vertices.get(), m_nr_vertices );
-    m_element_buffer = create_buffer<unsigned int>( GL_ELEMENT_ARRAY_BUFFER, m_indices.get(), m_nr_indices );
+    if ( m_nr_indices > 0 )
+        m_element_buffer = create_buffer<unsigned int>( GL_ELEMENT_ARRAY_BUFFER, m_indices.get(), m_nr_indices );
     set_vertex_attributes();
 }
 
 Mesh::~Mesh() {
-    glDeleteVertexArrays( 1, &m_vertex_array );
-    glDeleteBuffers( 1, &m_vertex_buffer );
-    if ( has_index() )
+    if ( m_vertex_array )
+        glDeleteVertexArrays( 1, &m_vertex_array );
+    if ( m_vertex_buffer )
+        glDeleteBuffers( 1, &m_vertex_buffer );
+    if ( m_element_buffer )
         glDeleteBuffers( 1, &m_element_buffer );
+}
+
+Mesh::Mesh( Mesh && mesh ) noexcept
+    : m_vertices { std::move( mesh.m_vertices ) }, m_nr_vertices { mesh.m_nr_vertices },
+      m_indices { mesh.m_indices ? std::move( mesh.m_indices ) : nullptr }, m_nr_indices { mesh.m_nr_indices },
+      m_vertex_buffer { mesh.m_vertex_buffer }, m_vertex_array { mesh.m_vertex_array },
+      m_element_buffer { mesh.m_element_buffer }, m_default_mode { mesh.m_default_mode } {
+    mesh.m_vertex_buffer = 0;
+    mesh.m_vertex_array = 0;
+    mesh.m_element_buffer = 0;
 }
 
 bool Mesh::has_index() const {

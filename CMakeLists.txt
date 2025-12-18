@@ -54,6 +54,10 @@ add_executable(demo_td src/main.cpp
         src/engine/ini_reader.hpp
         src/engine/log.cpp
         src/engine/log.hpp
+        src/engine/render_object.cpp
+        src/engine/render_object.hpp
+        src/engine/renderer.cpp
+        src/engine/renderer.hpp
 )
 
 # Link the necessary libraries

@@ -28,23 +28,23 @@ std::ostream & operator<<( std::ostream & stream, Vertex const & vertex );
 /** A basic mesh. */
 class Mesh {
 public:
-    /** Constructor without vertex indices.
+    /** Constructor; creates some underlying OpenGL buffers.
      *
-     * @param vertices The vertex positions of the mesh. Each group of 3 vertices will be used to create 1 face.
-     * @param draw_mode The default draw mode for the mesh.
+     * @param vertices The vertices of the mesh.
+     * @param indices The indices used to define the faces of the mesh, depending on the draw_mode. If this parameter is
+     *  omitted, then a sequence {0, 1, 2...} is used by default.
+     * @param draw_mode The default draw mode for the mesh as used in OpenGL. The default value 'GL_TRIANGLES' means
+     *  that groups of three vertices will be combined to define some triangles.
      */
-    explicit Mesh( std::vector<Vertex> const & vertices, int draw_mode = GL_TRIANGLES );
+    explicit Mesh( std::vector<Vertex> const & vertices,
+                   std::vector<unsigned int> const & indices = {},
+                   int draw_mode = GL_TRIANGLES );
 
-    /** Constructor with vertex indices.
-     *
-     * @param vertices The coordinates of the vertices of the mesh.
-     * @param indices The faces of the mesh, each face is defined by the indices of its vertices.
-     * @param draw_mode The default draw mode for the mesh.
-     */
-    Mesh( std::vector<Vertex> const & vertices, std::vector<unsigned int> const & indices, int draw_mode = GL_TRIANGLES );
-
-    /** Destructor. */
+    /** Destructor; deletes the underlying OpenGL buffer objects. */
     ~Mesh();
+
+    /** Move constructor. */
+    Mesh( Mesh && mesh ) noexcept;
 
     /** Returns whether the mesh has an index array configured. */
     [[nodiscard]] bool has_index() const;
@@ -57,7 +57,7 @@ public:
     void draw( int mode = -1 ) const;
 
 private:
-    /// The mesh data.
+    /// The mesh data; could be used to modify the buffer data.
     std::unique_ptr<Vertex[]> m_vertices;
     unsigned long m_nr_vertices;
     std::unique_ptr<unsigned int[]> m_indices;
