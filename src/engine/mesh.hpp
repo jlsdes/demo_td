@@ -1,22 +1,12 @@
 #ifndef DEMO_TD_MESH_HPP
 #define DEMO_TD_MESH_HPP
 
-#include "shapes.hpp"
+#include "shape.hpp"
 
 #include <glad/gl.h>
 
 #include <memory>
 #include <vector>
-
-
-struct Vertex {
-    Vector3 position;
-    Vector3 normal;
-    Vector3 colour;
-    // TODO add texture coordinates? Although I might not use them in this project
-};
-
-std::ostream & operator<<( std::ostream & stream, Vertex const & vertex );
 
 
 /** A basic mesh. */

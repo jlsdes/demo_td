@@ -58,8 +58,8 @@ add_executable(demo_td src/main.cpp
         src/engine/render_object.hpp
         src/engine/renderer.cpp
         src/engine/renderer.hpp
-        src/engine/shapes.cpp
-        src/engine/shapes.hpp
+        src/engine/shape.cpp
+        src/engine/shape.hpp
 )
 
 # Link the necessary libraries

@@ -8,7 +8,7 @@
 #include "engine/render_object.hpp"
 #include "engine/renderer.hpp"
 #include "engine/shader.hpp"
-#include "engine/shapes.hpp"
+#include "engine/shape.hpp"
 #include "engine/time.hpp"
 #include "engine/window.hpp"
 
@@ -72,29 +72,16 @@ Mesh create_colour_circle() {
 
 
 Mesh create_cube() {
-    // std::vector<Vertex> vertices { 8ul };
-    // for ( unsigned int i { 0 }; i < 8; ++i ) {
-    //     float const x { static_cast<float>(i & 1) };
-    //     float const y { static_cast<float>((i & 2) >> 1) };
-    //     float const z { static_cast<float>((i & 4) >> 2) };
-    //     vertices.at( i ) = { { x, y, z }, {}, { x, y, z } };
-    // }
-    // std::vector<unsigned int> indices {
-    //     3, 2, 0,
-    //     3, 0, 1,
-    //     7, 6, 2,
-    //     7, 2, 3,
-    //     6, 7, 5,
-    //     6, 5, 4,
-    //     1, 0, 4,
-    //     1, 4, 5,
-    //     7, 3, 1,
-    //     7, 1, 5,
-    //     2, 6, 4,
-    //     2, 4, 0
-    // };
-    // return Mesh { vertices, indices, GL_TRIANGLES };
-    Shape const cube { generate_cube() };
+    Shape cube { generate_cube() };
+    cube.normals.reserve( 8 );
+    cube.colours.reserve( 8 );
+    for ( unsigned int i { 0 }; i < 8; ++i ) {
+        cube.normals.emplace_back();
+        auto const r { static_cast<float>((i & 4) >> 2) };
+        auto const g { static_cast<float>((i & 2) >> 1) };
+        auto const b { static_cast<float>(i & 1) };
+        cube.colours.emplace_back( r, g, b );
+    }
     return Mesh { cube };
 }
 
@@ -121,7 +108,7 @@ int main() {
         Mesh mesh { create_cube() };
         RenderObject object { RenderObject::Opaque, std::move( mesh ), &shader };
         object.translate( { 0.f, 0.f, 3.f } );
-        object.rotate( { 0.f, 1.f, 0.f }, glm::radians( 180.f ) );
+        // object.rotate( { 0.f, 1.f, 0.f }, glm::radians( 180.f ) );
         renderer.register_object( object );
 
         // Create a camera object and attach it to the shader
