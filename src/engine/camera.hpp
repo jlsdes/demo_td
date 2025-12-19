@@ -49,7 +49,7 @@ public:
 
     /** Rotates the camera toward the given direction (which is relative to the camera's current forward direction),
      *  depending on the camera's speed. */
-    void rotate( glm::vec2 const & direction );
+    void rotate( glm::vec2 const & mouse_position );
 
     /** Updates the view matrix in the attached shader. */
     void update();

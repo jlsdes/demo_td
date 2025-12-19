@@ -38,54 +38,6 @@ void keep_time() {
 }
 
 
-Mesh create_colour_circle() {
-    std::vector<Vertex> vertices { 101 };
-    std::vector indices { 0u }; // A vector of unsigned ints with a single element 0
-    vertices.at( 0 ) = { { 0.f, 0.f, 0.f }, {}, { 0.f, 0.f, 0.f } };
-    for ( unsigned int i { 1 }; i < vertices.size(); ++i ) {
-        double const angle { (100. - i) / 100. * glm::two_pi<double>() };
-        Vertex & vertex { vertices.at( i ) };
-        vertex.position = { static_cast<float>(cos( angle )), static_cast<float>(sin( angle )), 0.f };
-
-        float const angle_div { static_cast<float>(angle / (glm::pi<double>() / 3)) };
-        switch ( static_cast<int>(std::floor( angle_div )) ) {
-        case 0: vertex.colour = { 1, (1 - std::abs( angle_div - 1 )), 0 };
-            break;
-        case 1: vertex.colour = { (1 - std::abs( angle_div - 1 )), 1, 0 };
-            break;
-        case 2: vertex.colour = { 0, 1, (1 - std::abs( angle_div - 3 )) };
-            break;
-        case 3: vertex.colour = { 0, (1 - std::abs( angle_div - 3 )), 1 };
-            break;
-        case 4: vertex.colour = { (1 - std::abs( angle_div - 5 )), 0, 1 };
-            break;
-        case 5: vertex.colour = { 1, 0, (1 - std::abs( angle_div - 5 )) };
-            break;
-        default: // Shouldn't happen
-            break;
-        }
-        indices.emplace_back( i );
-    }
-    indices.emplace_back( 1 );
-    return Mesh { vertices, indices, GL_TRIANGLE_FAN };
-}
-
-
-Mesh create_cube() {
-    Shape cube { generate_cube() };
-    cube.normals.reserve( 8 );
-    cube.colours.reserve( 8 );
-    for ( unsigned int i { 0 }; i < 8; ++i ) {
-        cube.normals.emplace_back();
-        auto const r { static_cast<float>((i & 4) >> 2) };
-        auto const g { static_cast<float>((i & 2) >> 1) };
-        auto const b { static_cast<float>(i & 1) };
-        cube.colours.emplace_back( r, g, b );
-    }
-    return Mesh { cube };
-}
-
-
 int main() {
     auto const main_dir { (std::filesystem::path( __FILE__ ) / "../../").lexically_normal() };
     Config::load_config( main_dir / "config.ini" );
@@ -103,17 +55,26 @@ int main() {
         GraphicsShader shader { vertex_shader.c_str(), fragment_shader.c_str() };
         shader.use();
 
-        // Set up the renderer with a single object for now
         Renderer renderer {};
-        Mesh mesh { create_cube() };
-        RenderObject object { RenderObject::Opaque, std::move( mesh ), &shader };
-        object.translate( { 0.f, 0.f, 3.f } );
-        // object.rotate( { 0.f, 1.f, 0.f }, glm::radians( 180.f ) );
-        renderer.register_object( object );
+        std::vector<std::unique_ptr<RenderObject>> render_objects {};
+        // Set up 8 cubes around the origin
+        for ( unsigned char i { 0 }; i < 8; ++i ) {
+            auto const r { static_cast<float>(i >> 2 & 1) };
+            auto const g { static_cast<float>(i >> 1 & 1) };
+            auto const b { static_cast<float>(i & 1) };
+            Shape shape { generate_cube() };
+            shape.colours = { 8, { r, g, b } };
+            shape.normals = { 8, { 0.f } };
+            render_objects.push_back( std::make_unique<RenderObject>( RenderObject::Opaque, Mesh { shape }, &shader ) );
+            RenderObject & object { *render_objects.back() };
+            object.translate( { r - 0.5, g - 0.5, b - 0.5 } );
+            object.scale( 0.3 );
+            renderer.register_object( object );
+        }
 
         // Create a camera object and attach it to the shader
-        glm::vec3 const & camera_position { 0.f, 0.f, 0.f };
-        glm::vec3 const & camera_target { 0.f, 0.f, 3.f };
+        glm::vec3 const & camera_position { 0.f, 0.f, -3.f };
+        glm::vec3 const & camera_target { 0.f, 0.f, 0.f };
         Camera camera { camera_position, camera_target, &shader };
         camera.set_free_view( window.get_input_manager() );
 

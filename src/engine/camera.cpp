@@ -54,12 +54,12 @@ void Camera::set_rotation( glm::vec3 const & look_in_direction ) {
     m_right = compute_right( m_forward );
     m_up = compute_up( m_forward, m_right );
 
-    m_pitch = glm::degrees( asin( m_forward.y ) );
+    m_pitch = static_cast<float>(glm::degrees( asin( m_forward.y ) ));
     // Using only one of the x and z components does not give enough information to determine the yaw with certainty
     // They can be used to compute either the sine or the cosine (resp.), which together do determine the correct yaw
-    float const yaw_sin = m_forward.z / cos(m_pitch);
-    float const yaw_cos = m_forward.x / cos(m_pitch);
-    m_yaw = (yaw_sin > 0 ? 0.f : glm::pi<float>()) + acos( yaw_cos );
+    float const yaw_sin = m_forward.z / std::cos( m_pitch );
+    float const yaw_cos = m_forward.x / std::cos( m_pitch );
+    m_yaw = (yaw_sin > 0 ? 0.f : glm::pi<float>()) + std::acos( yaw_cos );
 }
 
 void Camera::set_rotation( float const yaw, float const pitch ) {
@@ -68,9 +68,9 @@ void Camera::set_rotation( float const yaw, float const pitch ) {
     m_pitch = std::clamp( pitch, -upper, upper );
 
     m_forward = glm::normalize( glm::vec3 {
-        cos( m_yaw ) * cos( m_pitch ),
-        sin( m_pitch ),
-        sin( m_yaw ) * cos( m_pitch )
+        std::cos( m_yaw ) * std::cos( m_pitch ),
+        std::sin( m_pitch ),
+        std::sin( m_yaw ) * std::cos( m_pitch )
     } );
     m_right = compute_right( m_forward );
     m_up = compute_up( m_forward, m_right );
@@ -81,20 +81,20 @@ void Camera::translate( glm::vec3 const & direction ) {
     m_position += camera_speed * elapsed_time * glm::normalize( direction );
 }
 
-void Camera::rotate( glm::vec2 const & direction ) {
-    static glm::vec2 previous_direction { 0.f, 0.f };
+void Camera::rotate( glm::vec2 const & mouse_position ) {
+    static glm::vec2 previous_position { 0.f, 0.f };
     static bool first_call { true };
     if ( first_call ) {
-        previous_direction = direction;
+        previous_position = mouse_position;
         first_call = false;
         return;
     }
 
-    glm::vec2 const offset { (direction - previous_direction) * camera_sensitivity };
+    glm::vec2 const offset { (mouse_position - previous_position) * camera_sensitivity };
     m_yaw += offset.x;
     m_pitch -= offset.y;
     set_rotation( m_yaw, m_pitch );
-    previous_direction = direction;
+    previous_position = mouse_position;
 }
 
 void Camera::toggle_movement( int const key, int const action ) {
