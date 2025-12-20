@@ -8,11 +8,10 @@
 #include "engine/render_object.hpp"
 #include "engine/renderer.hpp"
 #include "engine/shader.hpp"
-#include "engine/shape.hpp"
+#include "engine/mesh_builder.hpp"
 #include "engine/time.hpp"
 #include "engine/window.hpp"
 
-#include <cmath>
 #include <filesystem>
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -62,10 +61,11 @@ int main() {
             auto const r { static_cast<float>(i >> 2 & 1) };
             auto const g { static_cast<float>(i >> 1 & 1) };
             auto const b { static_cast<float>(i & 1) };
-            Shape shape { generate_cube() };
-            shape.colours = { 8, { r, g, b } };
-            shape.normals = { 8, { 0.f } };
-            render_objects.push_back( std::make_unique<RenderObject>( RenderObject::Opaque, Mesh { shape }, &shader ) );
+            MeshBuilder builder { MeshBuilder::generate_cube() };
+            builder.m_colours = { 8, { r, g, b } };
+            builder.m_normals = { 8, { 0.f } };
+            render_objects.push_back(
+                std::make_unique<RenderObject>( RenderObject::Opaque, builder.get_mesh(), &shader ) );
             RenderObject & object { *render_objects.back() };
             object.translate( { r - 0.5, g - 0.5, b - 0.5 } );
             object.scale( 0.3 );

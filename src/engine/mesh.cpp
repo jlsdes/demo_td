@@ -1,10 +1,19 @@
 #include "mesh.hpp"
+
 #include "log.hpp"
 
 #include <glad/gl.h>
 
 #include <cassert>
 
+
+std::ostream & operator<<( std::ostream & stream, Vector3 const & vector ) {
+    return stream << '<' << vector.x << ", " << vector.y << ", " << vector.z << '>';
+}
+
+std::ostream & operator<<( std::ostream & stream, Vertex const & vertex ) {
+    return stream << "<Vertex" << vertex.position << ", " << vertex.normal << ", " << vertex.colour << '>';
+}
 
 /// Helper function for the constructors; initialises an OpenGL buffer object, and copies data into it
 template <typename ElementType>
@@ -44,18 +53,6 @@ Mesh::Mesh( std::vector<Vertex> const & vertices, std::vector<unsigned int> cons
     : m_vertices { vector_to_array( vertices ) }, m_nr_vertices { vertices.size() },
       m_indices { indices.empty() ? nullptr : vector_to_array( indices ) }, m_nr_indices { indices.size() },
       m_vertex_buffer { 0 }, m_vertex_array { 0 }, m_element_buffer { 0 }, m_default_mode { draw_mode } {
-    glGenVertexArrays( 1, &m_vertex_array );
-    glBindVertexArray( m_vertex_array );
-    m_vertex_buffer = create_buffer<Vertex>( GL_ARRAY_BUFFER, m_vertices.get(), m_nr_vertices );
-    if ( m_nr_indices > 0 )
-        m_element_buffer = create_buffer<unsigned int>( GL_ELEMENT_ARRAY_BUFFER, m_indices.get(), m_nr_indices );
-    set_vertex_attributes();
-}
-
-Mesh::Mesh( Shape const & shape )
-    : m_vertices { vector_to_array( shape.get_vertices() ) }, m_nr_vertices { shape.vertices.size() },
-      m_indices { vector_to_array( shape.get_face_indices() ) }, m_nr_indices { shape.faces.size() * 3 },
-      m_vertex_buffer { 0 }, m_vertex_array { 0 }, m_element_buffer { 0 }, m_default_mode { GL_TRIANGLES } {
     glGenVertexArrays( 1, &m_vertex_array );
     glBindVertexArray( m_vertex_array );
     m_vertex_buffer = create_buffer<Vertex>( GL_ARRAY_BUFFER, m_vertices.get(), m_nr_vertices );

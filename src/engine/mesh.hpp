@@ -1,12 +1,30 @@
 #ifndef DEMO_TD_MESH_HPP
 #define DEMO_TD_MESH_HPP
 
-#include "shape.hpp"
-
 #include <glad/gl.h>
 
 #include <memory>
+#include <ostream>
 #include <vector>
+
+
+struct Vector3 {
+    float x = 0.f;
+    float y = 0.f;
+    float z = 0.f;
+};
+
+std::ostream & operator<<( std::ostream & stream, Vector3 const & vector );
+
+
+struct Vertex {
+    Vector3 position;
+    Vector3 normal;
+    Vector3 colour;
+    // TODO add texture coordinates? Although I might not use them in this project
+};
+
+std::ostream & operator<<( std::ostream & stream, Vertex const & vertex );
 
 
 /** A basic mesh. */
@@ -23,7 +41,6 @@ public:
     explicit Mesh( std::vector<Vertex> const & vertices,
                    std::vector<unsigned int> const & indices = {},
                    int draw_mode = GL_TRIANGLES );
-    explicit Mesh( Shape const & shape );
 
     /** Destructor; deletes the underlying OpenGL buffer objects. */
     ~Mesh();
