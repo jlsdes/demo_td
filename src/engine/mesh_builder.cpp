@@ -2,10 +2,12 @@
 
 #include "log.hpp"
 
+#include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 
 #include <cmath>
 #include <format>
+#include <ranges>
 #include <stdexcept>
 
 
@@ -33,10 +35,52 @@ MeshBuilder & MeshBuilder::convert_to_triangles() {
     return *this;
 }
 
+struct ValueLocation {
+    unsigned int face_index; // The index of the face in 'm_faces'.
+    unsigned int face_vertex_index; // The index of the vertex in 'm_faces.at( face_index )'.
+};
+
+/// Returns the indices of the faces each vertex is part of, and the indices of the vertex index within the faces' lists
+/// of vertices.
+std::vector<std::vector<ValueLocation>> get_faces_per_vertex( std::vector<std::vector<unsigned int>> const & faces,
+                                                              unsigned long const nr_vertices ) {
+    std::vector<std::vector<ValueLocation>> faces_per_vertex { nr_vertices };
+    for ( unsigned int face_index { 0 }; face_index < faces.size(); ++face_index )
+        for ( auto const [index, vertex_index] : std::ranges::enumerate_view( faces.at( face_index ) ) )
+            faces_per_vertex.at( vertex_index ).emplace_back( face_index, index );
+    return faces_per_vertex;
+}
+
+/// Returns a normal vector for a triangle, assuming that the vertices are given in the correct winding order.
+Vector3 compute_normal( Vector3 const & a, Vector3 const & b, Vector3 const & c ) {
+    // For some reason I decided to use a separate Vector3 struct... using glm here anyway
+    glm::vec3 const vec_1 { c.x - a.x, c.y - a.y, c.z - a.z };
+    glm::vec3 const vec_2 { b.x - a.x, b.y - a.y, b.z - a.z };
+    glm::vec3 const cross { glm::normalize( glm::cross( vec_1, vec_2 ) ) };
+    return { cross.x, cross.y, cross.z };
+}
+
 MeshBuilder & MeshBuilder::generate_face_normals() {
-    m_normals.clear();
+    // Vertices might have different normals for each face they're a corner of; duplicating vertices can solve this
+    for ( auto const faces_per_vertex { get_faces_per_vertex( m_faces, m_vertices.size() ) };
+          auto const & [vertex_index, face_indices] : std::ranges::enumerate_view( faces_per_vertex ) ) {
+        if ( face_indices.empty() )
+            Log::debug( "Vertex found without any faces attached." );
+        for ( unsigned int i { 1 }; i < face_indices.size(); ++i ) {
+            auto const [face_index, face_vertex_index] { face_indices.at( i ) };
+            m_faces.at( face_index ).at( face_vertex_index ) = m_vertices.size();
+            m_vertices.emplace_back( m_vertices.at( vertex_index ) );
+        }
+    }
+    m_normals.resize( m_vertices.size() );
+
     for ( auto const & face : m_faces ) {
-        // TODO rest of the for loop
+        Vector3 const normal {
+            compute_normal( m_vertices.at( face.at( 0 ) ), m_vertices.at( face.at( 1 ) ),
+                            m_vertices.at( face.at( 2 ) ) )
+        };
+        for ( auto const vertex_index : face )
+            m_normals.at( vertex_index ) = normal;
     }
     return *this;
 }
