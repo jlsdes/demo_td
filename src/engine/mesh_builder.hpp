@@ -12,10 +12,10 @@
 class MeshBuilder {
 public:
     /** The constructor, which can be initialised with any amount of initial vertex and face data. */
-    explicit MeshBuilder( std::vector<Vector3> const & vertices = {},
+    explicit MeshBuilder( std::vector<glm::vec3> const & vertices = {},
                           std::vector<std::vector<unsigned int>> const & faces = {},
-                          std::vector<Vector3> const & normals = {},
-                          std::vector<Vector3> const & colours = {} );
+                          std::vector<glm::vec3> const & normals = {},
+                          std::vector<glm::vec3> const & colours = {} );
 
     /** Default copy/move con-/destructors. */
     MeshBuilder( MeshBuilder const & other ) = default;
@@ -60,9 +60,9 @@ public:
     static MeshBuilder generate_icosahedron();
 
 // private:
-    std::vector<Vector3> m_vertices;
-    std::vector<Vector3> m_normals;
-    std::vector<Vector3> m_colours;
+    std::vector<glm::vec3> m_vertices;
+    std::vector<glm::vec3> m_normals;
+    std::vector<glm::vec3> m_colours;
     std::vector<std::vector<unsigned int>> m_faces;
 };
 

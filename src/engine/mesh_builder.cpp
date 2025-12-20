@@ -11,10 +11,10 @@
 #include <stdexcept>
 
 
-MeshBuilder::MeshBuilder( std::vector<Vector3> const & vertices,
+MeshBuilder::MeshBuilder( std::vector<glm::vec3> const & vertices,
                           std::vector<std::vector<unsigned int>> const & faces,
-                          std::vector<Vector3> const & normals,
-                          std::vector<Vector3> const & colours )
+                          std::vector<glm::vec3> const & normals,
+                          std::vector<glm::vec3> const & colours )
     : m_vertices { vertices }, m_normals { normals }, m_colours { colours }, m_faces { faces } {}
 
 MeshBuilder & MeshBuilder::convert_to_triangles() {
@@ -52,12 +52,8 @@ std::vector<std::vector<ValueLocation>> get_faces_per_vertex( std::vector<std::v
 }
 
 /// Returns a normal vector for a triangle, assuming that the vertices are given in the correct winding order.
-Vector3 compute_normal( Vector3 const & a, Vector3 const & b, Vector3 const & c ) {
-    // For some reason I decided to use a separate Vector3 struct... using glm here anyway
-    glm::vec3 const vec_1 { c.x - a.x, c.y - a.y, c.z - a.z };
-    glm::vec3 const vec_2 { b.x - a.x, b.y - a.y, b.z - a.z };
-    glm::vec3 const cross { glm::normalize( glm::cross( vec_1, vec_2 ) ) };
-    return { cross.x, cross.y, cross.z };
+glm::vec3 compute_normal( glm::vec3 const & a, glm::vec3 const & b, glm::vec3 const & c ) {
+    return  glm::normalize( glm::cross( c - a, b - a ) ) ;
 }
 
 MeshBuilder & MeshBuilder::generate_face_normals() {
@@ -75,7 +71,7 @@ MeshBuilder & MeshBuilder::generate_face_normals() {
     m_normals.resize( m_vertices.size() );
 
     for ( auto const & face : m_faces ) {
-        Vector3 const normal {
+        glm::vec3 const normal {
             compute_normal( m_vertices.at( face.at( 0 ) ), m_vertices.at( face.at( 1 ) ),
                             m_vertices.at( face.at( 2 ) ) )
         };
@@ -101,7 +97,7 @@ std::vector<Vertex> MeshBuilder::get_mesh_vertices() const {
 
     std::vector<Vertex> vertex_data { m_vertices.size() };
     for ( unsigned int i { 0 }; i < m_vertices.size(); ++i ) {
-        Vector3 constexpr zeroes { 0.f };
+        glm::vec3 constexpr zeroes { 0.f };
         auto const normal { has_normals ? m_normals.at( i ) : zeroes };
         auto const colour { has_colours ? m_colours.at( i ) : zeroes };
         vertex_data.at( i ) = { m_vertices.at( i ), normal, colour };

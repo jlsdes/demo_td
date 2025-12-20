@@ -7,7 +7,7 @@
 #include <cassert>
 
 
-std::ostream & operator<<( std::ostream & stream, Vector3 const & vector ) {
+std::ostream & operator<<( std::ostream & stream, glm::vec3 const & vector ) {
     return stream << '<' << vector.x << ", " << vector.y << ", " << vector.z << '>';
 }
 
@@ -41,11 +41,11 @@ void set_vertex_attributes() {
     glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, sizeof( Vertex ), nullptr );
     glEnableVertexAttribArray( 0 );
     // Set the normal vectors
-    glVertexAttribPointer( 1, 3, GL_FLOAT, GL_FALSE, sizeof( Vertex ), reinterpret_cast<void *>(sizeof( Vector3 )) );
+    glVertexAttribPointer( 1, 3, GL_FLOAT, GL_FALSE, sizeof( Vertex ), reinterpret_cast<void *>(sizeof( glm::vec3 )) );
     glEnableVertexAttribArray( 1 );
     // Set the colour values
     glVertexAttribPointer( 2, 3, GL_FLOAT, GL_FALSE, sizeof( Vertex ),
-                           reinterpret_cast<void *>(2 * sizeof( Vector3 )) );
+                           reinterpret_cast<void *>(2 * sizeof( glm::vec3 )) );
     glEnableVertexAttribArray( 2 );
 }
 
