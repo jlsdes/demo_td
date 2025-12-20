@@ -65,7 +65,7 @@ MeshBuilder & MeshBuilder::generate_face_normals() {
     bool const copy_colours { m_vertices.size() == m_colours.size() };
     // Vertices might have different normals for each face they're a corner of; duplicating vertices can solve this
     auto const faces_per_vertex { get_faces_per_vertex( m_faces, m_vertices.size() ) };
-    for ( unsigned int vertex_index {0}; vertex_index < faces_per_vertex.size(); ++vertex_index ) {
+    for ( unsigned int vertex_index { 0 }; vertex_index < faces_per_vertex.size(); ++vertex_index ) {
         auto const & face_indices { faces_per_vertex.at( vertex_index ) };
         if ( face_indices.empty() )
             Log::debug( "Vertex found without any faces attached." );
@@ -89,8 +89,18 @@ MeshBuilder & MeshBuilder::generate_face_normals() {
 }
 
 MeshBuilder & MeshBuilder::generate_vertex_normals() {
-    m_normals.clear();
-    // TODO rest of the function
+    std::vector<glm::vec3> face_normals { m_faces.size() };
+    for ( auto const & [face_index, face] : std::ranges::enumerate_view( m_faces ) )
+        face_normals.at( face_index ) = compute_normal( m_vertices, face );
+    auto const faces_per_vertex { get_faces_per_vertex( m_faces, m_vertices.size() ) };
+
+    m_normals.resize( m_vertices.size() );
+    for ( auto const & [vertex_index, vertex] : std::ranges::enumerate_view( m_vertices ) ) {
+        glm::vec3 normal_sum { 0.f, 0.f, 0.f };
+        for ( auto const [face_index, _] : faces_per_vertex.at( vertex_index ) )
+            normal_sum += face_normals.at( face_index );
+        m_normals.at( vertex_index ) = normal_sum / static_cast<float>(faces_per_vertex.at( vertex_index ).size());
+    }
     return *this;
 }
 
