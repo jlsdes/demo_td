@@ -63,7 +63,7 @@ int main() {
             auto const b { static_cast<float>(i & 1) };
             MeshBuilder builder { MeshBuilder::generate_cube() };
             builder.m_colours = { 8, { r, g, b } };
-            builder.m_normals = { 8, { 0.f, 0.f, 0.f } };
+            builder.generate_face_normals();
             render_objects.push_back(
                 std::make_unique<RenderObject>( RenderObject::Opaque, builder.get_mesh(), &shader ) );
             RenderObject & object { *render_objects.back() };

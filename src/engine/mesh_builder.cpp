@@ -51,30 +51,37 @@ std::vector<std::vector<ValueLocation>> get_faces_per_vertex( std::vector<std::v
     return faces_per_vertex;
 }
 
-/// Returns a normal vector for a triangle, assuming that the vertices are given in the correct winding order.
-glm::vec3 compute_normal( glm::vec3 const & a, glm::vec3 const & b, glm::vec3 const & c ) {
-    return  glm::normalize( glm::cross( c - a, b - a ) ) ;
+/// Computes the (normalised) normal vector for a given face. This function only looks at the first 3 vertices given in
+/// its index vector.
+glm::vec3 compute_normal( std::vector<glm::vec3> const & vertices, std::vector<unsigned int> const & face ) {
+    auto const vertex_0 { vertices.at( face.at( 0 ) ) };
+    auto const vertex_1 { vertices.at( face.at( 1 ) ) };
+    auto const vertex_2 { vertices.at( face.at( 2 ) ) };
+    return glm::normalize( glm::cross( vertex_2 - vertex_0, vertex_1 - vertex_0 ) );
 }
 
 MeshBuilder & MeshBuilder::generate_face_normals() {
+    // When duplicating vertices, also copy colours if they are currently matching the vertices 1:1
+    bool const copy_colours { m_vertices.size() == m_colours.size() };
     // Vertices might have different normals for each face they're a corner of; duplicating vertices can solve this
-    for ( auto const faces_per_vertex { get_faces_per_vertex( m_faces, m_vertices.size() ) };
-          auto const & [vertex_index, face_indices] : std::ranges::enumerate_view( faces_per_vertex ) ) {
+    auto const faces_per_vertex { get_faces_per_vertex( m_faces, m_vertices.size() ) };
+    for ( unsigned int vertex_index {0}; vertex_index < faces_per_vertex.size(); ++vertex_index ) {
+        auto const & face_indices { faces_per_vertex.at( vertex_index ) };
         if ( face_indices.empty() )
             Log::debug( "Vertex found without any faces attached." );
+
         for ( unsigned int i { 1 }; i < face_indices.size(); ++i ) {
             auto const [face_index, face_vertex_index] { face_indices.at( i ) };
             m_faces.at( face_index ).at( face_vertex_index ) = m_vertices.size();
             m_vertices.emplace_back( m_vertices.at( vertex_index ) );
+            if ( copy_colours )
+                m_colours.emplace_back( m_colours.at( vertex_index ) );
         }
     }
     m_normals.resize( m_vertices.size() );
 
     for ( auto const & face : m_faces ) {
-        glm::vec3 const normal {
-            compute_normal( m_vertices.at( face.at( 0 ) ), m_vertices.at( face.at( 1 ) ),
-                            m_vertices.at( face.at( 2 ) ) )
-        };
+        glm::vec3 const normal { compute_normal( m_vertices, face ) };
         for ( auto const vertex_index : face )
             m_normals.at( vertex_index ) = normal;
     }
@@ -87,13 +94,24 @@ MeshBuilder & MeshBuilder::generate_vertex_normals() {
     return *this;
 }
 
+/// Helper function for get_mesh_vertices.
+bool is_valid_attribute_vector( std::string const & name,
+                                std::vector<glm::vec3> const & data,
+                                std::vector<glm::vec3> const & vertices
+) {
+    auto const size { data.size() };
+    auto const expected { vertices.size() };
+    if ( size == 0 )
+        Log::warning( "Generating vertex data, but the normal vectors are missing." );
+    else if ( size != expected )
+        Log::error( "Generating vertex data, but the number of vertices (", expected,
+                    ") does not match the number of ", name, " vectors (", size, ")." );
+    return size == expected;
+}
+
 std::vector<Vertex> MeshBuilder::get_mesh_vertices() const {
-    bool const has_normals { !m_normals.empty() };
-    if ( !has_normals )
-        Log::warning( "Generating vertex data from a shape without any normal vectors." );
-    bool const has_colours { !m_colours.empty() };
-    if ( !has_colours )
-        Log::warning( "Generating face data from a shape without any colours." );
+    bool const has_normals { is_valid_attribute_vector( "normal", m_normals, m_vertices ) };
+    bool const has_colours { is_valid_attribute_vector( "colour", m_colours, m_vertices ) };
 
     std::vector<Vertex> vertex_data { m_vertices.size() };
     for ( unsigned int i { 0 }; i < m_vertices.size(); ++i ) {
