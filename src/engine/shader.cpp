@@ -63,12 +63,10 @@ GraphicsShader::GraphicsShader( std::string const & vertex_path, std::string con
     unsigned int const vertex_shader { compile_shader( GL_VERTEX_SHADER, vertex_path ) };
     unsigned int const fragment_shader { compile_shader( GL_FRAGMENT_SHADER, fragment_path ) };
 
-    // Link these shaders to the shader program
     glAttachShader( m_program, vertex_shader );
     glAttachShader( m_program, fragment_shader );
     glLinkProgram( m_program );
 
-    // Check for errors
     int success;
     char log[1024];
     glGetProgramiv( m_program, GL_LINK_STATUS, &success );
