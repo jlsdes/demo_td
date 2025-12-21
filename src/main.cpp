@@ -40,7 +40,7 @@ void keep_time() {
 int main() {
     auto const main_dir { (std::filesystem::path( __FILE__ ) / "../../").lexically_normal() };
     Config::load_config( main_dir / "config.ini" );
-    Log::info( "Loaded config", main_dir / "config.ini" );
+    Log::info( "Loaded config ", main_dir / "config.ini" );
 
     // If any glDelete...() function is called after glfwTerminate() has been called, a segfault occurs
     // This code block ensures that all objects go out of scope, and thus have their destructors called with glDelete()
@@ -56,18 +56,14 @@ int main() {
 
         Renderer renderer {};
         std::vector<std::unique_ptr<RenderObject>> render_objects {};
+        MeshBuilder builder { MeshBuilder::generate_cube() };
         // Set up 8 cubes around the origin
         for ( unsigned char i { 0 }; i < 8; ++i ) {
-            auto const r { static_cast<float>(i >> 2 & 1) };
-            auto const g { static_cast<float>(i >> 1 & 1) };
-            auto const b { static_cast<float>(i & 1) };
-            MeshBuilder builder { MeshBuilder::generate_cube() };
-            builder.m_colours = { 8, { r, g, b } };
-            builder.generate_vertex_normals();
+            builder.m_colours = { builder.m_vertices.size(), builder.m_vertices.at( i ) + 0.5f };
             render_objects.push_back(
                 std::make_unique<RenderObject>( RenderObject::Opaque, builder.get_mesh(), &shader ) );
             RenderObject & object { *render_objects.back() };
-            object.translate( { r - 0.5, g - 0.5, b - 0.5 } );
+            object.translate( builder.m_vertices.at( i ) );
             object.scale( 0.3 );
             renderer.register_object( object );
         }

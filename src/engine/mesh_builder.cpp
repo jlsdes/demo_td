@@ -181,7 +181,7 @@ MeshBuilder MeshBuilder::generate_rectangle( float const width, float const heig
 MeshBuilder MeshBuilder::generate_tetrahedron() {}
 
 MeshBuilder MeshBuilder::generate_cube() {
-    MeshBuilder shape {
+    MeshBuilder cube_builder {
         {
             { -0.5f, -0.5f, -0.5f },
             { -0.5f, -0.5f, 0.5f },
@@ -201,8 +201,9 @@ MeshBuilder MeshBuilder::generate_cube() {
             { 1, 5, 4, 0 }
         }
     };
-    shape.convert_to_triangles();
-    return shape;
+    cube_builder.generate_face_normals();
+    cube_builder.convert_to_triangles();
+    return cube_builder;
 }
 
 MeshBuilder MeshBuilder::generate_octahedron() {}

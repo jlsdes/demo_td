@@ -114,7 +114,8 @@ template <typename... Args>
 void Log::log( MessageType const type, Args... args ) {
     write_time();
     write_type( type );
-    (((*m_target->stream << ' ') << std::forward<Args>( args )), ...) << '\n';
+    *m_target->stream << ' ';
+    ((*m_target->stream << std::forward<Args>( args )), ...) << '\n';
 }
 
 template <typename... Args>

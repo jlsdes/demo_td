@@ -8,16 +8,16 @@
 
 Log::Log( std::ostream & stream )
     : m_target { std::make_unique<Target>( &stream ) }, m_enable_colours { true } {
-    log( "Starting log at (UTC)", std::chrono::system_clock::now(), "." );
+    log( "Starting log at (UTC) ", std::chrono::system_clock::now(), "." );
 }
 
 Log::Log( std::string const & filename )
     : m_target { std::make_unique<FileTarget>( filename ) }, m_enable_colours { false } {
-    log( "Starting log at (UTC)", std::chrono::system_clock::now(), "." );
+    log( "Starting log at (UTC) ", std::chrono::system_clock::now(), "." );
 }
 
 Log::~Log() {
-    log( "Closing log at (UTC)", std::chrono::system_clock::now(), "." );
+    log( "Closing log at (UTC) ", std::chrono::system_clock::now(), "." );
 }
 
 Log & Log::get_main( std::string const & filename ) {
@@ -45,14 +45,14 @@ void Log::set_output( std::string const & filename ) {
 }
 
 void Log::write_type( MessageType const type ) const {
-    char constexpr tags[37] {
+    char constexpr tags[] {
         "[Debug  ]"
         "[Info   ]"
         "[Warning]"
         "[Error  ]"
     };
     unsigned int constexpr tag_size { sizeof(tags) / 4 };
-    char constexpr colour_tags[73] {
+    char constexpr colour_tags[] {
         "[\033[96mDebug  \033[0m]"
         "[\033[97mInfo   \033[0m]"
         "[\033[93mWarning\033[0m]"
