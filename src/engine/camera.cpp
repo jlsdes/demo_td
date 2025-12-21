@@ -119,6 +119,7 @@ void Camera::update() {
         if ( moving_ud ) direction += m_directions.at( Direction::Up ) ? m_up : -m_up;
         translate( direction );
     }
+    m_shader->set_uniform( "camera_position", m_position );
     m_shader->set_uniform( "view", glm::lookAt( m_position, m_position + m_forward, m_up ) );
 }
 

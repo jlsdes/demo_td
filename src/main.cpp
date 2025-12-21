@@ -40,7 +40,7 @@ void keep_time() {
 int main() {
     auto const main_dir { (std::filesystem::path( __FILE__ ) / "../../").lexically_normal() };
     Config::load_config( main_dir / "config.ini" );
-    Log::info( "Loaded config ", main_dir / "config.ini" );
+    Log::info( "Loaded config ", (main_dir / "config.ini").string() );
 
     // If any glDelete...() function is called after glfwTerminate() has been called, a segfault occurs
     // This code block ensures that all objects go out of scope, and thus have their destructors called with glDelete()
@@ -48,11 +48,24 @@ int main() {
     {
         Window window {};
 
+        // Draw triangles as wireframes when F is being pressed
+        auto & input_manager { window.get_input_manager() };
+        input_manager.observe_keyboard( GLFW_KEY_F, []( int const, int const action ) {
+            if ( action == GLFW_PRESS )
+                glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+            else if ( action == GLFW_RELEASE )
+                glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+        } );
+
         // Find and build the main graphics shader
         auto const vertex_shader { main_dir / Config::get<std::string>( "Shader", "vertex_shader" ) };
         auto const fragment_shader { main_dir / Config::get<std::string>( "Shader", "fragment_shader" ) };
         GraphicsShader shader { vertex_shader.c_str(), fragment_shader.c_str() };
         shader.use();
+
+        shader.set_uniform( "ambient_light", glm::vec3 { 0.1f, 0.1f, 0.1f } );
+        shader.set_uniform( "sun_light", glm::vec3 { 1.f, 1.f, 1.f } );
+        shader.set_uniform( "sun_position", glm::normalize( glm::vec3 { -0.2f, 1.f, -0.1f } ) );
 
         Renderer renderer {};
         std::vector<std::unique_ptr<RenderObject>> render_objects {};

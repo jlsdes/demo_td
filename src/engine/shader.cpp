@@ -42,6 +42,10 @@ void Shader::set_uniform( char const * name, double const value ) const {
     glUniform1d( get_uniform_location( name ), value );
 }
 
+void Shader::set_uniform( char const * name, glm::vec3 const & value ) const {
+    glUniform3fv( get_uniform_location( name ), 1, glm::value_ptr( value ) );
+}
+
 void Shader::set_uniform( char const * name, glm::mat4 const & value ) const {
     glUniformMatrix4fv( get_uniform_location( name ), 1, GL_FALSE, glm::value_ptr( value ) );
 }

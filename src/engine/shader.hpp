@@ -27,6 +27,7 @@ public:
     void set_uniform( char const * name, float value ) const;
     void set_uniform( char const * name, double value ) const;
 
+    void set_uniform( char const * name, glm::vec3 const & value ) const;
     void set_uniform( char const * name, glm::mat4 const & value ) const;
 
     /** Returns a path to the directory containing this project's shader files. */
