@@ -18,12 +18,12 @@ glm::vec3 constexpr world_up { 0.f, 1.f, 0.f };
 
 /// Computes the right-facing vector for a given forward-facing vector.
 inline glm::vec3 compute_right( glm::vec3 const & forward ) {
-    return glm::normalize( glm::cross( forward, world_up ) );
+    return glm::normalize( glm::cross( world_up, forward ) );
 }
 
 /// Computes the upward-facing vector for given forward- and right-facing vectors.
 inline glm::vec3 compute_up( glm::vec3 const & forward, glm::vec3 const & right ) {
-    return glm::normalize( glm::cross( right, forward ) );
+    return glm::normalize( glm::cross( forward, right ) );
 }
 
 
@@ -32,17 +32,17 @@ Camera::Camera( glm::vec3 const & position,
                 GraphicsShader * const shader )
     : m_position { position }, m_yaw {}, m_pitch {}, m_forward { glm::normalize( target - position ) },
       m_right { compute_right( m_forward ) }, m_up { compute_up( m_forward, m_right ) }, m_shader { shader },
-      m_directions {}, m_controls {} {
+      m_directions {} {
     set_rotation( target - position );
     update();
 
     // Default keybinds for free-view camera
-    m_controls[GLFW_KEY_W] = Direction::Forward;
-    m_controls[GLFW_KEY_A] = Direction::Left;
-    m_controls[GLFW_KEY_S] = Direction::Backward;
-    m_controls[GLFW_KEY_D] = Direction::Right;
-    m_controls[GLFW_KEY_LEFT_SHIFT] = Direction::Up;
-    m_controls[GLFW_KEY_LEFT_CONTROL] = Direction::Down;
+    m_controls[GLFW_KEY_W] = Forward;
+    m_controls[GLFW_KEY_A] = Left;
+    m_controls[GLFW_KEY_S] = Backward;
+    m_controls[GLFW_KEY_D] = Right;
+    m_controls[GLFW_KEY_LEFT_SHIFT] = Up;
+    m_controls[GLFW_KEY_LEFT_CONTROL] = Down;
 }
 
 void Camera::set_position( glm::vec3 const & position ) {
@@ -54,7 +54,7 @@ void Camera::set_rotation( glm::vec3 const & look_in_direction ) {
     m_right = compute_right( m_forward );
     m_up = compute_up( m_forward, m_right );
 
-    m_pitch = static_cast<float>(glm::degrees( asin( m_forward.y ) ));
+    m_pitch = std::asin( m_forward.y );
     // Using only one of the x and z components does not give enough information to determine the yaw with certainty
     // They can be used to compute either the sine or the cosine (resp.), which together do determine the correct yaw
     float const yaw_sin = m_forward.z / std::cos( m_pitch );
@@ -64,7 +64,7 @@ void Camera::set_rotation( glm::vec3 const & look_in_direction ) {
 
 void Camera::set_rotation( float const yaw, float const pitch ) {
     m_yaw = yaw;
-    constexpr float upper { glm::half_pi<float>() - 0.01f };
+    float constexpr upper { glm::half_pi<float>() - 0.01f };
     m_pitch = std::clamp( pitch, -upper, upper );
 
     m_forward = glm::normalize( glm::vec3 {
@@ -108,15 +108,15 @@ void Camera::toggle_movement( int const key, int const action ) {
 void Camera::update() {
     // Moving forward and backward at the same time simply cancel each other out
     // 'bool != bool' is equivalent to ^ (xor), but ^ does not return a bool
-    bool const moving_bf { m_directions.at( Direction::Forward ) != m_directions.at( Direction::Backward ) };
-    bool const moving_rl { m_directions.at( Direction::Right ) != m_directions.at( Direction::Left ) };
-    bool const moving_ud { m_directions.at( Direction::Up ) != m_directions.at( Direction::Down ) };
+    bool const moving_bf { m_directions.at( Forward ) != m_directions.at( Backward ) };
+    bool const moving_rl { m_directions.at( Right ) != m_directions.at( Left ) };
+    bool const moving_ud { m_directions.at( Up ) != m_directions.at( Down ) };
 
     if ( moving_bf || moving_rl || moving_ud ) {
         glm::vec3 direction { 0.f };
-        if ( moving_bf ) direction += m_directions.at( Direction::Forward ) ? m_forward : -m_forward;
-        if ( moving_rl ) direction += m_directions.at( Direction::Right ) ? m_right : -m_right;
-        if ( moving_ud ) direction += m_directions.at( Direction::Up ) ? m_up : -m_up;
+        if ( moving_bf ) direction += m_directions.at( Forward ) ? m_forward : -m_forward;
+        if ( moving_rl ) direction += m_directions.at( Right ) ? -m_right : m_right;
+        if ( moving_ud ) direction += m_directions.at( Up ) ? m_up : -m_up;
         translate( direction );
     }
     m_shader->set_uniform( "camera_position", m_position );

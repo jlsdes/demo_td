@@ -57,7 +57,8 @@ glm::vec3 compute_normal( std::vector<glm::vec3> const & vertices, std::vector<u
     auto const vertex_0 { vertices.at( face.at( 0 ) ) };
     auto const vertex_1 { vertices.at( face.at( 1 ) ) };
     auto const vertex_2 { vertices.at( face.at( 2 ) ) };
-    return glm::normalize( glm::cross( vertex_2 - vertex_0, vertex_1 - vertex_0 ) );
+    // Assuming the vertices are given in counter-clockwise order
+    return glm::normalize( glm::cross( vertex_1 - vertex_0, vertex_2 - vertex_0 ) );
 }
 
 MeshBuilder & MeshBuilder::generate_face_normals() {
@@ -178,19 +179,36 @@ MeshBuilder MeshBuilder::generate_rectangle( float const width, float const heig
     return shape.convert_to_triangles();
 }
 
-MeshBuilder MeshBuilder::generate_tetrahedron() {}
-
-MeshBuilder MeshBuilder::generate_cube() {
-    MeshBuilder cube_builder {
+MeshBuilder MeshBuilder::generate_tetrahedron() {
+    MeshBuilder tetrahedron {
         {
             { -0.5f, -0.5f, -0.5f },
-            { -0.5f, -0.5f, 0.5f },
-            { -0.5f, 0.5f, -0.5f },
             { -0.5f, 0.5f, 0.5f },
-            { 0.5f, -0.5f, -0.5f },
             { 0.5f, -0.5f, 0.5f },
             { 0.5f, 0.5f, -0.5f },
-            { 0.5f, 0.5f, 0.5f }
+        },
+        {
+            { 0, 2, 3 },
+            { 0, 3, 1 },
+            { 3, 2, 1 },
+            { 2, 0, 1 },
+        }
+    };
+    tetrahedron.generate_face_normals();
+    return tetrahedron;
+}
+
+MeshBuilder MeshBuilder::generate_cube() {
+    MeshBuilder cube {
+        {
+            { -0.5f, -0.5f, 0.5f },
+            { -0.5f, -0.5f, -0.5f },
+            { -0.5f, 0.5f, 0.5f },
+            { -0.5f, 0.5f, -0.5f },
+            { 0.5f, -0.5f, 0.5f },
+            { 0.5f, -0.5f, -0.5f },
+            { 0.5f, 0.5f, 0.5f },
+            { 0.5f, 0.5f, -0.5f },
         },
         {
             { 0, 4, 6, 2 },
@@ -198,12 +216,12 @@ MeshBuilder MeshBuilder::generate_cube() {
             { 5, 1, 3, 7 },
             { 1, 0, 2, 3 },
             { 2, 6, 7, 3 },
-            { 1, 5, 4, 0 }
+            { 1, 5, 4, 0 },
         }
     };
-    cube_builder.generate_face_normals();
-    cube_builder.convert_to_triangles();
-    return cube_builder;
+    cube.generate_face_normals();
+    cube.convert_to_triangles();
+    return cube;
 }
 
 MeshBuilder MeshBuilder::generate_octahedron() {}

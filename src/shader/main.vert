@@ -18,7 +18,7 @@ uniform mat4 projection;
 
 void main()
 {
-    position = vertex_position;
+    position = vec3( model * vec4( vertex_position, 1.0 ) );
     normal = vertex_normal;
     colour = vertex_colour;
 

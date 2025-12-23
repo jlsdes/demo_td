@@ -44,11 +44,11 @@ Window::Window( unsigned int const width, unsigned int const height, char const 
 
     // General setup for OpenGL
     glClearColor( 0.1f, 0.1f, 0.1f, 1.0f );
-    glDepthFunc( GL_LEQUAL );
+    glDepthFunc( GL_LESS );
     glEnable( GL_DEPTH_TEST );
-    glEnable( GL_CULL_FACE );
     glCullFace( GL_BACK );
-    glFrontFace( GL_CW );
+    glFrontFace( GL_CCW );
+    glEnable( GL_CULL_FACE );
 
     // The window user pointer will allow us to retrieve this object from the GLFW window object; useful for callbacks
     glfwSetWindowUserPointer( m_window, this );
@@ -71,9 +71,12 @@ void Window::focus() const {
     glfwMakeContextCurrent( m_window );
 }
 
+void Window::clear() const {
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+}
+
 void Window::render() const {
     glfwSwapBuffers( m_window );
-    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 }
 
 void Window::resize( unsigned int const width, unsigned int const height ) const {

@@ -7,7 +7,7 @@
 
 
 RenderObject::RenderObject( Type const type, Mesh && mesh, Shader * const shader )
-    : m_type { type }, m_mesh { std::move( mesh ) }, m_shader { shader }, m_transform { glm::identity<glm::mat4>() } {
+    : m_type { type }, m_mesh { std::move( mesh ) }, m_shader { shader }, m_transform { 1.f } {
     if (shader == nullptr)
         Log::warning( "RenderObject was not provided with a Shader object." );
 }

@@ -21,7 +21,9 @@ public:
     /** Makes the window the active one. */
     void focus() const;
 
-    /** Renders a new frame after all drawing calls (should) have been made. */
+
+    /** Clears/Renders a new frame. */
+    void clear() const;
     void render() const;
 
     /** Changes the size of the window. */

@@ -65,7 +65,14 @@ int main() {
 
         shader.set_uniform( "ambient_light", glm::vec3 { 0.1f, 0.1f, 0.1f } );
         shader.set_uniform( "sun_light", glm::vec3 { 1.f, 1.f, 1.f } );
-        shader.set_uniform( "sun_position", glm::normalize( glm::vec3 { -0.2f, 1.f, -0.1f } ) );
+        glm::vec3 constexpr sun_direction { 0.f, 1.f, 0.f };
+        shader.set_uniform( "sun_direction", sun_direction );
+
+        // Create a camera object and attach it to the shader
+        glm::vec3 const & camera_position { 0.f, 0.f, -3.f };
+        glm::vec3 const & camera_target { 0.f, 0.f, 0.f };
+        Camera camera { camera_position, camera_target, &shader };
+        camera.set_free_view( window.get_input_manager() );
 
         Renderer renderer {};
         std::vector<std::unique_ptr<RenderObject>> render_objects {};
@@ -76,25 +83,18 @@ int main() {
             render_objects.push_back(
                 std::make_unique<RenderObject>( RenderObject::Opaque, builder.get_mesh(), &shader ) );
             RenderObject & object { *render_objects.back() };
-            object.translate( builder.m_vertices.at( i ) );
+            object.translate( camera_target + builder.m_vertices.at( i ) );
             object.scale( 0.3 );
             renderer.register_object( object );
         }
 
-        // Create a camera object and attach it to the shader
-        glm::vec3 const & camera_position { 0.f, 0.f, -3.f };
-        glm::vec3 const & camera_target { 0.f, 0.f, 0.f };
-        Camera camera { camera_position, camera_target, &shader };
-        camera.set_free_view( window.get_input_manager() );
-
-        shader.set_uniform( "model", glm::identity<glm::mat4>() );
-        shader.set_uniform( "projection", glm::perspective( glm::radians( 45.f ), 1200.f / 800.f, 0.1f, 100.f ) );
+        float constexpr fov { glm::quarter_pi<float>() }; // 45 degrees
+        shader.set_uniform( "projection", glm::perspective( fov, 1200.f / 800.f, 0.1f, 100.f ) );
 
         // Main program loop
         while ( !window.is_closing() ) {
             Time::loop_start();
-
-            // object.translate( { 0.f, 0.f, -0.01f } );
+            window.clear();
 
             glfwPollEvents();
             renderer.draw();
