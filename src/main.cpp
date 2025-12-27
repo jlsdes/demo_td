@@ -48,25 +48,29 @@ int main() {
     {
         Window window {};
 
-        // Draw triangles as wireframes when F is being pressed
-        auto & input_manager { window.get_input_manager() };
-        input_manager.observe_keyboard( GLFW_KEY_F, []( int const, int const action ) {
-            if ( action == GLFW_PRESS )
-                glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-            else if ( action == GLFW_RELEASE )
-                glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-        } );
-
         // Find and build the main graphics shader
         auto const vertex_shader { main_dir / Config::get<std::string>( "Shader", "vertex_shader" ) };
         auto const fragment_shader { main_dir / Config::get<std::string>( "Shader", "fragment_shader" ) };
         GraphicsShader shader { vertex_shader.c_str(), fragment_shader.c_str() };
         shader.use();
 
-        shader.set_uniform( "ambient_light", glm::vec3 { 0.1f, 0.1f, 0.1f } );
+        glm::vec3 constexpr ambient_light { 0.1f, 0.1f, 0.1f };
+        shader.set_uniform( "ambient_light", ambient_light );
         shader.set_uniform( "sun_light", glm::vec3 { 1.f, 1.f, 1.f } );
         glm::vec3 constexpr sun_direction { 0.f, 1.f, 0.f };
         shader.set_uniform( "sun_direction", sun_direction );
+
+        // Draw triangles as wireframes when F is being pressed
+        auto & input_manager { window.get_input_manager() };
+        input_manager.observe_keyboard( GLFW_KEY_F, [&]( int const, int const action ) {
+            if ( action == GLFW_PRESS ) {
+                glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+                shader.set_uniform( "ambient_light", glm::vec3 { 1.f, 1.f, 1.f } );
+            } else if ( action == GLFW_RELEASE ) {
+                glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+                shader.set_uniform( "ambient_light", ambient_light );
+            }
+        } );
 
         // Create a camera object and attach it to the shader
         glm::vec3 const & camera_position { 0.f, 0.f, -3.f };
@@ -76,9 +80,9 @@ int main() {
 
         Renderer renderer {};
         std::vector<std::unique_ptr<RenderObject>> render_objects {};
-        MeshBuilder builder { MeshBuilder::generate_cube() };
+        MeshBuilder builder { MeshBuilder::generate_dodecahedron() };
         // Set up 8 cubes around the origin
-        for ( unsigned char i { 0 }; i < 8; ++i ) {
+        for ( unsigned char i { 0 }; i < 20; ++i ) {
             builder.m_colours = { builder.m_vertices.size(), builder.m_vertices.at( i ) + 0.5f };
             render_objects.push_back(
                 std::make_unique<RenderObject>( RenderObject::Opaque, builder.get_mesh(), &shader ) );

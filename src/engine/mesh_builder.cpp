@@ -7,6 +7,7 @@
 
 #include <cmath>
 #include <format>
+#include <numbers>
 #include <ranges>
 #include <stdexcept>
 
@@ -179,13 +180,13 @@ MeshBuilder MeshBuilder::generate_rectangle( float const width, float const heig
     return shape.convert_to_triangles();
 }
 
-MeshBuilder MeshBuilder::generate_tetrahedron() {
+MeshBuilder MeshBuilder::generate_tetrahedron( bool const normals ) {
     MeshBuilder tetrahedron {
         {
-            { -0.5f, -0.5f, -0.5f },
-            { -0.5f, 0.5f, 0.5f },
-            { 0.5f, -0.5f, 0.5f },
-            { 0.5f, 0.5f, -0.5f },
+            { -0.5f, -0.5f, 0.5f },
+            { -0.5f, 0.5f, -0.5f },
+            { 0.5f, -0.5f, -0.5f },
+            { 0.5f, 0.5f, 0.5f },
         },
         {
             { 0, 2, 3 },
@@ -194,11 +195,12 @@ MeshBuilder MeshBuilder::generate_tetrahedron() {
             { 2, 0, 1 },
         }
     };
-    tetrahedron.generate_face_normals();
+    if ( normals )
+        tetrahedron.generate_face_normals();
     return tetrahedron;
 }
 
-MeshBuilder MeshBuilder::generate_cube() {
+MeshBuilder MeshBuilder::generate_cube( bool const normals, bool const triangles ) {
     MeshBuilder cube {
         {
             { -0.5f, -0.5f, 0.5f },
@@ -219,13 +221,107 @@ MeshBuilder MeshBuilder::generate_cube() {
             { 1, 5, 4, 0 },
         }
     };
-    cube.generate_face_normals();
-    cube.convert_to_triangles();
+    if ( normals )
+        cube.generate_face_normals();
+    if ( triangles )
+        cube.convert_to_triangles();
     return cube;
 }
 
-MeshBuilder MeshBuilder::generate_octahedron() {}
+MeshBuilder MeshBuilder::generate_octahedron( bool normals ) {
+    MeshBuilder octahedron {
+        {
+            { 0.f, -1.f, 0.f }, // Bottom vertex
+            { -1.f, 0.f, 0.f }, // Middle vertices in clockwise order when looking from the top
+            { 0.f, 0.f, -1.f },
+            { 1.f, 0.f, 0.f },
+            { 0.f, 0.f, 1.f },
+            { 0.f, 1.f, 0.f }, // Top vertex
+        },
+        {
+            { 0, 1, 2 },
+            { 0, 2, 3 },
+            { 0, 3, 4 },
+            { 0, 4, 1 },
+            { 5, 2, 1 },
+            { 5, 3, 2 },
+            { 5, 4, 3 },
+            { 5, 1, 4 },
+        }
+    };
+    if ( normals )
+        octahedron.generate_face_normals();
+    return octahedron;
+}
 
-MeshBuilder MeshBuilder::generate_dodecahedron() {}
+float constexpr phi { std::numbers::phi_v<float> };
+float constexpr phi_inv { 1.f / phi };
 
-MeshBuilder MeshBuilder::generate_icosahedron() {}
+MeshBuilder MeshBuilder::generate_dodecahedron( bool const normals, bool const triangles ) {
+    MeshBuilder dodecahedron {
+        // Coordinates taken from wikipedia (https://en.wikipedia.org/wiki/Regular_dodecahedron)
+        {
+            { -1.f, -1.f, -1.f }, // Cube vertices [0-7]
+            { -1.f, -1.f, 1.f },
+            { -1.f, 1.f, -1.f },
+            { -1.f, 1.f, 1.f },
+            { 1.f, -1.f, -1.f },
+            { 1.f, -1.f, 1.f },
+            { 1.f, 1.f, -1.f },
+            { 1.f, 1.f, 1.f },
+            { 0.f, -phi, -phi_inv }, // yz-plane rectangle vertices [8-11]
+            { 0.f, -phi, phi_inv },
+            { 0.f, phi, -phi_inv },
+            { 0.f, phi, phi_inv },
+            { -phi_inv, 0.f, -phi }, // xz-plane rectangle vertices [12-15]
+            { -phi_inv, 0.f, phi },
+            { phi_inv, 0.f, -phi },
+            { phi_inv, 0.f, phi },
+            { -phi, -phi_inv, 0.f }, // xy-plane rectangle vertices [16-19]
+            { -phi, phi_inv, 0.f },
+            { phi, -phi_inv, 0.f },
+            { phi, phi_inv, 0.f },
+        },
+        // Each face contains exactly two vertices with indices < 8, which (atm) have coordinates with only +/-1; this
+        // pair of coordinates must share exactly two coordinate values, the other values must be opposite.
+        // Each face must also contain exactly two vertices that lie in the same yz/xz/xy-plane, more specifically on
+        // the short side of one of the triangles listed above (i.e. the +/-phi coordinate values have matching signs).
+        // The fifth vertex of each face must be a vertex that also matches the matching signs of the two cube vertices,
+        // where the third coordinate is 0.
+        // The actual ordering of the vertices below is different, notably the "fifth vertex" is always given first.
+        {
+            { 8, 0, 12, 14, 4 }, // With "fifth vertex" 8 : ( 0, -phi, -phi_inv )
+            { 9, 5, 15, 13, 1 },
+            { 10, 6, 14, 12, 2 },
+            { 11, 3, 13, 15, 7 },
+            { 12, 0, 16, 17, 2 },
+            { 13, 3, 17, 16, 1 },
+            { 14, 6, 19, 18, 4 },
+            { 15, 5, 18, 19, 7 },
+            { 16, 0, 8, 9, 1 },
+            { 17, 3, 11, 10, 2 },
+            { 18, 5, 9, 8, 4 },
+            { 19, 6, 10, 11, 7 },
+        }
+    };
+    // Rescale the dodecahedron to be inscribed within a sphere of radius 1
+    for ( auto & vertex : dodecahedron.m_vertices )
+        vertex *= std::numbers::inv_sqrt3_v<float>;
+
+    if ( normals )
+        dodecahedron.generate_face_normals();
+    if ( triangles )
+        dodecahedron.convert_to_triangles();
+    return dodecahedron;
+}
+
+MeshBuilder MeshBuilder::generate_icosahedron( bool const normals ) {
+    MeshBuilder icosahedron {
+        {
+        },
+        {}
+    };
+    if ( normals )
+        icosahedron.generate_face_normals();
+    return icosahedron;
+}
