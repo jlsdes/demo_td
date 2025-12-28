@@ -17,8 +17,8 @@ out vec4 fragment_colour;
 
 // Some constants, these should become material attributes at some point I think
 // No ambient factor; this can be changed by scaling the ambient_light uniform
-#define diffuse_factor 1.0f
-#define specular_factor 0.5f
+#define diffuse_factor 0.1f
+#define specular_factor 0.01f
 #define shininess 32
 
 

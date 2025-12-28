@@ -183,10 +183,10 @@ MeshBuilder MeshBuilder::generate_rectangle( float const width, float const heig
 MeshBuilder MeshBuilder::generate_tetrahedron( bool const normals ) {
     MeshBuilder tetrahedron {
         {
-            { -0.5f, -0.5f, 0.5f },
-            { -0.5f, 0.5f, -0.5f },
-            { 0.5f, -0.5f, -0.5f },
-            { 0.5f, 0.5f, 0.5f },
+            { -1.f, -1.f, 1.f },
+            { -1.f, 1.f, -1.f },
+            { 1.f, -1.f, -1.f },
+            { 1.f, 1.f, 1.f },
         },
         {
             { 0, 2, 3 },
@@ -195,6 +195,10 @@ MeshBuilder MeshBuilder::generate_tetrahedron( bool const normals ) {
             { 2, 0, 1 },
         }
     };
+    // Rescale the cube to be inscribed within a sphere of radius 1
+    for ( auto & vertex : tetrahedron.m_vertices )
+        vertex /= std::numbers::sqrt3_v<float>;
+
     if ( normals )
         tetrahedron.generate_face_normals();
     return tetrahedron;
@@ -203,14 +207,14 @@ MeshBuilder MeshBuilder::generate_tetrahedron( bool const normals ) {
 MeshBuilder MeshBuilder::generate_cube( bool const normals, bool const triangles ) {
     MeshBuilder cube {
         {
-            { -0.5f, -0.5f, 0.5f },
-            { -0.5f, -0.5f, -0.5f },
-            { -0.5f, 0.5f, 0.5f },
-            { -0.5f, 0.5f, -0.5f },
-            { 0.5f, -0.5f, 0.5f },
-            { 0.5f, -0.5f, -0.5f },
-            { 0.5f, 0.5f, 0.5f },
-            { 0.5f, 0.5f, -0.5f },
+            { -1.f, -1.f, 1.f },
+            { -1.f, -1.f, -1.f },
+            { -1.f, 1.f, 1.f },
+            { -1.f, 1.f, -1.f },
+            { 1.f, -1.f, 1.f },
+            { 1.f, -1.f, -1.f },
+            { 1.f, 1.f, 1.f },
+            { 1.f, 1.f, -1.f },
         },
         {
             { 0, 4, 6, 2 },
@@ -221,6 +225,10 @@ MeshBuilder MeshBuilder::generate_cube( bool const normals, bool const triangles
             { 1, 5, 4, 0 },
         }
     };
+    // Rescale the cube to be inscribed within a sphere of radius 1
+    for ( auto & vertex : cube.m_vertices )
+        vertex /= std::numbers::sqrt3_v<float>;
+
     if ( normals )
         cube.generate_face_normals();
     if ( triangles )
@@ -282,15 +290,18 @@ MeshBuilder MeshBuilder::generate_dodecahedron( bool const normals, bool const t
             { phi, -phi_inv, 0.f },
             { phi, phi_inv, 0.f },
         },
-        // Each face contains exactly two vertices with indices < 8, which (atm) have coordinates with only +/-1; this
-        // pair of coordinates must share exactly two coordinate values, the other values must be opposite.
-        // Each face must also contain exactly two vertices that lie in the same yz/xz/xy-plane, more specifically on
-        // the short side of one of the triangles listed above (i.e. the +/-phi coordinate values have matching signs).
-        // The fifth vertex of each face must be a vertex that also matches the matching signs of the two cube vertices,
-        // where the third coordinate is 0.
-        // The actual ordering of the vertices below is different, notably the "fifth vertex" is always given first.
+        // Each face can be defined by the following set of vertices (in a slightly different order):
+        // - one of the rectangle vertices [8-19].
+        // - the two cube vertices whose signs match the non-zero coordinate values of the first vertex.
+        // - the two rectangle vertices which can be found by transforming the original (i.e. first vertex) coordinates
+        //   - the original phi coordinate becomes zero.
+        //   - the original phi_inv coordinate becomes phi.
+        //   - the original zero coordinate becomes +/- phi_inv.
         {
-            { 8, 0, 12, 14, 4 }, // With "fifth vertex" 8 : ( 0, -phi, -phi_inv )
+            // For example, with first vertex 8 = ( 0, -phi, -phi_inv )
+            // The two cube vertices 0 = ( -1, -1, -1 ) and 4 = ( 1, -1, -1 )
+            // The two other rectangle vertices 12 = ( -phi_inv, 0, -phi ) and 14 = ( phi_inv, 0, -phi )
+            { 8, 0, 12, 14, 4 },
             { 9, 5, 15, 13, 1 },
             { 10, 6, 14, 12, 2 },
             { 11, 3, 13, 15, 7 },
@@ -306,7 +317,7 @@ MeshBuilder MeshBuilder::generate_dodecahedron( bool const normals, bool const t
     };
     // Rescale the dodecahedron to be inscribed within a sphere of radius 1
     for ( auto & vertex : dodecahedron.m_vertices )
-        vertex *= std::numbers::inv_sqrt3_v<float>;
+        vertex /= std::numbers::sqrt3_v<float>;
 
     if ( normals )
         dodecahedron.generate_face_normals();
@@ -318,9 +329,53 @@ MeshBuilder MeshBuilder::generate_dodecahedron( bool const normals, bool const t
 MeshBuilder MeshBuilder::generate_icosahedron( bool const normals ) {
     MeshBuilder icosahedron {
         {
+            { 0.f, -1.f, -phi }, // yz-plane rectangle vertices [0-3]
+            { 0.f, -1.f, phi },
+            { 0.f, 1.f, -phi },
+            { 0.f, 1.f, phi },
+            { -phi, 0.f, -1.f }, // xz-plane rectangle vertices [4-7]
+            { -phi, 0.f, 1.f },
+            { phi, 0.f, -1.f },
+            { phi, 0.f, 1.f },
+            { -1.f, -phi, 0.f }, // xy-plane rectangle vertices [8-11]
+            { -1.f, phi, 0.f },
+            { 1.f, -phi, 0.f },
+            { 1.f, phi, 0.f },
         },
-        {}
+        // There are two types of face 'definitions' used here.
+        // For every vertex, exactly one face exists that links it with the two other vertices which have values +/-phi
+        //  where the first vertex has value +/-1 (the signs for these specific coordinate values must match).
+        // Every group of three vertices, where all signs match on every coordinate value with 0 as a universal match,
+        //  also defines a single face.
+        {
+            // E.g. vertex 0 = ( 0, -1, -phi ) and its neighbours 10 = ( 1, -phi, 0 ) and 8 = ( -1, -phi, 0 )
+            { 0, 10, 8 },
+            { 1, 8, 10 },
+            { 2, 9, 11 },
+            { 3, 11, 9 },
+            { 4, 2, 0 },
+            { 5, 1, 3 },
+            { 6, 0, 2 },
+            { 7, 3, 1 },
+            { 8, 5, 4 },
+            { 9, 4, 5 },
+            { 10, 6, 7 },
+            { 11, 7, 6 },
+            // E.g. all vertices with coordinate values x <= 0, y <= 0, z <= 0
+            { 0, 8, 4 }, // ---
+            { 1, 5, 8 }, // --+
+            { 2, 4, 9 }, // -+-
+            { 3, 9, 5 }, // -++
+            { 0, 6, 10 }, // +--
+            { 1, 10, 7 }, // +-+
+            { 2, 11, 6 }, // ++-
+            { 3, 7, 11 }, // +++
+        }
     };
+    // Rescale the dodecahedron to be inscribed within a sphere of radius 1
+    for ( auto & vertex : icosahedron.m_vertices )
+        vertex /= std::sqrt( phi * phi + 1 );
+
     if ( normals )
         icosahedron.generate_face_normals();
     return icosahedron;
