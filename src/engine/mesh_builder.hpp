@@ -52,12 +52,15 @@ public:
      */
     static MeshBuilder generate_rectangle( float width, float height );
 
-    /** Generates the Platonic solids. */
-    static MeshBuilder generate_tetrahedron( bool normals = true );
-    static MeshBuilder generate_cube( bool normals = true, bool triangles = true );
-    static MeshBuilder generate_octahedron( bool normals = true );
-    static MeshBuilder generate_dodecahedron( bool normals = true, bool triangles = true );
-    static MeshBuilder generate_icosahedron( bool normals = true );
+    /** Platonic solid generator functions. */
+    static MeshBuilder tetrahedron( bool normals = true );
+    static MeshBuilder cube( bool normals = true, bool triangles = true );
+    static MeshBuilder octahedron( bool normals = true );
+    static MeshBuilder dodecahedron( bool normals = true, bool triangles = true );
+    static MeshBuilder icosahedron( bool normals = true );
+
+    /** Generates a sphere-like polyhedron. */
+    static MeshBuilder sphere( unsigned int n, bool normals = true );
 
 // private:
     std::vector<glm::vec3> m_vertices;

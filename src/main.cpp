@@ -66,11 +66,11 @@ int main() {
             if ( action == GLFW_PRESS ) {
                 glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
                 shader.set_uniform( "ambient_light", glm::vec3 { 1.f, 1.f, 1.f } );
-                glDisable( GL_CULL_FACE );
+                // glDisable( GL_CULL_FACE );
             } else if ( action == GLFW_RELEASE ) {
                 glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
                 shader.set_uniform( "ambient_light", ambient_light );
-                glEnable( GL_CULL_FACE );
+                // glEnable( GL_CULL_FACE );
             }
         } );
 
@@ -82,13 +82,14 @@ int main() {
 
         Renderer renderer {};
         std::vector<std::unique_ptr<RenderObject>> render_objects {};
-        MeshBuilder builder { MeshBuilder::generate_icosahedron() };
-        for ( unsigned char i { 0 }; i < 12; ++i ) {
-            builder.m_colours = { builder.m_vertices.size(), builder.m_vertices.at( i ) + 0.5f };
+        MeshBuilder builder { MeshBuilder::sphere( 10 ) };
+        for ( unsigned char i { 0 }; i < 1; ++i ) {
+            glm::vec3 offset { i & 4 ? -0.5f : 0.5f, i & 2 ? -0.5f : 0.5f, i & 1 ? -0.5f : 0.5f };
+            builder.m_colours = { builder.m_vertices.size(), offset + glm::vec3 { 0.5f } };
             render_objects.push_back(
                 std::make_unique<RenderObject>( RenderObject::Opaque, builder.get_mesh(), &shader ) );
             RenderObject & object { *render_objects.back() };
-            object.translate( camera_target + builder.m_vertices.at( i ) );
+            object.translate( camera_target + offset );
             object.scale( 0.3 );
             renderer.register_object( object );
         }

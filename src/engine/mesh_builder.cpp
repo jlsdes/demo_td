@@ -5,11 +5,14 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 
+#include <array>
 #include <cmath>
 #include <format>
 #include <numbers>
 #include <ranges>
 #include <stdexcept>
+
+#include <format>
 
 
 MeshBuilder::MeshBuilder( std::vector<glm::vec3> const & vertices,
@@ -180,7 +183,7 @@ MeshBuilder MeshBuilder::generate_rectangle( float const width, float const heig
     return shape.convert_to_triangles();
 }
 
-MeshBuilder MeshBuilder::generate_tetrahedron( bool const normals ) {
+MeshBuilder MeshBuilder::tetrahedron( bool const normals ) {
     MeshBuilder tetrahedron {
         {
             { -1.f, -1.f, 1.f },
@@ -204,7 +207,7 @@ MeshBuilder MeshBuilder::generate_tetrahedron( bool const normals ) {
     return tetrahedron;
 }
 
-MeshBuilder MeshBuilder::generate_cube( bool const normals, bool const triangles ) {
+MeshBuilder MeshBuilder::cube( bool const normals, bool const triangles ) {
     MeshBuilder cube {
         {
             { -1.f, -1.f, 1.f },
@@ -236,7 +239,7 @@ MeshBuilder MeshBuilder::generate_cube( bool const normals, bool const triangles
     return cube;
 }
 
-MeshBuilder MeshBuilder::generate_octahedron( bool normals ) {
+MeshBuilder MeshBuilder::octahedron( bool normals ) {
     MeshBuilder octahedron {
         {
             { 0.f, -1.f, 0.f }, // Bottom vertex
@@ -265,7 +268,7 @@ MeshBuilder MeshBuilder::generate_octahedron( bool normals ) {
 float constexpr phi { std::numbers::phi_v<float> };
 float constexpr phi_inv { 1.f / phi };
 
-MeshBuilder MeshBuilder::generate_dodecahedron( bool const normals, bool const triangles ) {
+MeshBuilder MeshBuilder::dodecahedron( bool const normals, bool const triangles ) {
     MeshBuilder dodecahedron {
         // Coordinates taken from wikipedia (https://en.wikipedia.org/wiki/Regular_dodecahedron)
         {
@@ -326,7 +329,7 @@ MeshBuilder MeshBuilder::generate_dodecahedron( bool const normals, bool const t
     return dodecahedron;
 }
 
-MeshBuilder MeshBuilder::generate_icosahedron( bool const normals ) {
+MeshBuilder MeshBuilder::icosahedron( bool const normals ) {
     MeshBuilder icosahedron {
         {
             { 0.f, -1.f, -phi }, // yz-plane rectangle vertices [0-3]
@@ -379,4 +382,105 @@ MeshBuilder MeshBuilder::generate_icosahedron( bool const normals ) {
     if ( normals )
         icosahedron.generate_face_normals();
     return icosahedron;
+}
+
+/** Returns a reference to the vertex's index by (part of) its barycentric coordinates. This function assumes that the
+ *  barycentric coordinate values sum to n, and thus does not need the first coordinate u. */
+unsigned int & vertex_reference( std::vector<unsigned int> & vertices, unsigned int const v, unsigned int const w ) {
+    // Vertices are stored in this order: (n, 0, 0), (n-1, 1, 0), (n-1, 0, 1), (n-2, 2, 0) ... (0, 0, n)
+    // Row 0:           (n, 0, 0)
+    // Row 1:       (n-1, 1, 0) (n-1, 0, 1)
+    // Row 2:   (n-2, 2, 0) ...
+    // ...
+    // Row n: (0, n, 0) ... (0, 0, n)
+    unsigned int const row { v + w };
+    unsigned int const row_index { row * (row + 1) / 2 };
+    return vertices.at( row_index + w );
+}
+
+/// Stores an iterable range containing the indices of newly created vertices along edges.
+/// This array wastes some memory space, as not all pairs of vertices define an actually existing edge.
+using EdgeMap = std::array<std::pair<unsigned int, bool>, 144>;
+
+/** Returns the index data on the new vertices along an edge, and creates those vertices if necessary. */
+EdgeMap::value_type get_edge_vertices( MeshBuilder & sphere,
+                                       EdgeMap & edges,
+                                       unsigned int const vertex_1,
+                                       unsigned int const vertex_2,
+                                       unsigned int const n ) {
+    auto & edge_data { edges.at( vertex_1 * 12 + vertex_2 ) };
+    if ( edge_data.first )
+        return edge_data;
+
+    auto const lowest_new_index { sphere.m_vertices.size() };
+    glm::vec3 position { sphere.m_vertices.at( vertex_1 ) };
+    glm::vec3 const step { (sphere.m_vertices.at( vertex_2 ) - position) / static_cast<float>(n) };
+    for ( unsigned int i { 1 }; i < n; ++i )
+        sphere.m_vertices.emplace_back( glm::normalize( position += step ) );
+
+    edge_data = { lowest_new_index, true }; // Modifies edges as well btw
+    edges.at( vertex_2 * 12 + vertex_1 ) = { sphere.m_vertices.size() - 1, false };
+    return edge_data;
+}
+
+MeshBuilder MeshBuilder::sphere( unsigned int const n, bool const normals ) {
+    // Starting from a basic icosahedron with its original 12 vertices and 20 faces
+    auto sphere = icosahedron( false );
+    std::vector<std::vector<unsigned int>> faces {};
+
+    EdgeMap edges; // Initialised with 0 and false values; 0 should not appear otherwise, so it indicates empty cells
+
+    for ( auto const & face : sphere.m_faces ) {
+        std::vector<unsigned int> vertices( (n + 1) * (n + 2) / 2 );
+
+        for ( unsigned int i { 0 }; i < 3; ++i ) {
+            unsigned int bary_coordinate[3] {};
+            bary_coordinate[i] = n; // Starting at a corner
+            vertex_reference( vertices, bary_coordinate[1], bary_coordinate[2] ) = face.at( i );
+
+            // Retrieve/create all vertices along this edge of the face
+            auto [index, ascending] { get_edge_vertices( sphere, edges, face.at( i ), face.at( (i + 1) % 3 ), n ) };
+            for ( unsigned int j { 1 }; j < n; ++j ) {
+                --bary_coordinate[i];
+                ++bary_coordinate[(i + 1) % 3];
+                vertex_reference( vertices, bary_coordinate[1], bary_coordinate[2] ) = index;
+                index += ascending ? 1 : -1;
+            }
+        }
+
+        // Create all internal vertices in the face
+        glm::vec3 const vertex_0 { sphere.m_vertices.at( face.at( 0 ) ) };
+        glm::vec3 const vertex_1 { sphere.m_vertices.at( face.at( 1 ) ) };
+        glm::vec3 const vertex_2 { sphere.m_vertices.at( face.at( 2 ) ) };
+        glm::vec3 const step_v { (vertex_1 - vertex_0) / static_cast<float>(n) };
+        glm::vec3 const step_w { (vertex_2 - vertex_0) / static_cast<float>(n) };
+        for ( unsigned int v { 1 }; v < n; ++v ) {
+            glm::vec3 position { vertex_0 + static_cast<float>(v) * step_v };
+            for ( unsigned int w { 1 }; w < n - v; ++w ) {
+                position += step_w;
+                vertex_reference( vertices, v, w ) = sphere.m_vertices.size();
+                sphere.m_vertices.emplace_back( glm::normalize( position ) );
+            }
+        }
+
+        // Create all triangles
+        for ( unsigned int v { 0 }; v < n; ++v ) {
+            for ( unsigned int w { 0 }; w < n - v; ++w ) {
+                faces.push_back( {
+                    vertex_reference( vertices, v, w ), vertex_reference( vertices, v + 1, w ),
+                    vertex_reference( vertices, v, w + 1 )
+                } );
+                if ( w != n - v - 1 )
+                    faces.push_back( {
+                        vertex_reference( vertices, v, w + 1 ), vertex_reference( vertices, v + 1, w ),
+                        vertex_reference( vertices, v + 1, w + 1 )
+                    } );
+            }
+        }
+    }
+    sphere.m_faces = faces;
+
+    if ( normals )
+        sphere.generate_vertex_normals();
+    return sphere;
 }
