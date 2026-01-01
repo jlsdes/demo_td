@@ -82,8 +82,8 @@ int main() {
 
         Renderer renderer {};
         std::vector<std::unique_ptr<RenderObject>> render_objects {};
-        MeshBuilder builder { MeshBuilder::sphere( 10 ) };
-        for ( unsigned char i { 0 }; i < 1; ++i ) {
+        MeshBuilder builder { MeshBuilder::sphere( 20 ) };
+        for ( unsigned char i { 0 }; i < 8; ++i ) {
             glm::vec3 offset { i & 4 ? -0.5f : 0.5f, i & 2 ? -0.5f : 0.5f, i & 1 ? -0.5f : 0.5f };
             builder.m_colours = { builder.m_vertices.size(), offset + glm::vec3 { 0.5f } };
             render_objects.push_back(
