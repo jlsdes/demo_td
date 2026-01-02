@@ -413,13 +413,21 @@ unsigned int & vertex_reference( FaceData & data, unsigned int const v, unsigned
     return data.vertices.at( row_index + w );
 }
 
+unsigned int const & vertex_reference( FaceData const & data, unsigned int const v, unsigned int const w ) {
+    return data.vertices.at( (v + w) * (v + w + 1) / 2 + w );
+}
+
 /** Returns a reference to the edge data associated with the given edge in the edge map/array. */
-EdgeData & edge_reference( FaceData const & data, Edge const & edge, bool const reverse = false ) {
+EdgeData & edge_reference( FaceData & data, Edge const & edge, bool const reverse = false ) {
+    return data.edges.at( reverse ? edge.first * 12 + edge.second : edge.second * 12 + edge.first );
+}
+
+EdgeData const & edge_reference( FaceData const & data, Edge const & edge, bool const reverse = false ) {
     return data.edges.at( reverse ? edge.first * 12 + edge.second : edge.second * 12 + edge.first );
 }
 
 /** Returns the index data on the new vertices along an edge, and creates those vertices if necessary. */
-EdgeData get_edge_vertices( FaceData const & data, Edge const & edge ) {
+EdgeData get_edge_vertices( FaceData & data, Edge const & edge ) {
     auto & edge_data { edge_reference( data, edge ) };
     if ( edge_data.first )
         return edge_data;
@@ -471,7 +479,7 @@ void create_internal_vertices( FaceData & data, std::vector<unsigned int> const 
 }
 
 /** Creates new triangles between all newly created vertices. */
-void create_triangles( FaceData & data, std::vector<std::vector<unsigned int>> & faces ) {
+void create_triangles( FaceData const & data, std::vector<std::vector<unsigned int>> & faces ) {
     for ( unsigned int v { 0 }; v < data.n; ++v ) {
         for ( unsigned int w { 0 }; w < data.n - v; ++w ) {
             //            (u, v, w)
