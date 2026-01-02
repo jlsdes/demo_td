@@ -82,15 +82,21 @@ int main() {
 
         Renderer renderer {};
         std::vector<std::unique_ptr<RenderObject>> render_objects {};
+
         MeshBuilder builder { MeshBuilder::sphere( 20 ) };
+        builder.translate( camera_target );
+        builder.transform( glm::identity<glm::mat3>() * 0.3f );
+
         for ( unsigned char i { 0 }; i < 8; ++i ) {
             glm::vec3 offset { i & 4 ? -0.5f : 0.5f, i & 2 ? -0.5f : 0.5f, i & 1 ? -0.5f : 0.5f };
+
             builder.m_colours = { builder.m_vertices.size(), offset + glm::vec3 { 0.5f } };
+            builder.translate( offset );
             render_objects.push_back(
                 std::make_unique<RenderObject>( RenderObject::Opaque, builder.get_mesh(), &shader ) );
+            builder.translate( -offset );
+
             RenderObject & object { *render_objects.back() };
-            object.translate( camera_target + offset );
-            object.scale( 0.3 );
             renderer.register_object( object );
         }
 

@@ -152,7 +152,53 @@ Mesh MeshBuilder::get_mesh() const {
     return Mesh { get_mesh_vertices(), get_mesh_face_indices(), GL_TRIANGLES };
 }
 
-MeshBuilder MeshBuilder::generate_regular_polygon( unsigned int const nr_corners ) {
+MeshBuilder & MeshBuilder::merge( MeshBuilder const & other ) {
+    if ( m_normals.empty() != other.m_normals.empty() )
+        Log::warning( "Merging two MeshBuilders with mismatched normal presence; dropping existing normals." );
+    if ( m_colours.empty() != other.m_colours.empty() )
+        Log::warning( "Merging two MeshBuilders with mismatched colour presence; dropping existing colours." );
+
+    auto const offset { m_vertices.size() };
+    m_vertices.insert( m_vertices.end(), other.m_vertices.cbegin(), other.m_vertices.cend() );
+    if ( !m_normals.empty() && !other.m_normals.empty() )
+        m_normals.insert( m_normals.end(), other.m_normals.cbegin(), other.m_normals.cend() );
+    if ( !m_colours.empty() && !other.m_colours.empty() )
+        m_colours.insert( m_colours.end(), other.m_colours.cbegin(), other.m_colours.cend() );
+
+    for ( auto face : other.m_faces ) {
+        for ( unsigned int & index : face )
+            index += offset;
+        m_faces.push_back( face );
+    }
+    return *this;
+}
+
+MeshBuilder & MeshBuilder::operator+=( MeshBuilder const & other ) {
+    return merge( other );
+}
+
+MeshBuilder MeshBuilder::operator+( MeshBuilder const & other ) const {
+    MeshBuilder copy { *this };
+    return copy += other;
+}
+
+void MeshBuilder::translate( glm::vec3 const & direction ) {
+    for ( glm::vec3 & vertex : m_vertices )
+        vertex += direction;
+}
+
+void MeshBuilder::transform( glm::mat3 const & matrix ) {
+    for ( glm::vec3 & vertex : m_vertices )
+        vertex = matrix * vertex;
+
+    if ( !m_normals.empty() ) {
+        glm::mat3 const normal_transform { glm::transpose( glm::inverse( matrix ) ) };
+        for ( glm::vec3 & normal : m_normals )
+            normal = normal_transform * normal;
+    }
+}
+
+MeshBuilder MeshBuilder::regular_polygon( unsigned int const nr_corners ) {
     if ( nr_corners < 3 )
         throw std::out_of_range( std::format( "Attempting to create a regular polygon with {} corners.", nr_corners ) );
     MeshBuilder shape { {}, { { nr_corners } } };
@@ -168,7 +214,7 @@ MeshBuilder MeshBuilder::generate_regular_polygon( unsigned int const nr_corners
     return shape.convert_to_triangles();
 }
 
-MeshBuilder MeshBuilder::generate_rectangle( float const width, float const height ) {
+MeshBuilder MeshBuilder::rectangle( float const width, float const height ) {
     if ( height == 0.f )
         throw std::invalid_argument( "Attempting to create a rectangle with zero height." );
     MeshBuilder shape {
