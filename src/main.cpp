@@ -66,11 +66,11 @@ int main() {
             if ( action == GLFW_PRESS ) {
                 glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
                 shader.set_uniform( "ambient_light", glm::vec3 { 1.f, 1.f, 1.f } );
-                // glDisable( GL_CULL_FACE );
+                glDisable( GL_CULL_FACE );
             } else if ( action == GLFW_RELEASE ) {
                 glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
                 shader.set_uniform( "ambient_light", ambient_light );
-                // glEnable( GL_CULL_FACE );
+                glEnable( GL_CULL_FACE );
             }
         } );
 
@@ -83,22 +83,43 @@ int main() {
         Renderer renderer {};
         std::vector<std::unique_ptr<RenderObject>> render_objects {};
 
-        MeshBuilder builder { MeshBuilder::sphere( 20 ) };
+        MeshBuilder builder {
+            {
+                { 1.f, 0.f, 0.f },
+                { 0.2f, 0.2f, 0.f },
+                { 0.f, 1.f, 0.f },
+                { -0.2f, 0.2f, 0.f },
+                { -1.f, 0.f, 0.f },
+                { -0.2f, -0.2f, 0.f },
+                { 0.f, -1.f, 0.f },
+                { 0.2f, -0.2f, 0.f },
+            },
+            { { 0, 1, 2, 3, 4, 5, 6, 7 } }
+        };
         builder.translate( camera_target );
-        builder.transform( glm::identity<glm::mat3>() * 0.3f );
+        builder.m_colours = { 8, glm::vec3 { 1.f, 1.f, 0.f } };
+        builder.convert_to_triangles();
+        builder.generate_face_normals();
 
-        for ( unsigned char i { 0 }; i < 8; ++i ) {
-            glm::vec3 offset { i & 4 ? -0.5f : 0.5f, i & 2 ? -0.5f : 0.5f, i & 1 ? -0.5f : 0.5f };
+        render_objects.push_back( std::make_unique<RenderObject>( RenderObject::Opaque, builder.get_mesh(), &shader ) );
+        renderer.register_object( *render_objects.back() );
 
-            builder.m_colours = { builder.m_vertices.size(), offset + glm::vec3 { 0.5f } };
-            builder.translate( offset );
-            render_objects.push_back(
-                std::make_unique<RenderObject>( RenderObject::Opaque, builder.get_mesh(), &shader ) );
-            builder.translate( -offset );
-
-            RenderObject & object { *render_objects.back() };
-            renderer.register_object( object );
-        }
+        // MeshBuilder builder { MeshBuilder::sphere( 20 ) };
+        // builder.translate( camera_target );
+        // builder.transform( glm::identity<glm::mat3>() * 0.3f );
+        //
+        // for ( unsigned char i { 0 }; i < 8; ++i ) {
+        //     glm::vec3 offset { i & 4 ? -0.5f : 0.5f, i & 2 ? -0.5f : 0.5f, i & 1 ? -0.5f : 0.5f };
+        //
+        //     builder.m_colours = { builder.m_vertices.size(), offset + glm::vec3 { 0.5f } };
+        //     builder.translate( offset );
+        //     render_objects.push_back(
+        //         std::make_unique<RenderObject>( RenderObject::Opaque, builder.get_mesh(), &shader ) );
+        //     builder.translate( -offset );
+        //
+        //     RenderObject & object { *render_objects.back() };
+        //     renderer.register_object( object );
+        // }
 
         float constexpr fov { glm::quarter_pi<float>() }; // 45 degrees
         shader.set_uniform( "projection", glm::perspective( fov, 1200.f / 800.f, 0.1f, 100.f ) );

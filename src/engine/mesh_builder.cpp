@@ -12,14 +12,32 @@
 #include <ranges>
 #include <stdexcept>
 
-#include <format>
-
 
 MeshBuilder::MeshBuilder( std::vector<glm::vec3> const & vertices,
                           std::vector<std::vector<unsigned int>> const & faces,
                           std::vector<glm::vec3> const & normals,
                           std::vector<glm::vec3> const & colours )
     : m_vertices { vertices }, m_normals { normals }, m_colours { colours }, m_faces { faces } {}
+
+/** Returns whether a face is a convex polygon. */
+bool is_convex( std::vector<glm::vec3> const & vertices, std::vector<unsigned int> const & face ) {
+    glm::vec3 current_vertex { vertices.at( face.at( 0 ) ) };
+    glm::vec3 current_edge { current_vertex - vertices.at( face.at( face.size() - 1 ) ) };
+    glm::vec3 const last_edge { vertices.at( face.at( face.size() - 1 ) ) - vertices.at( face.at( face.size() - 2 ) ) };
+    glm::vec3 const last_normal { glm::normalize( glm::cross( last_edge, current_edge ) ) };
+
+    for ( unsigned int i { 1 }; i < face.size(); ++i ) {
+        glm::vec3 const next_vertex { vertices.at( face.at( i ) ) };
+        glm::vec3 const next_edge { next_vertex - current_vertex };
+
+        if ( glm::length( glm::normalize( glm::cross( current_edge, next_edge ) ) - last_normal ) > 0.00001 )
+            return false;
+
+        current_vertex = next_vertex;
+        current_edge = next_edge;
+    }
+    return true;
+}
 
 MeshBuilder & MeshBuilder::convert_to_triangles() {
     unsigned long const nr_faces_original { m_faces.size() };
@@ -29,12 +47,14 @@ MeshBuilder & MeshBuilder::convert_to_triangles() {
         if ( nr_corners == 3 )
             continue;
 
+        if ( !is_convex( m_vertices, m_faces.at( i ) ) )
+            Log::warning( "Concave polygon detected; this is currently not fully supported." );
+
         // For now assuming convex polygons
         for ( unsigned int j { 2 }; j < nr_corners - 1; ++j )
             m_faces.push_back( { m_faces.at( i ).at( 0 ), m_faces.at( i ).at( j ), m_faces.at( i ).at( j + 1 ) } );
         // Keep only the first 3 elements, which is a triangle that was skipped in the for loop
         m_faces.at( i ).resize( 3 );
-        // TODO concave polygons
     }
     return *this;
 }
