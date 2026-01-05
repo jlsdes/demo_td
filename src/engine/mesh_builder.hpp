@@ -3,6 +3,7 @@
 
 #include "mesh.hpp"
 
+#include <functional>
 #include <vector>
 
 
@@ -51,15 +52,30 @@ public:
      *  vertices will lie in the plane where z = 0.
      *
      *  @param nr_corners The number of corners the polygon should have; must be at least 3.
+     *  @param normals Whether the polygon should have its normal vectors generated.
      */
-    static MeshBuilder regular_polygon( unsigned int nr_corners );
+    static MeshBuilder regular_polygon( unsigned int nr_corners, bool normals = true );
 
     /** Generates a rectangle with a given width and height, and with its centre at the origin.
      *
      * @param width The width of the rectangle; must not be zero.
      * @param height The height of the rectangle; must not be zero.
+     *  @param normals Whether the polygon should have its normal vectors generated.
      */
-    static MeshBuilder rectangle( float width, float height );
+    static MeshBuilder rectangle( float width, float height, bool normals = true );
+    static MeshBuilder square( float width, bool normals = true );
+
+private:
+    static auto constexpr s_zero_elevation = []( float, float ) { return 0.f; };
+
+public:
+    /** Generates a large grid of square cells. Each cell will be 'width/columns' wide and 'height/rows' high. */
+    static MeshBuilder grid( float size_x,
+                             float size_z,
+                             unsigned int cells_x,
+                             unsigned int cells_z,
+                             std::function<float( float, float )> const & elevation = s_zero_elevation,
+                             bool normals = true );
 
     /** Platonic solid generator functions. */
     static MeshBuilder tetrahedron( bool normals = true );
@@ -71,7 +87,7 @@ public:
     /** Generates a sphere-like polyhedron. */
     static MeshBuilder sphere( unsigned int n, bool normals = true );
 
-// private:
+    // private:
     std::vector<glm::vec3> m_vertices;
     std::vector<glm::vec3> m_normals;
     std::vector<glm::vec3> m_colours;

@@ -1,5 +1,6 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include "engine/camera.hpp"
 #include "engine/config.hpp"
@@ -13,8 +14,7 @@
 #include "engine/window.hpp"
 
 #include <filesystem>
-
-#include <glm/gtc/matrix_transform.hpp>
+#include <random>
 
 
 /** Reports the framerate of the program at regular intervals; to be called after rendering each frame. */
@@ -75,7 +75,7 @@ int main() {
         } );
 
         // Create a camera object and attach it to the shader
-        glm::vec3 const & camera_position { 0.f, 0.f, -3.f };
+        glm::vec3 const & camera_position { 0.f, 1.f, -3.f };
         glm::vec3 const & camera_target { 0.f, 0.f, 0.f };
         Camera camera { camera_position, camera_target, &shader };
         camera.set_free_view( window.get_input_manager() );
@@ -83,22 +83,31 @@ int main() {
         Renderer renderer {};
         std::vector<std::unique_ptr<RenderObject>> render_objects {};
 
-        MeshBuilder builder { MeshBuilder::sphere( 20 ) };
+        MeshBuilder builder { MeshBuilder::grid( 10.f, 10.f, 20, 20 ) };
         builder.translate( camera_target );
-        builder.transform( glm::identity<glm::mat3>() * 0.3f );
+        builder.m_colours = { builder.m_vertices.size(), glm::vec3 {} };
 
-        for ( unsigned char i { 0 }; i < 8; ++i ) {
-            glm::vec3 offset { i & 4 ? -0.5f : 0.5f, i & 2 ? -0.5f : 0.5f, i & 1 ? -0.5f : 0.5f };
-
-            builder.m_colours = { builder.m_vertices.size(), offset + glm::vec3 { 0.5f } };
-            builder.translate( offset );
-            render_objects.push_back(
-                std::make_unique<RenderObject>( RenderObject::Opaque, builder.get_mesh(), &shader ) );
-            builder.translate( -offset );
-
-            RenderObject & object { *render_objects.back() };
-            renderer.register_object( object );
+        std::random_device random_device {};
+        std::uniform_real_distribution distribution( 0.5f, 1.f );
+        for ( glm::vec3 & colour : builder.m_colours ) {
+            colour.g = distribution( random_device );
         }
+
+        RenderObject grid { RenderObject::Terrain, builder.get_mesh(), &shader };
+        renderer.register_object( grid );
+
+        // for ( unsigned char i { 0 }; i < 8; ++i ) {
+        //     glm::vec3 offset { i & 4 ? -0.5f : 0.5f, i & 2 ? -0.5f : 0.5f, i & 1 ? -0.5f : 0.5f };
+        //
+        //     builder.m_colours = { builder.m_vertices.size(), offset + glm::vec3 { 0.5f } };
+        //     builder.translate( offset );
+        //     render_objects.push_back(
+        //         std::make_unique<RenderObject>( RenderObject::Opaque, builder.get_mesh(), &shader ) );
+        //     builder.translate( -offset );
+        //
+        //     RenderObject & object { *render_objects.back() };
+        //     renderer.register_object( object );
+        // }
 
         float constexpr fov { glm::quarter_pi<float>() }; // 45 degrees
         shader.set_uniform( "projection", glm::perspective( fov, 1200.f / 800.f, 0.1f, 100.f ) );

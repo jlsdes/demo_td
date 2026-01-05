@@ -217,7 +217,7 @@ void MeshBuilder::transform( glm::mat3 const & matrix ) {
     }
 }
 
-MeshBuilder MeshBuilder::regular_polygon( unsigned int const nr_corners ) {
+MeshBuilder MeshBuilder::regular_polygon( unsigned int const nr_corners, bool const normals ) {
     if ( nr_corners < 3 )
         throw std::out_of_range( std::format( "Attempting to create a regular polygon with {} corners.", nr_corners ) );
     MeshBuilder shape { {}, { { nr_corners } } };
@@ -230,10 +230,12 @@ MeshBuilder MeshBuilder::regular_polygon( unsigned int const nr_corners ) {
         shape.m_faces.at( 0 ).emplace_back( i );
         current_angle += angle;
     }
+    if ( normals )
+        shape.generate_face_normals();
     return shape.convert_to_triangles();
 }
 
-MeshBuilder MeshBuilder::rectangle( float const width, float const height ) {
+MeshBuilder MeshBuilder::rectangle( float const width, float const height, bool const normals ) {
     if ( height == 0.f )
         throw std::invalid_argument( "Attempting to create a rectangle with zero height." );
     MeshBuilder shape {
@@ -245,7 +247,50 @@ MeshBuilder MeshBuilder::rectangle( float const width, float const height ) {
         },
         { { 0, 1, 2, 3 } }
     };
+    if ( normals )
+        shape.generate_face_normals();
     return shape.convert_to_triangles();
+}
+
+MeshBuilder MeshBuilder::square( float const width, bool const normals ) {
+    return rectangle( width, width, normals );
+}
+
+MeshBuilder MeshBuilder::grid( float const size_x,
+                               float const size_z,
+                               unsigned int const cells_x,
+                               unsigned int const cells_z,
+                               std::function<float( float, float )> const & elevation,
+                               bool const normals ) {
+    MeshBuilder shape {};
+    shape.m_vertices.reserve( (cells_x + 1) * (cells_z + 1) );
+    shape.m_faces.reserve( cells_x * cells_z * 2 );
+
+    // Returns the vertex (index) in shape.m_vertices of the grid coordinate (i, j)
+    auto const vertex { [&]( unsigned int const i, unsigned int const j ) { return j * (cells_x + 1) + i; } };
+
+    float const step_x { size_x / static_cast<float>(cells_x) };
+    float const step_z { size_z / static_cast<float>(cells_z) };
+
+    float x { -size_x / 2.f };
+    for ( unsigned int i { 0 }; i < cells_x + 1; ++i ) {
+        float z { -size_z / 2.f };
+        for ( unsigned int j { 0 }; j < cells_z + 1; ++j ) {
+
+            shape.m_vertices.emplace_back( x, elevation( x, z ), z );
+            if ( i < cells_x && j < cells_z ) {
+                shape.m_faces.push_back( { vertex( i, j ), vertex( i + 1, j ), vertex( i, j + 1 ) } );
+                shape.m_faces.push_back( { vertex( i + 1, j ), vertex( i + 1, j + 1 ), vertex( i, j + 1 ) } );
+            }
+
+            z += step_z;
+        }
+        x += step_x;
+    }
+
+    if ( normals )
+        shape.generate_vertex_normals();
+    return shape;
 }
 
 MeshBuilder MeshBuilder::tetrahedron( bool const normals ) {
