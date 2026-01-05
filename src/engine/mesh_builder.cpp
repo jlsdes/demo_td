@@ -48,9 +48,8 @@ MeshBuilder & MeshBuilder::convert_to_triangles() {
             continue;
 
         if ( !is_convex( m_vertices, m_faces.at( i ) ) )
-            Log::warning( "Concave polygon detected; this is currently not fully supported." );
+            Log::warning( "Concave polygon detected; this is not fully supported." );
 
-        // For now assuming convex polygons
         for ( unsigned int j { 2 }; j < nr_corners - 1; ++j )
             m_faces.push_back( { m_faces.at( i ).at( 0 ), m_faces.at( i ).at( j ), m_faces.at( i ).at( j + 1 ) } );
         // Keep only the first 3 elements, which is a triangle that was skipped in the for loop
