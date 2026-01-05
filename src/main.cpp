@@ -6,6 +6,7 @@
 #include "engine/config.hpp"
 #include "engine/log.hpp"
 #include "engine/mesh.hpp"
+#include "engine/model_object.hpp"
 #include "engine/view_object.hpp"
 #include "engine/renderer.hpp"
 #include "engine/shader.hpp"
@@ -80,15 +81,20 @@ int main() {
         Camera camera { camera_position, camera_target, &shader };
         camera.set_free_view( window.get_input_manager() );
 
+        ModelObject<ModelData> model { glm::vec3 { 0.f, 0.f, 0.f } };
+        model.activate_next();
+
         Renderer renderer {};
         std::vector<std::unique_ptr<ViewObject>> render_objects {};
 
-        MeshBuilder builder { MeshBuilder::grid( 10.f, 10.f, 20, 20 ) };
+        std::random_device random_device {};
+        std::uniform_real_distribution distribution( 0.5f, 1.f );
+        auto const elevation { [&](float, float) { return distribution( random_device ); } };
+
+        MeshBuilder builder { MeshBuilder::grid( 10.f, 10.f, 20, 20, elevation ) };
         builder.translate( camera_target );
         builder.m_colours = { builder.m_vertices.size(), glm::vec3 {} };
 
-        std::random_device random_device {};
-        std::uniform_real_distribution distribution( 0.5f, 1.f );
         for ( glm::vec3 & colour : builder.m_colours ) {
             colour.g = distribution( random_device );
         }

@@ -1,7 +1,6 @@
 #ifndef DEMO_TD_MODEL_OBJECT_HPP
 #define DEMO_TD_MODEL_OBJECT_HPP
 
-
 #include "log.hpp"
 
 #include <glm/glm.hpp>
@@ -20,7 +19,7 @@ struct ModelData {
 template <typename Data>
 concept DataType = std::is_base_of_v<ModelData, Data>;
 
-/** Holds the model's data, while preventing any updates to it. This object should  */
+/** Holds the model's data, while preventing any updates to it. This object should be destroyed as soon as possible. */
 template <DataType Data>
 struct Accessor {
     Data const * data;
@@ -32,31 +31,30 @@ struct Accessor {
 };
 
 
-/** Base class for the in-game interaction models.
- *
- * Model objects have two "twins" containing the model's data. One is active and contains the model's current data, and
- * the other is used to compute the next iteration of the model in. At the end of each game tick, the active twin is
- * deactivated and the inactive twin, which should then contain the next iteration, is activated. */
+/** Base class for the in-game interaction models. */
 template <DataType Data>
 class ModelObject {
 public:
     /** Constructor and destructor. */
-    explicit ModelObject( glm::vec3 const & position = {} );
+    explicit ModelObject( glm::vec3 const & position );
     virtual ~ModelObject();
 
-    /** Returns the currently active data twin. */
-    Data const * get_data() const;
+    /** Returns the model's data. The returned accessor blocks any updates to the data, so it should be destroyed as
+     *  quickly as possible ideally. */
+    Accessor<Data> get_data() const;
 
     /** Compute the next iteration of the model in the inactive twin, and then activate it. */
     virtual void compute_next();
     virtual void activate_next();
 
 private:
-    /// Two instances of the model's data; one for the actual current data, and one for computing the next iteration.
-    std::unique_ptr<Data[2]> m_data_twin;
-    /// Which of the two data twins is currently active.
-    bool m_twin_toggle;
-    /// A mutex governing access to the active twin. Locked during activate_next(), and while get_data()
+    /** Constructor used exclusively to construct a twin model. */
+    ModelObject();
+
+    std::unique_ptr<ModelObject<Data>> m_twin;
+    std::unique_ptr<Data> m_data;
+    /// A mutex governing access to the active twin. Locked during activate_next(), and while the returned Accessor from
+    /// get_data() exists.
     std::timed_mutex m_mutex;
 };
 
@@ -74,14 +72,15 @@ Data const & Accessor<Data>::operator*() {
 
 template <DataType Data>
 ModelObject<Data>::ModelObject( glm::vec3 const & position )
-    : m_data_twin { std::make_unique<Data[2]>( position ) }, m_twin_toggle { false } {}
+    : m_twin { std::unique_ptr<ModelObject<Data>> { new ModelObject<Data>() } },
+      m_data { std::make_unique<Data>( position ) }, m_mutex {} {}
 
 template <DataType Data>
 ModelObject<Data>::~ModelObject() = default;
 
 template <DataType Data>
-Data const * ModelObject<Data>::get_data() const {
-    return Accessor<Data> { m_data_twin[m_twin_toggle].get() };
+Accessor<Data> ModelObject<Data>::get_data() const {
+    return Accessor<Data> { m_data.get(), m_mutex };
 }
 
 template <DataType Data>
@@ -94,7 +93,11 @@ void ModelObject<Data>::activate_next() {
     if ( !lock )
         Log::error( "Failed to acquire mutex, this model object's data is being read for >10ms." );
     else
-        m_twin_toggle = !m_twin_toggle;
+        std::swap( m_data, m_twin->m_data );
 }
+
+template <DataType Data>
+ModelObject<Data>::ModelObject()
+    : m_twin { nullptr }, m_data { std::make_unique<Data>() }, m_mutex {} {}
 
 #endif //DEMO_TD_MODEL_OBJECT_HPP
