@@ -1,7 +1,7 @@
 #ifndef DEMO_TD_RENDERER_HPP
 #define DEMO_TD_RENDERER_HPP
 
-#include "render_object.hpp"
+#include "view_object.hpp"
 
 #include <memory>
 #include <queue>
@@ -15,9 +15,9 @@ class RenderQueue {
 public:
     virtual ~RenderQueue();
 
-    virtual void push( RenderObject const & object ) = 0;
-    void push( RenderObject const * object );
-    virtual RenderObject const & pop() = 0;
+    virtual void push( ViewObject const & object ) = 0;
+    void push( ViewObject const * object );
+    virtual ViewObject const & pop() = 0;
     virtual bool empty() = 0;
 };
 
@@ -26,12 +26,12 @@ class NaiveRenderQueue : public RenderQueue {
 public:
     ~NaiveRenderQueue() override;
 
-    void push( RenderObject const & object ) override;
-    RenderObject const & pop() override;
+    void push( ViewObject const & object ) override;
+    ViewObject const & pop() override;
     bool empty() override;
 
 private:
-    std::queue<RenderObject const *> m_objects;
+    std::queue<ViewObject const *> m_objects;
 };
 
 /** */
@@ -40,13 +40,13 @@ public:
     explicit Renderer( std::unique_ptr<RenderQueue> && queue = nullptr );
     ~Renderer();
 
-    void register_object( RenderObject const & object );
-    void unregister_object( RenderObject const & object );
+    void register_object( ViewObject const & object );
+    void unregister_object( ViewObject const & object );
 
     void draw() const;
 
 private:
-    std::vector<RenderObject const *> m_objects;
+    std::vector<ViewObject const *> m_objects;
     std::unique_ptr<RenderQueue> m_queue;
 };
 

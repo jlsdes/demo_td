@@ -54,12 +54,14 @@ add_executable(demo_td src/main.cpp
         src/engine/ini_reader.hpp
         src/engine/log.cpp
         src/engine/log.hpp
-        src/engine/render_object.cpp
-        src/engine/render_object.hpp
+        src/engine/view_object.cpp
+        src/engine/view_object.hpp
         src/engine/renderer.cpp
         src/engine/renderer.hpp
         src/engine/mesh_builder.cpp
         src/engine/mesh_builder.hpp
+        src/engine/model_object.cpp
+        src/engine/model_object.hpp
 )
 
 # Link the necessary libraries

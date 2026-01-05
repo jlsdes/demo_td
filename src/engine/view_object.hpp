@@ -10,7 +10,7 @@ class Shader;
 
 
 /** The (base) class for any object that can be drawn. */
-class RenderObject {
+class ViewObject {
 public:
     /** Types of renderable stuff, in the order in which they'll be drawn. */
     enum Type : unsigned int {
@@ -22,8 +22,8 @@ public:
     };
 
     /** Constructor and destructor. */
-    RenderObject( Type type, Mesh && mesh, Shader * shader );
-    ~RenderObject() = default;
+    ViewObject( Type type, Mesh && mesh, Shader * shader );
+    ~ViewObject() = default;
 
     /** Draws the object on the next frame, if possible. */
     void draw() const;

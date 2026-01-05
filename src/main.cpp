@@ -6,7 +6,7 @@
 #include "engine/config.hpp"
 #include "engine/log.hpp"
 #include "engine/mesh.hpp"
-#include "engine/render_object.hpp"
+#include "engine/view_object.hpp"
 #include "engine/renderer.hpp"
 #include "engine/shader.hpp"
 #include "engine/mesh_builder.hpp"
@@ -81,7 +81,7 @@ int main() {
         camera.set_free_view( window.get_input_manager() );
 
         Renderer renderer {};
-        std::vector<std::unique_ptr<RenderObject>> render_objects {};
+        std::vector<std::unique_ptr<ViewObject>> render_objects {};
 
         MeshBuilder builder { MeshBuilder::grid( 10.f, 10.f, 20, 20 ) };
         builder.translate( camera_target );
@@ -93,7 +93,7 @@ int main() {
             colour.g = distribution( random_device );
         }
 
-        RenderObject grid { RenderObject::Terrain, builder.get_mesh(), &shader };
+        ViewObject grid { ViewObject::Terrain, builder.get_mesh(), &shader };
         renderer.register_object( grid );
 
         // for ( unsigned char i { 0 }; i < 8; ++i ) {

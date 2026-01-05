@@ -7,18 +7,18 @@
 
 RenderQueue::~RenderQueue() = default;
 
-void RenderQueue::push( RenderObject const * object ) {
+void RenderQueue::push( ViewObject const * object ) {
     push( *object );
 }
 
 NaiveRenderQueue::~NaiveRenderQueue() = default;
 
-void NaiveRenderQueue::push( RenderObject const & object ) {
+void NaiveRenderQueue::push( ViewObject const & object ) {
     m_objects.push( &object );
 }
 
-RenderObject const & NaiveRenderQueue::pop() {
-    RenderObject const * const first { m_objects.front() };
+ViewObject const & NaiveRenderQueue::pop() {
+    ViewObject const * const first { m_objects.front() };
     m_objects.pop();
     return *first;
 }
@@ -32,11 +32,11 @@ Renderer::Renderer( std::unique_ptr<RenderQueue> && queue )
 
 Renderer::~Renderer() = default;
 
-void Renderer::register_object( RenderObject const & object ) {
+void Renderer::register_object( ViewObject const & object ) {
     m_objects.emplace_back( &object );
 }
 
-void Renderer::unregister_object( RenderObject const & object ) {
+void Renderer::unregister_object( ViewObject const & object ) {
     auto const location { std::ranges::find( std::as_const(m_objects), &object ) };
     if ( location == m_objects.cend() )
         Log::error( "Attempting to remove a RenderObject that cannot be found." );
