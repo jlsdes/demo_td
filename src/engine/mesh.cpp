@@ -1,6 +1,6 @@
 #include "mesh.hpp"
 
-#include "log.hpp"
+#include "../utils/log.hpp"
 
 #include <glad/gl.h>
 

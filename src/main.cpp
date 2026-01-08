@@ -3,16 +3,16 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "engine/camera.hpp"
-#include "engine/config.hpp"
-#include "engine/log.hpp"
 #include "engine/mesh.hpp"
 #include "engine/model_object.hpp"
 #include "engine/view_object.hpp"
 #include "engine/renderer.hpp"
 #include "engine/shader.hpp"
 #include "engine/mesh_builder.hpp"
-#include "engine/time.hpp"
 #include "engine/window.hpp"
+#include "utils/config.hpp"
+#include "utils/log.hpp"
+#include "utils/time.hpp"
 
 #include <filesystem>
 #include <random>

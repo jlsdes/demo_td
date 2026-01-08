@@ -1,6 +1,6 @@
 #include "camera.hpp"
 #include "shader.hpp"
-#include "time.hpp"
+#include "../utils/time.hpp"
 
 #include <GLFW/glfw3.h>
 #include <glm/gtc/matrix_transform.hpp>

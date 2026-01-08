@@ -1,7 +1,6 @@
 #include "view_object.hpp"
-
-#include "log.hpp"
 #include "shader.hpp"
+#include "../utils/log.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 

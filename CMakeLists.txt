@@ -46,14 +46,14 @@ add_executable(demo_td src/main.cpp
         src/engine/camera.hpp
         src/engine/input_manager.cpp
         src/engine/input_manager.hpp
-        src/engine/time.cpp
-        src/engine/time.hpp
-        src/engine/config.cpp
-        src/engine/config.hpp
-        src/engine/ini_reader.cpp
-        src/engine/ini_reader.hpp
-        src/engine/log.cpp
-        src/engine/log.hpp
+        src/utils/time.cpp
+        src/utils/time.hpp
+        src/utils/config.cpp
+        src/utils/config.hpp
+        src/utils/ini_reader.cpp
+        src/utils/ini_reader.hpp
+        src/utils/log.cpp
+        src/utils/log.hpp
         src/engine/view_object.cpp
         src/engine/view_object.hpp
         src/engine/renderer.cpp
