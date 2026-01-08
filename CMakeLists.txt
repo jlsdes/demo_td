@@ -62,6 +62,8 @@ add_executable(demo_td src/main.cpp
         src/engine/mesh_builder.hpp
         src/engine/model_object.cpp
         src/engine/model_object.hpp
+        src/engine/model_manager.cpp
+        src/engine/model_manager.hpp
 )
 
 # Link the necessary libraries

@@ -4,11 +4,12 @@
 
 #include "engine/camera.hpp"
 #include "engine/mesh.hpp"
+#include "engine/mesh_builder.hpp"
 #include "engine/model_object.hpp"
-#include "engine/view_object.hpp"
+#include "engine/model_manager.hpp"
 #include "engine/renderer.hpp"
 #include "engine/shader.hpp"
-#include "engine/mesh_builder.hpp"
+#include "engine/view_object.hpp"
 #include "engine/window.hpp"
 #include "utils/config.hpp"
 #include "utils/log.hpp"
@@ -16,6 +17,7 @@
 
 #include <filesystem>
 #include <random>
+#include <syncstream>
 
 
 /** Reports the framerate of the program at regular intervals; to be called after rendering each frame. */
@@ -81,9 +83,12 @@ int main() {
         Camera camera { camera_position, camera_target, &shader };
         camera.set_free_view( window.get_input_manager() );
 
-        ModelObject model { glm::vec3 { 0.f, 0.f, 0.f } };
-        auto const accessor { model.get_render_data<ModelData>() };
-        model.next();
+        ModelManager model_manager {};
+        for ( unsigned int i { 0 }; i < 100; ++i ) {
+            auto model { std::make_unique<ModelObject>( glm::vec3 { static_cast<float>(i), 0.f, 0.f } ) };
+            model_manager.add_model( std::move( model ) );
+        }
+        model_manager.update_models();
 
         Renderer renderer {};
         std::vector<std::unique_ptr<ViewObject>> render_objects {};

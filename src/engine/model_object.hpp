@@ -99,7 +99,7 @@ Accessor<Data> ModelObject::get_render_data() {
 
 template <DataType Data>
 Data const * ModelObject::get_model_data() const {
-    return m_data[m_active];
+    return &m_data[m_active];
 }
 
 #endif //DEMO_TD_MODEL_OBJECT_HPP
