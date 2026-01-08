@@ -81,15 +81,16 @@ int main() {
         Camera camera { camera_position, camera_target, &shader };
         camera.set_free_view( window.get_input_manager() );
 
-        ModelObject<ModelData> model { glm::vec3 { 0.f, 0.f, 0.f } };
-        model.activate_next();
+        ModelObject model { glm::vec3 { 0.f, 0.f, 0.f } };
+        auto const accessor { model.get_render_data<ModelData>() };
+        model.next();
 
         Renderer renderer {};
         std::vector<std::unique_ptr<ViewObject>> render_objects {};
 
         std::random_device random_device {};
         std::uniform_real_distribution distribution( 0.5f, 1.f );
-        auto const elevation { [&](float, float) { return distribution( random_device ); } };
+        auto const elevation { [&]( float, float ) { return distribution( random_device ); } };
 
         MeshBuilder builder { MeshBuilder::grid( 10.f, 10.f, 20, 20, elevation ) };
         builder.translate( camera_target );
