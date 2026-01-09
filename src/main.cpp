@@ -17,7 +17,6 @@
 
 #include <filesystem>
 #include <random>
-#include <syncstream>
 
 
 /** Reports the framerate of the program at regular intervals; to be called after rendering each frame. */
@@ -84,11 +83,15 @@ int main() {
         camera.set_free_view( window.get_input_manager() );
 
         ModelManager model_manager {};
+        ModelManager also_model_manager {};
         for ( unsigned int i { 0 }; i < 100; ++i ) {
             auto model { std::make_unique<ModelObject>( glm::vec3 { static_cast<float>(i), 0.f, 0.f } ) };
             model_manager.add_model( std::move( model ) );
+            auto also_model { std::make_unique<ModelObject>( glm::vec3 { static_cast<float>(i), 0.f, 0.f } ) };
+            also_model_manager.add_model( std::move( also_model ) );
         }
         model_manager.update_models();
+        also_model_manager.update_models();
 
         Renderer renderer {};
         std::vector<std::unique_ptr<ViewObject>> render_objects {};

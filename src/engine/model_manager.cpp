@@ -1,22 +1,11 @@
 #include "model_manager.hpp"
 #include "../utils/log.hpp"
 
+#include <mutex>
 #include <ranges>
+#include <semaphore>
+#include <thread>
 
-
-ModelManager::ModelManager()
-    : m_models {}, m_threads {} {
-    for ( unsigned int i { 0 }; i < s_number_threads; ++i )
-        m_threads.at( i ) = std::thread { worker_thread, std::ref( m_worker_data ) };
-}
-
-ModelManager::~ModelManager() {
-    // Signal the worker threads that they can stop executing
-    m_worker_data.finish = true;
-    m_worker_data.filled.release( s_number_threads );
-    for ( unsigned int i { 0 }; i < s_number_threads; ++i )
-        m_threads.at( i ).join();
-}
 
 unsigned int ModelManager::add_model( std::unique_ptr<ModelObject> && model ) {
     static unsigned int model_id { 0 };
@@ -62,28 +51,68 @@ bool ModelManager::remove_model( unsigned int const model_id ) {
     return true;
 }
 
-void ModelManager::update_models() {
-    for ( auto & model : std::ranges::views::values(m_models) ) {
-        m_worker_data.empty.acquire();
-        std::lock_guard queue_lock { m_worker_data.queue_mutex };
-        m_worker_data.queue.at( m_worker_data.end ) = model.get();
-        m_worker_data.end = (m_worker_data.end + 1) % s_buffer_size;
-        m_worker_data.filled.release();
-    }
-}
+/// The buffer size used for the model queue, which delivers models to update to the worker threads.
+unsigned int constexpr g_number_workers { 4 };
+unsigned int constexpr g_buffer_size { 16 };
 
-void worker_thread( ModelManager::WorkerData & data ) {
+/** A group of worker threads used to update the models. */
+struct WorkerPool {
+    std::array<std::thread, g_number_workers> threads;
+
+    struct Data {
+        std::array<ModelObject *, g_buffer_size> queue {};
+        unsigned int begin { 0 };
+        unsigned int end { 0 };
+        bool finish { false };
+
+        std::counting_semaphore<g_buffer_size> filled { 0 };
+        std::counting_semaphore<g_buffer_size> empty { g_buffer_size };
+        std::mutex queue_mutex {};
+    } data {};
+
+    WorkerPool();
+    ~WorkerPool();
+    WorkerPool( WorkerPool const & ) = delete;
+    WorkerPool( WorkerPool && ) = delete;
+    WorkerPool & operator=( WorkerPool const & ) = delete;
+    WorkerPool & operator=( WorkerPool && ) = delete;
+};
+
+void worker_thread( WorkerPool::Data & data ) {
     data.filled.acquire();
     do {
         ModelObject * model;
         {
             std::lock_guard queue_lock { data.queue_mutex }; // Lock the queue to extract the next model safely
             model = data.queue.at( data.begin );
-            data.begin = (data.begin + 1) % ModelManager::s_buffer_size;
+            data.begin = (data.begin + 1) % data.queue.size();
             data.empty.release();
         }
         model->update();
 
         data.filled.acquire(); // Wait until there's something new in the queue for the next iteration
     } while ( not data.finish );
+}
+
+WorkerPool::WorkerPool() : threads {}, data {} {
+    for ( auto & thread : threads )
+        thread = std::thread { worker_thread, std::ref( data ) };
+}
+
+WorkerPool::~WorkerPool() {
+    data.finish = true;
+    data.filled.release( g_number_workers );
+    for ( auto & thread : threads )
+        thread.join();
+}
+
+void ModelManager::update_models() {
+    static WorkerPool workers {};
+    for ( auto & model : std::ranges::views::values( m_models ) ) {
+        workers.data.empty.acquire();
+        std::lock_guard queue_lock { workers.data.queue_mutex };
+        workers.data.queue.at( workers.data.end ) = model.get();
+        workers.data.end = (workers.data.end + 1) % g_buffer_size;
+        workers.data.filled.release();
+    }
 }

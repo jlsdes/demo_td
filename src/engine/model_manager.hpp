@@ -3,19 +3,14 @@
 
 #include "model_object.hpp"
 
-#include <array>
 #include <memory>
-#include <mutex>
-#include <semaphore>
-#include <thread>
 #include <vector>
 
 
 /** Manages the model objects, and some worker threads. */
 class ModelManager {
 public:
-    ModelManager();
-    ~ModelManager();
+    ModelManager() = default;
 
     /** Adds the ModelObject to the ModelManager and returns the object's new ID, which can be used to retrieve it or
      *  remove it from the manager. */
@@ -26,36 +21,13 @@ public:
     /** Removes the ModelObject from the ModelManager, and returns whether this was successful. */
     bool remove_model( unsigned int model_id );
 
+    /** Updates all registered ModelObjects in parallel using some worker threads. */
     void update_models();
 
 private:
     /// All registered models and their IDs; these are stored in ascending order of their IDs.
     std::vector<std::pair<unsigned int, std::unique_ptr<ModelObject>>> m_models;
-
-    /// The buffer size used for the model queue, which delivers models to update to the worker threads.
-    static unsigned int constexpr s_buffer_size { 16 };
-    static unsigned int constexpr s_number_threads { 4 };
-
-    /// The worker threads used for updating models.
-    std::array<std::thread, 4> m_threads;
-
-    /// The data passed to the worker threads, and the communication utilities.
-    struct WorkerData {
-        std::array<ModelObject *, s_buffer_size> queue {};
-        unsigned int begin { 0 };
-        unsigned int end { 0 };
-        bool finish { false };
-
-        std::counting_semaphore<s_buffer_size> filled { 0 };
-        std::counting_semaphore<s_buffer_size> empty { s_buffer_size };
-        std::mutex queue_mutex {};
-    } m_worker_data {};
-
-    /** The code that each of the worker threads will run. */
-    friend void worker_thread( WorkerData & data );
 };
-
-void worker_thread( ModelManager::WorkerData & data );
 
 
 #endif //DEMO_TD_MODEL_MANAGER_HPP

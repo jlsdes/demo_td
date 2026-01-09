@@ -64,6 +64,7 @@ add_executable(demo_td src/main.cpp
         src/engine/model_object.hpp
         src/engine/model_manager.cpp
         src/engine/model_manager.hpp
+        src/utils/producer_consumer.hpp
 )
 
 # Link the necessary libraries
