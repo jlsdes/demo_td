@@ -57,18 +57,18 @@ unsigned int constexpr g_buffer_size { 16 };
 
 /** A group of worker threads used to update the models. */
 struct WorkerPool {
-    std::array<std::thread, g_number_workers> threads;
+    std::array<std::thread, g_number_workers> threads {};
 
-    struct Data {
+    struct Parameters {
         std::array<ModelObject *, g_buffer_size> queue {};
         unsigned int begin { 0 };
         unsigned int end { 0 };
-        bool finish { false };
+        bool finished { false };
 
         std::counting_semaphore<g_buffer_size> filled { 0 };
         std::counting_semaphore<g_buffer_size> empty { g_buffer_size };
         std::mutex queue_mutex {};
-    } data {};
+    } params {};
 
     WorkerPool();
     ~WorkerPool();
@@ -78,9 +78,9 @@ struct WorkerPool {
     WorkerPool & operator=( WorkerPool && ) = delete;
 };
 
-void worker_thread( WorkerPool::Data & data ) {
+void worker_thread( WorkerPool::Parameters & data ) {
     data.filled.acquire();
-    do {
+    while ( not data.finished ) {
         ModelObject * model;
         {
             std::lock_guard queue_lock { data.queue_mutex }; // Lock the queue to extract the next model safely
@@ -91,17 +91,17 @@ void worker_thread( WorkerPool::Data & data ) {
         model->update();
 
         data.filled.acquire(); // Wait until there's something new in the queue for the next iteration
-    } while ( not data.finish );
+    }
 }
 
-WorkerPool::WorkerPool() : threads {}, data {} {
+WorkerPool::WorkerPool() {
     for ( auto & thread : threads )
-        thread = std::thread { worker_thread, std::ref( data ) };
+        thread = std::thread { worker_thread, std::ref( params ) };
 }
 
 WorkerPool::~WorkerPool() {
-    data.finish = true;
-    data.filled.release( g_number_workers );
+    params.finished = true;
+    params.filled.release( static_cast<long>(threads.size()) );
     for ( auto & thread : threads )
         thread.join();
 }
@@ -109,10 +109,14 @@ WorkerPool::~WorkerPool() {
 void ModelManager::update_models() {
     static WorkerPool workers {};
     for ( auto & model : std::ranges::views::values( m_models ) ) {
-        workers.data.empty.acquire();
-        std::lock_guard queue_lock { workers.data.queue_mutex };
-        workers.data.queue.at( workers.data.end ) = model.get();
-        workers.data.end = (workers.data.end + 1) % g_buffer_size;
-        workers.data.filled.release();
+
+        // If the queue has an empty space, push the next model, else update it in this thread
+        if (workers.params.empty.try_acquire()) {
+            std::lock_guard queue_lock { workers.params.queue_mutex };
+            workers.params.queue.at( workers.params.end ) = model.get();
+            workers.params.end = (workers.params.end + 1) % workers.params.queue.size();
+            workers.params.filled.release();
+        } else
+            model->update();
     }
 }
