@@ -17,6 +17,7 @@
 
 #include <filesystem>
 #include <random>
+#include <thread>
 
 
 /** Reports the framerate of the program at regular intervals; to be called after rendering each frame. */
@@ -38,6 +39,53 @@ void keep_time() {
     }
 }
 
+void render_loop( Window const & window, Renderer const & renderer, Camera & camera ) {
+    unsigned int counter { 0 };
+    // GLFW handles FPS limiting if VSync is enabled, which it probably is
+    while ( !window.is_closing() ) {
+        window.clear();
+        renderer.draw();
+        camera.update();
+        window.render();
+
+        if ( ++counter > 120 )
+            window.close();
+    }
+}
+
+void game_loop( Window const & window ) {
+    ModelManager model_manager {};
+    ModelManager also_model_manager {};
+    for ( unsigned int i { 0 }; i < 100; ++i ) {
+        auto model { std::make_unique<ModelObject>( glm::vec3 { static_cast<float>(i), 0.f, 0.f } ) };
+        model_manager.add_model( std::move( model ) );
+        auto also_model { std::make_unique<ModelObject>( glm::vec3 { static_cast<float>(i), 0.f, 0.f } ) };
+        also_model_manager.add_model( std::move( also_model ) );
+    }
+
+    double constexpr ticks_per_second { 100. };
+    std::chrono::duration<double> constexpr tick_duration { 1. / ticks_per_second };
+
+    double margin { 0. };
+    unsigned int counter { 0 };
+    while ( !window.is_closing() ) {
+        auto const loop_start { std::chrono::steady_clock::now() };
+
+        Time::loop_start();
+        glfwPollEvents();
+        model_manager.update_models();
+        also_model_manager.update_models();
+
+        // Adjust the sleeping duration slightly according to the accuracy of the previous iteration's duration
+        auto const sleepy_time {
+            tick_duration - std::chrono::duration<double> { margin > 0 ? margin : 0 }
+        };
+        auto wake_up_time { loop_start + sleepy_time };
+        std::this_thread::sleep_until( wake_up_time );
+        margin = Time::get_elapsed_time() - tick_duration.count();
+        Log::debug( "Iteration ", counter++, "\t-- Tick length ", Time::get_elapsed_time(), "\t-- Margin ", margin );
+    }
+}
 
 int main() {
     auto const main_dir { (std::filesystem::path( __FILE__ ) / "../../").lexically_normal() };
@@ -82,17 +130,6 @@ int main() {
         Camera camera { camera_position, camera_target, &shader };
         camera.set_free_view( window.get_input_manager() );
 
-        ModelManager model_manager {};
-        ModelManager also_model_manager {};
-        for ( unsigned int i { 0 }; i < 100; ++i ) {
-            auto model { std::make_unique<ModelObject>( glm::vec3 { static_cast<float>(i), 0.f, 0.f } ) };
-            model_manager.add_model( std::move( model ) );
-            auto also_model { std::make_unique<ModelObject>( glm::vec3 { static_cast<float>(i), 0.f, 0.f } ) };
-            also_model_manager.add_model( std::move( also_model ) );
-        }
-        model_manager.update_models();
-        also_model_manager.update_models();
-
         Renderer renderer {};
         std::vector<std::unique_ptr<ViewObject>> render_objects {};
 
@@ -127,17 +164,9 @@ int main() {
         float constexpr fov { glm::quarter_pi<float>() }; // 45 degrees
         shader.set_uniform( "projection", glm::perspective( fov, 1200.f / 800.f, 0.1f, 100.f ) );
 
-        // Main program loop
-        while ( !window.is_closing() ) {
-            Time::loop_start();
-            window.clear();
-
-            glfwPollEvents();
-            renderer.draw();
-            camera.update();
-            window.render();
-            // keep_time();
-        }
+        std::thread game_thread { game_loop, std::ref( window ) };
+        render_loop( window, renderer, camera );
+        game_thread.join();
     }
     glfwTerminate();
     return 0;

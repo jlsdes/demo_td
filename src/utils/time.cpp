@@ -2,7 +2,7 @@
 
 
 Time::Time()
-    : m_initialisation_time { Clock::now() }, m_last_start { Clock::now() }, m_elapsed_time { 0. } {
+    : m_initialisation_time { Clock::now() }, m_last_start { m_initialisation_time }, m_elapsed_time { 0. } {
 }
 
 Time & Time::get_instance() {
@@ -18,8 +18,14 @@ double Time::get_time() {
 void Time::loop_start() {
     Time & instance { get_instance() };
     Timestamp const current_time { Clock::now() };
-    auto const duration { current_time - instance.m_last_start };
-    instance.m_elapsed_time = std::chrono::duration<double>( duration ).count();
+    // The elapsed time for the very first iteration should simply remain 0, rather than some arbitrary time period
+    // spent initialising the program
+    if ( instance.m_last_start == instance.m_initialisation_time )
+        instance.m_elapsed_time = 0.;
+    else {
+        auto const duration { current_time - instance.m_last_start };
+        instance.m_elapsed_time = std::chrono::duration<double>( duration ).count();
+    }
     instance.m_last_start = current_time;
 }
 
