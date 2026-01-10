@@ -124,7 +124,7 @@ void render_thread( Window & window, std::latch & initialisation_latch ) {
 }
 
 void game_thread( Window const & window, std::latch & initialisation_latch ) {
-    // Set up some stuff for the some basic testing
+    // Set up some stuff for some basic testing
     ModelManager model_manager {};
     ModelManager also_model_manager {};
     for ( unsigned int i { 0 }; i < 100; ++i ) {
@@ -140,13 +140,17 @@ void game_thread( Window const & window, std::latch & initialisation_latch ) {
     double constexpr tick_duration { 1. / 100. };
     double margin { 0. };
     while ( !window.is_closing() ) {
-
-        Time::loop_start();
+        double const loop_start { Time::loop_start() };
         glfwPollEvents();
         model_manager.update_models();
         also_model_manager.update_models();
 
-        double const sleep_time { tick_duration - ( margin > 0 ? margin : 0 ) };
+        // The computations are likely to be done before the next game tick, so this thread needs to sleep briefly
+        // At the time of implementation, subtracting the previous margin of error twice seems to be quite accurate
+        // TODO verify this when actual computations are happening
+        double const time_left { tick_duration - (Time::get_time() - loop_start) };
+        double const sleep_time { time_left - (margin > 0 ? 2 * margin : 0) };
+        // Log::debug( "Sleeping ", sleep_time, "s\t; Elapsed time ", Time::get_elapsed_time() );
         std::this_thread::sleep_for( std::chrono::duration<double> { sleep_time } );
         margin = Time::get_elapsed_time() - tick_duration;
     }

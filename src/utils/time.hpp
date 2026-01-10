@@ -29,8 +29,9 @@ public:
     [[nodiscard]] static double get_time();
 
     /** Keeps track of when the main program loop starts, and how much time has elapsed. This function is to be called
-     *  at the start of the main loop, such that get_elapsed_time() is correct. */
-    static void loop_start();
+     *  at the start of the main loop, such that get_elapsed_time() is correct. Returns the timestamp, as returned by
+     *  get_time(), of the start of the loop. */
+    static double loop_start();
 
     /** Returns the time in seconds that has elapsed since the last main loop. */
     [[nodiscard]] static double get_elapsed_time();
