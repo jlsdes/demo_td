@@ -65,6 +65,9 @@ add_executable(demo_td src/main.cpp
         src/engine/model_manager.cpp
         src/engine/model_manager.hpp
         src/engine/controller_object.hpp
+        src/engine/controller_manager.cpp
+        src/engine/controller_manager.hpp
+        src/utils/manager.hpp
 )
 
 # Link the necessary libraries

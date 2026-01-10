@@ -3,6 +3,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "engine/camera.hpp"
+#include "engine/controller_manager.hpp"
 #include "engine/mesh.hpp"
 #include "engine/mesh_builder.hpp"
 #include "engine/model_object.hpp"
@@ -123,15 +124,31 @@ void render_thread( Window & window, std::latch & initialisation_latch ) {
     }
 }
 
+struct TempController : public ControllerObject {
+    unsigned int id;
+
+    explicit TempController( unsigned int const id ) : id { id } {}
+
+    void update() const override { Log::debug( "Updating controller ", id ); }
+};
+
 void game_thread( Window const & window, std::latch & initialisation_latch ) {
     // Set up some stuff for some basic testing
     ModelManager model_manager {};
     ModelManager also_model_manager {};
+    ControllerManager controller_manager {};
+
     for ( unsigned int i { 0 }; i < 100; ++i ) {
         auto model { std::make_unique<ModelObject>( glm::vec3 { static_cast<float>(i), 0.f, 0.f } ) };
         model_manager.add_model( std::move( model ) );
         auto also_model { std::make_unique<ModelObject>( glm::vec3 { static_cast<float>(i), 0.f, 0.f } ) };
         also_model_manager.add_model( std::move( also_model ) );
+
+        controller_manager.push( std::make_unique<TempController>( i ) );
+    }
+
+    for ( auto iterator { controller_manager.begin() }; iterator != controller_manager.end(); ++iterator ) {
+        iterator->update();
     }
 
     // Wait until the other thread is ready as well
