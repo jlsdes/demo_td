@@ -2,6 +2,7 @@
 #define DEMO_TD_RENDER_OBJECT_HPP
 
 #include "mesh.hpp"
+#include "../utils/manager.hpp"
 
 #include <glm/glm.hpp>
 
@@ -10,7 +11,7 @@ class Shader;
 
 
 /** The (base) class for any object that can be drawn. */
-class ViewObject {
+class ViewObject : public ManagedObject {
 public:
     /** Types of renderable stuff, in the order in which they'll be drawn. */
     enum Type : unsigned int {
@@ -23,9 +24,10 @@ public:
 
     /** Constructor and destructor. */
     ViewObject( Type type, Mesh && mesh, Shader * shader );
-    ~ViewObject() = default;
+    ~ViewObject() override = default;
 
-    /** Draws the object on the next frame, if possible. */
+    /** Updates and draws the object, CPU- and GPU-side respectively (more or less). */
+    void update() override;
     void draw() const;
 
     /** Toggles whether the object should actually be rendered. */

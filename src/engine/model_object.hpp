@@ -1,6 +1,8 @@
 #ifndef DEMO_TD_MODEL_OBJECT_HPP
 #define DEMO_TD_MODEL_OBJECT_HPP
 
+#include "../utils/manager.hpp"
+
 #include <glm/glm.hpp>
 
 #include <chrono>
@@ -30,7 +32,7 @@ struct Accessor {
 
 
 /** Base class for the in-game interaction models. */
-class ModelObject {
+class ModelObject : public ManagedObject {
     /** Base constructor. */
     explicit ModelObject( std::unique_ptr<ModelData[]> && data );
 public:
@@ -40,7 +42,7 @@ public:
     ModelObject & operator=( ModelObject const & other ) = delete;
     ModelObject( ModelObject && other ) noexcept;
     ModelObject & operator=( ModelObject && other ) = delete;
-    virtual ~ModelObject() = default;
+    ~ModelObject() override = default;
 
 protected:
     /** Constructor for subclasses that uses a subclass of ModelData as its data type. */
@@ -59,7 +61,7 @@ public:
     Data const * get_model_data() const;
 
     /** Computes the next iteration of the model in the inactive twin, and then activates it. */
-    virtual void update();
+    void update() override;
     virtual void next();
 
 protected:

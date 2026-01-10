@@ -1,14 +1,17 @@
 #ifndef DEMO_TD_CONTROLLER_OBJECT_HPP
 #define DEMO_TD_CONTROLLER_OBJECT_HPP
 
+#include "../utils/manager.hpp"
+
 
 /** (Base) class for all controllers, i.e. the behaviour of the entities and player input handler. */
-class ControllerObject {
+class ControllerObject: public ManagedObject {
 public:
+    // TODO Figure out how to do this, because atm this is just identical to ManagedObject
     ControllerObject() = default;
-    virtual ~ControllerObject() = default;
+    ~ControllerObject() override = default;
 
-    virtual void update() const = 0;
+    void update() override = 0;
 };
 
 

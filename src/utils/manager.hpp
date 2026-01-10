@@ -5,12 +5,26 @@
 #include <vector>
 
 
-template <typename ObjectType>
+/** Abstract base class for types being managed by a Manager object. */
+class ManagedObject {
+public:
+    ManagedObject() = default;
+    virtual ~ManagedObject() = default;
+
+    virtual void update() = 0;
+};
+
+/** Defines a type derived from ManagedObject. Objects of this type must have a function `void update()`. */
+template <typename T>
+concept ManagedType = std::is_base_of_v<ManagedObject, T>;
+
+
+template <ManagedType ObjectType>
 using IdPair = std::pair<unsigned int, std::unique_ptr<ObjectType>>;
 
 
 /** A base class for any kind of manager class. */
-template <typename ObjectType>
+template <ManagedType ObjectType>
 class Manager {
 public:
     /** Constructors and destructor; copying is not allowed to avoid having multiple Manager objects managing the same
@@ -69,13 +83,13 @@ private:
 };
 
 
-template <typename ObjectType>
+template <ManagedType ObjectType>
 unsigned int Manager<ObjectType>::push( std::unique_ptr<ObjectType> && object ) {
     m_objects.emplace_back( m_next_id, std::move( object ) );
     return m_next_id++;
 }
 
-template <typename ObjectType>
+template <ManagedType ObjectType>
 bool Manager<ObjectType>::pop( unsigned int const object_id ) {
     auto const iterator { binary_search( object_id ) };
     bool const id_found { iterator != m_objects.cend() };
@@ -84,24 +98,24 @@ bool Manager<ObjectType>::pop( unsigned int const object_id ) {
     return id_found;
 }
 
-template <typename ObjectType>
+template <ManagedType ObjectType>
 bool Manager<ObjectType>::contains( unsigned int const object_id ) const {
     auto const iterator { binary_search( object_id ) };
     return iterator != m_objects.cend();
 }
 
-template <typename ObjectType>
+template <ManagedType ObjectType>
 ObjectType * Manager<ObjectType>::get( unsigned int const object_id ) const {
     auto const iterator { binary_search( object_id ) };
     return iterator == m_objects.cend() ? nullptr : iterator->second.get();
 }
 
-template <typename ObjectType>
+template <ManagedType ObjectType>
 size_t Manager<ObjectType>::size() const {
     return m_objects.size();
 }
 
-template <typename ObjectType>
+template <ManagedType ObjectType>
 std::vector<IdPair<ObjectType>>::const_iterator Manager<ObjectType>::binary_search( unsigned int const id ) const {
     if ( m_objects.empty() )
         return m_objects.cend();
@@ -122,70 +136,70 @@ std::vector<IdPair<ObjectType>>::const_iterator Manager<ObjectType>::binary_sear
     return id == iterator->first ? iterator : m_objects.cend();
 }
 
-template <typename ObjectType>
+template <ManagedType ObjectType>
 Manager<ObjectType>::Iterator::Iterator( Manager const & manager, unsigned int const index )
     : m_manager { manager }, m_index { index } {}
 
-template <typename ObjectType>
+template <ManagedType ObjectType>
 Manager<ObjectType>::Iterator & Manager<ObjectType>::Iterator::operator++() {
     ++m_index;
     return *this;
 }
 
-template <typename ObjectType>
+template <ManagedType ObjectType>
 Manager<ObjectType>::Iterator & Manager<ObjectType>::Iterator::operator--() {
     --m_index;
     return *this;
 }
 
-template <typename ObjectType>
+template <ManagedType ObjectType>
 Manager<ObjectType>::Iterator Manager<ObjectType>::Iterator::operator++( int ) {
     ++m_index;
     return { m_manager, m_index - 1 };
 }
 
-template <typename ObjectType>
+template <ManagedType ObjectType>
 Manager<ObjectType>::Iterator Manager<ObjectType>::Iterator::operator--( int ) {
     --m_index;
     return { m_manager, m_index + 1 };
 }
 
-template <typename ObjectType>
+template <ManagedType ObjectType>
 Manager<ObjectType>::Iterator Manager<ObjectType>::Iterator::operator+( unsigned int const offset ) {
     return { m_manager, m_index + offset };
 }
 
-template <typename ObjectType>
+template <ManagedType ObjectType>
 Manager<ObjectType>::Iterator Manager<ObjectType>::Iterator::operator-( unsigned int const offset ) {
     return { m_manager, m_index - offset };
 }
 
-template <typename ObjectType>
+template <ManagedType ObjectType>
 bool Manager<ObjectType>::Iterator::operator==( Iterator const & other ) const {
     return &m_manager == &other.m_manager && m_index == other.m_index;
 }
 
-template <typename ObjectType>
+template <ManagedType ObjectType>
 bool Manager<ObjectType>::Iterator::operator!=( Iterator const & other ) const {
     return &m_manager != &other.m_manager || m_index != other.m_index;
 }
 
-template <typename ObjectType>
+template <ManagedType ObjectType>
 ObjectType & Manager<ObjectType>::Iterator::operator*() const {
     return *m_manager.m_objects.at( m_index ).second.get();
 }
 
-template <typename ObjectType>
+template <ManagedType ObjectType>
 ObjectType * Manager<ObjectType>::Iterator::operator->() const {
     return m_manager.m_objects.at( m_index ).second.get();
 }
 
-template <typename ObjectType>
+template <ManagedType ObjectType>
 Manager<ObjectType>::Iterator Manager<ObjectType>::begin() const {
     return { *this, 0 };
 }
 
-template <typename ObjectType>
+template <ManagedType ObjectType>
 Manager<ObjectType>::Iterator Manager<ObjectType>::end() const {
     return { *this, static_cast<unsigned int>(size()) };
 }

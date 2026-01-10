@@ -129,7 +129,7 @@ struct TempController : public ControllerObject {
 
     explicit TempController( unsigned int const id ) : id { id } {}
 
-    void update() const override { Log::debug( "Updating controller ", id ); }
+    void update() override { Log::debug( "Updating controller ", id ); }
 };
 
 void game_thread( Window const & window, std::latch & initialisation_latch ) {
