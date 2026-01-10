@@ -7,50 +7,6 @@
 #include <thread>
 
 
-unsigned int ModelManager::add_model( std::unique_ptr<ModelObject> && model ) {
-    static unsigned int model_id { 0 };
-    m_models.emplace_back( model_id, std::move( model ) );
-    return model_id++;
-}
-
-using ModelVector = std::vector<std::pair<unsigned int, std::unique_ptr<ModelObject>>>;
-
-/** Returns the index of the model with the given ID, or models.size() if the given ID could not be found. */
-ModelVector::const_iterator binary_search( ModelVector const & models, unsigned int const model_id ) {
-    if ( models.empty() )
-        return models.cend();
-
-    unsigned long min_index { 0 };
-    unsigned long max_index { models.size() - 1 };
-    while ( min_index != max_index ) {
-        unsigned long const centre_index { (min_index + max_index) / 2 };
-
-        auto const iterator { models.cbegin() + static_cast<long>(centre_index) };
-        if ( model_id == iterator->first )
-            return iterator;
-
-        if ( model_id < iterator->first )
-            max_index = centre_index - 1;
-        else
-            min_index = centre_index + 1;
-    }
-    auto const iterator { models.cbegin() + static_cast<long>(min_index) };
-    return iterator->first == model_id ? iterator : models.cend();
-}
-
-ModelObject * ModelManager::get_model( unsigned int const model_id ) const {
-    auto const iterator { binary_search( m_models, model_id ) };
-    return iterator == m_models.cend() ? nullptr : iterator->second.get();
-}
-
-bool ModelManager::remove_model( unsigned int const model_id ) {
-    auto const iterator { binary_search( m_models, model_id ) };
-    if ( iterator == m_models.cend() )
-        return false;
-    m_models.erase( iterator );
-    return true;
-}
-
 /// The buffer size used for the model queue, which delivers models to update to the worker threads.
 unsigned int constexpr g_number_workers { 4 };
 unsigned int constexpr g_buffer_size { 16 };

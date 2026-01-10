@@ -140,9 +140,9 @@ void game_thread( Window const & window, std::latch & initialisation_latch ) {
 
     for ( unsigned int i { 0 }; i < 100; ++i ) {
         auto model { std::make_unique<ModelObject>( glm::vec3 { static_cast<float>(i), 0.f, 0.f } ) };
-        model_manager.add_model( std::move( model ) );
+        model_manager.push( std::move( model ) );
         auto also_model { std::make_unique<ModelObject>( glm::vec3 { static_cast<float>(i), 0.f, 0.f } ) };
-        also_model_manager.add_model( std::move( also_model ) );
+        also_model_manager.push( std::move( also_model ) );
 
         controller_manager.push( std::make_unique<TempController>( i ) );
     }

@@ -1,8 +1,6 @@
 #ifndef DEMO_TD_MANAGER_HPP
 #define DEMO_TD_MANAGER_HPP
 
-#include <cassert>
-#include <iterator>
 #include <memory>
 #include <vector>
 
@@ -15,7 +13,14 @@ using IdPair = std::pair<unsigned int, std::unique_ptr<ObjectType>>;
 template <typename ObjectType>
 class Manager {
 public:
+    /** Constructors and destructor; copying is not allowed to avoid having multiple Manager objects managing the same
+     *  object(s). */
     Manager() = default;
+    Manager( Manager const & ) = delete;
+    Manager & operator=( Manager const & ) = delete;
+    Manager( Manager && ) = default;
+    Manager & operator=( Manager && ) = default;
+    virtual ~Manager() = default;
 
     [[nodiscard]] bool contains( unsigned int object_id ) const;
     [[nodiscard]] ObjectType * get( unsigned int object_id ) const;
@@ -24,7 +29,7 @@ public:
     unsigned int push( std::unique_ptr<ObjectType> && object );
     bool pop( unsigned int object_id );
 
-    /** Simple iterator wrapping the m_objects iterator. */
+    /** A random-access iterator for accessing the stored objects. */
     class Iterator {
     public:
         Iterator( Manager const & manager, unsigned int index );
@@ -56,8 +61,10 @@ protected:
     std::vector<IdPair<ObjectType>> m_objects;
 
 private:
+    /// A counter to prevent multiple objects being registered with the same ID.
     unsigned int m_next_id { 0 };
 
+    /** Utility function to access object pairs internally. */
     std::vector<IdPair<ObjectType>>::const_iterator binary_search( unsigned int id ) const;
 };
 
