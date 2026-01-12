@@ -18,8 +18,6 @@
 
 #include <filesystem>
 #include <latch>
-#include <random>
-#include <thread>
 
 
 std::filesystem::path get_main_dir() {
@@ -81,33 +79,19 @@ void render_thread( Window & window, std::latch & initialisation_latch ) {
     Renderer renderer {};
     std::vector<std::unique_ptr<ViewObject>> render_objects {};
 
-    std::random_device random_device {};
-    std::uniform_real_distribution distribution( 0.5f, 1.f );
-    auto const elevation { [&]( float, float ) { return distribution( random_device ); } };
+    auto builder { MeshBuilder::sphere( 10 ) };
+    builder.transform( glm::identity<glm::mat3>() * 0.3f );
+    for ( unsigned char i { 0 }; i < 8; ++i ) {
+        glm::vec3 offset { i & 4 ? -0.5f : 0.5f, i & 2 ? -0.5f : 0.5f, i & 1 ? -0.5f : 0.5f };
 
-    MeshBuilder builder { MeshBuilder::grid( 10.f, 10.f, 20, 20, elevation ) };
-    builder.translate( camera_target );
-    builder.m_colours = { builder.m_vertices.size(), glm::vec3 {} };
+        builder.m_colours = { builder.m_vertices.size(), offset + glm::vec3 { 0.5f } };
+        builder.translate( offset );
+        render_objects.push_back( std::make_unique<ViewObject>( ViewObject::Opaque, builder.get_mesh(), &shader ) );
+        builder.translate( -offset );
 
-    for ( glm::vec3 & colour : builder.m_colours ) {
-        colour.g = distribution( random_device );
+        ViewObject & object { *render_objects.back() };
+        renderer.register_object( object );
     }
-
-    ViewObject grid { ViewObject::Terrain, builder.get_mesh(), &shader };
-    renderer.register_object( grid );
-
-    // for ( unsigned char i { 0 }; i < 8; ++i ) {
-    //     glm::vec3 offset { i & 4 ? -0.5f : 0.5f, i & 2 ? -0.5f : 0.5f, i & 1 ? -0.5f : 0.5f };
-    //
-    //     builder.m_colours = { builder.m_vertices.size(), offset + glm::vec3 { 0.5f } };
-    //     builder.translate( offset );
-    //     render_objects.push_back(
-    //         std::make_unique<RenderObject>( RenderObject::Opaque, builder.get_mesh(), &shader ) );
-    //     builder.translate( -offset );
-    //
-    //     RenderObject & object { *render_objects.back() };
-    //     renderer.register_object( object );
-    // }
 
     float constexpr fov { glm::quarter_pi<float>() }; // 45 degrees
     shader.set_uniform( "projection", glm::perspective( fov, 1200.f / 800.f, 0.1f, 100.f ) );
@@ -135,15 +119,11 @@ struct TempController : public ControllerObject {
 void game_thread( Window const & window, std::latch & initialisation_latch ) {
     // Set up some stuff for some basic testing
     ModelManager model_manager {};
-    ModelManager also_model_manager {};
     ControllerManager controller_manager {};
 
     for ( unsigned int i { 0 }; i < 100; ++i ) {
         auto model { std::make_unique<ModelObject>( glm::vec3 { static_cast<float>(i), 0.f, 0.f } ) };
         model_manager.push( std::move( model ) );
-        auto also_model { std::make_unique<ModelObject>( glm::vec3 { static_cast<float>(i), 0.f, 0.f } ) };
-        also_model_manager.push( std::move( also_model ) );
-
         controller_manager.push( std::make_unique<TempController>( i ) );
     }
     controller_manager.update();
@@ -157,7 +137,6 @@ void game_thread( Window const & window, std::latch & initialisation_latch ) {
         double const loop_start { Time::loop_start() };
         glfwPollEvents();
         model_manager.update();
-        also_model_manager.update();
 
         // The computations are likely to be done before the next game tick, so this thread needs to sleep briefly
         // At the time of implementation, subtracting the previous margin of error twice seems to be quite accurate

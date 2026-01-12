@@ -1,12 +1,11 @@
 #include "input_manager.hpp"
-
 #include "window.hpp"
+#include "../utils/log.hpp"
 
 #include <GLFW/glfw3.h>
 
 #include <format>
 #include <ranges>
-#include <stdexcept>
 
 
 InputManager::InputManager( GLFWwindow * const glfw_window )
@@ -34,11 +33,11 @@ unsigned int InputManager::observe_keyboard( std::set<int> const & keys,
 }
 
 void InputManager::forget_keyboard( int const key, unsigned int const callback_id ) {
-    if ( !m_keyboard_observers.contains( key ) )
-        throw std::invalid_argument( std::format( "No callbacks were registered for key '{}'.", key ) );
-    if ( !m_keyboard_observers.at( key ).contains( callback_id ) )
-        throw std::invalid_argument( std::format( "Callback {} was not registered for key '{}'.", callback_id, key ) );
-    m_keyboard_observers.at( key ).erase( callback_id );
+    if ( m_keyboard_observers.contains( key ) && m_keyboard_observers.at( key ).contains( callback_id ) )
+        m_keyboard_observers.at( key ).erase( callback_id );
+    else
+        Log::error( "Attempted to forget a keybind for a key (", key, ") and callback ID (", callback_id,
+                    ") that weren't registered." );
 }
 
 void InputManager::forget_keyboard( std::set<int> const & keys, unsigned int const callback_id ) {
@@ -52,9 +51,10 @@ unsigned int InputManager::observe_mouse( std::function<void( int, int )> const 
 }
 
 void InputManager::forget_mouse( unsigned int const callback_id ) {
-    if ( !m_mouse_observers.contains( callback_id ) )
-        throw std::out_of_range( std::format( "Callback {} was not registered for the mouse.", callback_id ) );
-    m_mouse_observers.erase( callback_id );
+    if ( m_mouse_observers.contains( callback_id ) )
+        m_mouse_observers.erase( callback_id );
+    else
+        Log::error( "Attempted to forget a mouse callback (", callback_id, ") that wasn't registered." );
 }
 
 /// Helper function for the callbacks that returns the InputManager associated with a GLFW window.
