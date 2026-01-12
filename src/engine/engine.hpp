@@ -6,6 +6,7 @@
 #include "renderer.hpp"
 #include "window.hpp"
 
+#include <latch>
 #include <memory>
 #include <vector>
 
@@ -24,8 +25,9 @@ public:
     void push_controller_manager( std::unique_ptr<ControllerManager> && controller_manager );
     bool pop_controller_manager( ControllerManager const * controller_manager );
 
-    void game_loop();
-    void render_loop();
+    void game_thread();
+    void render_thread();
+    void run();
 
     [[nodiscard]] Window & get_window() const; // TODO Decide whether to keep this function
 
@@ -36,6 +38,9 @@ private:
     std::vector<std::unique_ptr<ModelManager>> m_models;
     std::vector<std::unique_ptr<Renderer>> m_views;
     std::vector<std::unique_ptr<ControllerManager>> m_controllers;
+
+    std::thread m_game_thread;
+    std::latch m_initialisation_latch;
 };
 
 

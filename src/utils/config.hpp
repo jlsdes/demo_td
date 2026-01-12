@@ -7,6 +7,10 @@
 #include <stdexcept>
 
 
+/** Returns the main directory of this project. */
+std::filesystem::path get_main_dir();
+// TODO find a better solution to this ^
+
 /** Handles the configuration file(s). If any of the key-value pairs are identical (i.e. same section and same key),
  *  then the last read value will be used. These collisions can occur within the same config file, or between different
  *  files. The internal INI reader is not reset between different file reads.

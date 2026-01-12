@@ -5,6 +5,10 @@
 #include <stdexcept>
 
 
+std::filesystem::path get_main_dir() {
+    return (std::filesystem::path( __FILE__ ) / "../../../").lexically_normal();
+}
+
 Config & Config::get_instance() {
     static Config config;
     return config;
