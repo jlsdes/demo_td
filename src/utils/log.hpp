@@ -100,11 +100,14 @@ private:
         ~FileTarget() override;
     };
 
-    /// The output target.
     std::unique_ptr<Target> m_target;
+
     /// Whether colours are enabled when writing logs. The default behaviour for this parameter is to set it to true
     /// unless the target is a file.
     bool m_enable_colours;
+
+    /// To avoid mangled logs when multiple threads are attempting to write at the same time.
+    std::mutex m_mutex;
 };
 
 
@@ -112,6 +115,7 @@ private:
 
 template <typename... Args>
 void Log::log( MessageType const type, Args... args ) {
+    std::lock_guard lock { m_mutex };
     write_time();
     write_type( type );
     *m_target->stream << ' ';
@@ -125,6 +129,7 @@ void Log::log( Args... args ) {
 
 template <typename... Args>
 void Log::logf( MessageType const type, std::string const & message, Args const &... args ) {
+    std::lock_guard lock { m_mutex };
     write_time();
     write_type( type );
     *m_target->stream << ' ' << std::format( std::runtime_format( message ), args... ) << '\n';
