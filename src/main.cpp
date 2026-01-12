@@ -110,10 +110,11 @@ void render_thread( Window & window, std::latch & initialisation_latch ) {
 
 struct TempController : public ControllerObject {
     unsigned int id;
+    unsigned int counter;
 
-    explicit TempController( unsigned int const id ) : id { id } {}
+    explicit TempController( unsigned int const id ) : id { id }, counter { 0 } {}
 
-    void update() override { Log::debug( "Updating controller ", id ); }
+    void update() override { ++counter;}
 };
 
 void game_thread( Window const & window, std::latch & initialisation_latch ) {

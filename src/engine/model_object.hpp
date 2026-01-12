@@ -1,7 +1,7 @@
 #ifndef DEMO_TD_MODEL_OBJECT_HPP
 #define DEMO_TD_MODEL_OBJECT_HPP
 
-#include "../utils/manager.hpp"
+#include "utils/manager.hpp"
 
 #include <glm/glm.hpp>
 

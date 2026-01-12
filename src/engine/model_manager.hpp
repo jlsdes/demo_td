@@ -2,7 +2,7 @@
 #define DEMO_TD_MODEL_MANAGER_HPP
 
 #include "model_object.hpp"
-#include "../utils/manager.hpp"
+#include "utils/manager.hpp"
 
 
 /** Manages the model objects, and some worker threads. */

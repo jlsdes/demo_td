@@ -1,5 +1,5 @@
 #include "window.hpp"
-#include "../utils/config.hpp"
+#include "utils/config.hpp"
 
 #include <stdexcept>
 
@@ -22,8 +22,7 @@ Window::Window( unsigned int const width, unsigned int const height, char const 
     glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, 4 );
     glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 6 );
     glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
-    // Enable MSAA (anti-aliasing)
-    glfwWindowHint( GLFW_SAMPLES, 8 );
+    glfwWindowHint( GLFW_SAMPLES, 8 ); // Enable MSAA (anti-aliasing)
 
     // Create the new window using GLFW
     m_window = glfwCreateWindow( static_cast<int>(width), static_cast<int>(height), title, nullptr, nullptr );
@@ -34,7 +33,7 @@ Window::Window( unsigned int const width, unsigned int const height, char const 
 
     // Set the newly created window as active
     focus();
-    glfwSetInputMode( m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED );
+    // glfwSetInputMode( m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED );
 
     // Initialise GLAD
     if ( !gladLoadGL( glfwGetProcAddress ) ) {

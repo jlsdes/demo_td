@@ -1,6 +1,5 @@
 #include "mesh_builder.hpp"
-
-#include "../utils/log.hpp"
+#include "utils/log.hpp"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>

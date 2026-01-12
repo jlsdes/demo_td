@@ -1,5 +1,5 @@
 #include "model_object.hpp"
-#include "../utils/log.hpp"
+#include "utils/log.hpp"
 
 
 /** Generates a new unique ID. These IDs are simply sequentially ascending from 0. */

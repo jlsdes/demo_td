@@ -14,7 +14,7 @@ class InputManager
 {
 public:
     /** Constructor and destructor. */
-    explicit InputManager( GLFWwindow * glfw_window = nullptr );
+    explicit InputManager();
     ~InputManager() = default;
 
     /** Registers the object's callback function with OpenGL. */
@@ -41,7 +41,7 @@ public:
     void forget_mouse( unsigned int callback_id );
 
     /** The callback function that handles keyboard inputs. */
-    static void handle_keyboard( GLFWwindow * glfw_window, int key, int scancode, int action, int mods );
+    static void handle_keyboard( GLFWwindow * glfw_window, int key, int, int action, int );
 
     /** The callback function that handles mouse inputs. */
     static void handle_mouse( GLFWwindow * glfw_window, double x, double y );

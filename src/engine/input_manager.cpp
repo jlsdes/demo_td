@@ -1,6 +1,6 @@
 #include "input_manager.hpp"
 #include "window.hpp"
-#include "../utils/log.hpp"
+#include "utils/log.hpp"
 
 #include <GLFW/glfw3.h>
 
@@ -8,11 +8,7 @@
 #include <ranges>
 
 
-InputManager::InputManager( GLFWwindow * const glfw_window )
-    : m_keyboard_observers {}, m_mouse_observers {}, m_next_id { 1 } {
-    if ( glfw_window != nullptr )
-        initialise( glfw_window );
-}
+InputManager::InputManager() : m_keyboard_observers {}, m_mouse_observers {}, m_next_id { 1 } {}
 
 void InputManager::initialise( GLFWwindow * const glfw_window ) {
     glfwSetKeyCallback( glfw_window, handle_keyboard );
@@ -62,23 +58,15 @@ inline InputManager & get_input_manager( GLFWwindow * const glfw_window ) {
     return static_cast<Window *>(glfwGetWindowUserPointer( glfw_window ))->get_input_manager();
 }
 
-void InputManager::handle_keyboard( GLFWwindow * const glfw_window,
-                                    int const key,
-                                    int const scancode,
-                                    int const action,
-                                    int const mods ) {
+void InputManager::handle_keyboard( GLFWwindow * const glfw_window, int const key, int, int const action, int ) {
     InputManager & input_manager { get_input_manager( glfw_window ) };
-
     if ( input_manager.m_keyboard_observers.contains( key ) ) {
-        auto const & callbacks { input_manager.m_keyboard_observers.at( key ) };
-        for ( auto const & callback : std::views::values( callbacks ) )
+        for ( auto const & callback : std::views::values( input_manager.m_keyboard_observers.at( key ) ) )
             callback( key, action );
     }
 }
 
-void InputManager::handle_mouse( GLFWwindow * const glfw_window,
-                                 double const x,
-                                 double const y ) {
+void InputManager::handle_mouse( GLFWwindow * const glfw_window, double const x, double const y ) {
     InputManager & input_manager { get_input_manager( glfw_window ) };
     for ( auto const & callback : std::views::values( input_manager.m_mouse_observers ) )
         callback( x, y );

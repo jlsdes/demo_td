@@ -34,6 +34,8 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glm)
 
+include_directories(src)
+
 # Build the main executable
 add_executable(demo_td src/main.cpp
         src/engine/window.cpp

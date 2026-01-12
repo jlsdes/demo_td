@@ -4,6 +4,7 @@
 #include "controller_manager.hpp"
 #include "model_manager.hpp"
 #include "renderer.hpp"
+#include "window.hpp"
 
 #include <memory>
 #include <vector>
@@ -11,8 +12,11 @@
 
 class Engine {
 public:
-    Engine() = default;
+    Engine();
     ~Engine() = default;
+
+    void initialise_glfw();
+    void initialise_glad();
 
     void push_model_manager( std::unique_ptr<ModelManager> && model_manager );
     bool pop_model_manager( ModelManager const * model_manager );
@@ -27,6 +31,8 @@ public:
     void render_loop();
 
 private:
+    Window m_window;
+
     /// MVC managers
     std::vector<std::unique_ptr<ModelManager>> m_models;
     std::vector<std::unique_ptr<Renderer>> m_views;

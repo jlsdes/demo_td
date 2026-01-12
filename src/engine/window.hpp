@@ -21,8 +21,7 @@ public:
     /** Makes the window the active one. */
     void focus() const;
 
-
-    /** Clears/Renders a new frame. */
+    /** Clears/Renders a new frame; to be called before/after drawing everything respectively. */
     void clear() const;
     void render() const;
 

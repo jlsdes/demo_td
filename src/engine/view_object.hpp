@@ -2,7 +2,7 @@
 #define DEMO_TD_RENDER_OBJECT_HPP
 
 #include "mesh.hpp"
-#include "../utils/manager.hpp"
+#include "utils/manager.hpp"
 
 #include <glm/glm.hpp>
 

@@ -2,13 +2,7 @@
 #define DEMO_TD_CONTROLLER_MANAGER_HPP
 
 #include "controller_object.hpp"
-#include "../utils/manager.hpp"
-
-#include <memory>
-#include <vector>
-
-
-using ControllerPair = std::pair<unsigned int, std::unique_ptr<ControllerObject>>;
+#include "utils/manager.hpp"
 
 
 /** Manages a group of ControllerObjects. */

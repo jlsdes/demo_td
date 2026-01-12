@@ -1,5 +1,5 @@
 #include "engine.hpp"
-#include "../utils/log.hpp"
+#include "utils/log.hpp"
 
 #include <string>
 
@@ -15,6 +15,16 @@ bool pop_manager( std::vector<std::unique_ptr<T>> & container, T const * manager
     Log::error( "Attempted to remove a ", name, " that couldn't be found." );
     return false;
 }
+
+Engine::Engine() {
+    initialise_glfw();
+    m_window = Window();
+    initialise_glad();
+}
+
+void Engine::initialise_glfw() {}
+
+void Engine::initialise_glad() {}
 
 void Engine::push_model_manager( std::unique_ptr<ModelManager> && model_manager ) {
     m_models.emplace_back( std::move( model_manager ) );

@@ -1,6 +1,5 @@
 #include "renderer.hpp"
-
-#include "../utils/log.hpp"
+#include "utils/log.hpp"
 
 #include <utility>
 

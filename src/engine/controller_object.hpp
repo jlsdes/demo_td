@@ -1,7 +1,7 @@
 #ifndef DEMO_TD_CONTROLLER_OBJECT_HPP
 #define DEMO_TD_CONTROLLER_OBJECT_HPP
 
-#include "../utils/manager.hpp"
+#include "utils/manager.hpp"
 
 
 /** (Base) class for all controllers, i.e. the behaviour of the entities and player input handler. */
