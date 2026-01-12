@@ -1,16 +1,18 @@
 #ifndef DEMO_TD_MANAGER_HPP
 #define DEMO_TD_MANAGER_HPP
 
+#include <array>
 #include <memory>
+#include <mutex>
+#include <semaphore>
+#include <thread>
 #include <vector>
 
 
 /** Abstract base class for types being managed by a Manager object. */
 class ManagedObject {
 public:
-    ManagedObject() = default;
     virtual ~ManagedObject() = default;
-
     virtual void update() = 0;
 };
 
@@ -21,6 +23,14 @@ concept ManagedType = std::is_base_of_v<ManagedObject, T>;
 
 template <ManagedType ObjectType>
 using IdPair = std::pair<unsigned int, std::unique_ptr<ObjectType>>;
+
+
+template <unsigned int buffer_size>
+class WorkerPool;
+
+/// Some constant parameters for the WorkerPool instances
+unsigned int constexpr g_workers_per_manager_type { 4 };
+unsigned int constexpr g_worker_buffer_size { 4 * g_workers_per_manager_type };
 
 
 /** A base class for any kind of manager class. */
@@ -38,7 +48,7 @@ public:
 
     [[nodiscard]] bool contains( unsigned int object_id ) const;
     [[nodiscard]] ObjectType * get( unsigned int object_id ) const;
-    [[nodiscard]] size_t size() const;
+    [[nodiscard]] unsigned int size() const;
 
     unsigned int push( std::unique_ptr<ObjectType> && object );
     bool pop( unsigned int object_id );
@@ -70,6 +80,8 @@ public:
     Iterator begin() const;
     Iterator end() const;
 
+    void update() const;
+
 protected:
     /// All registered objects and their IDs; these are stored in strictly increasing order of ID.
     std::vector<IdPair<ObjectType>> m_objects;
@@ -82,6 +94,43 @@ private:
     std::vector<IdPair<ObjectType>>::const_iterator binary_search( unsigned int id ) const;
 };
 
+
+/** A pool of worker threads that call objects' update() function. */
+template <unsigned int buffer_size>
+class WorkerPool {
+public:
+    explicit WorkerPool( unsigned int nr_workers = 4 );
+    ~WorkerPool();
+    WorkerPool( WorkerPool const & ) = delete;
+    WorkerPool & operator=( WorkerPool const & ) = delete;
+    WorkerPool( WorkerPool && ) = default;
+    WorkerPool & operator=( WorkerPool && ) = default;
+
+    /** Updates all of a manager's registered objects in parallel. */
+    template <ManagedType ObjectType>
+    void update( Manager<ObjectType> const & manager );
+
+private:
+    /** The main function for the worker threads. These threads sleep until the queue gets populated, and then they call
+     *  the update() function on everything in the queue. Once everything has been processed, the worker threads go back
+     *  to sleep. */
+    void worker_thread();
+
+    std::vector<std::thread> m_workers {};
+    bool m_finished { false };
+
+    struct CircularBuffer {
+        std::array<ManagedObject *, buffer_size> objects {};
+        unsigned int begin { 0 };
+        unsigned int end { 0 };
+        std::counting_semaphore<buffer_size> filled_slots { 0 };
+        std::counting_semaphore<buffer_size> empty_slots { buffer_size };
+        std::mutex mutex {};
+    } m_queue {};
+};
+
+
+// Template definitions
 
 template <ManagedType ObjectType>
 unsigned int Manager<ObjectType>::push( std::unique_ptr<ObjectType> && object ) {
@@ -111,7 +160,7 @@ ObjectType * Manager<ObjectType>::get( unsigned int const object_id ) const {
 }
 
 template <ManagedType ObjectType>
-size_t Manager<ObjectType>::size() const {
+unsigned int Manager<ObjectType>::size() const {
     return m_objects.size();
 }
 
@@ -201,7 +250,57 @@ Manager<ObjectType>::Iterator Manager<ObjectType>::begin() const {
 
 template <ManagedType ObjectType>
 Manager<ObjectType>::Iterator Manager<ObjectType>::end() const {
-    return { *this, static_cast<unsigned int>(size()) };
+    return { *this, size() };
+}
+
+template <ManagedType ObjectType>
+void Manager<ObjectType>::update() const {
+    static WorkerPool<g_workers_per_manager_type> workers {};
+    workers.update( *this );
+}
+
+template <unsigned int buffer_size>
+WorkerPool<buffer_size>::WorkerPool( unsigned int const nr_workers ) : m_workers { nr_workers } {
+    for ( auto & thread : m_workers )
+        thread = std::thread { &WorkerPool::worker_thread, this };
+}
+
+template <unsigned int buffer_size>
+WorkerPool<buffer_size>::~WorkerPool() {
+    m_finished = true;
+    m_queue.filled_slots.release( m_workers.size() );
+    for ( auto & thread : m_workers )
+        thread.join();
+}
+
+template <unsigned int buffer_size>
+template <ManagedType ObjectType>
+void WorkerPool<buffer_size>::update( Manager<ObjectType> const & manager ) {
+    for ( ObjectType & object : manager ) {
+        m_queue.empty_slots.acquire();
+        {
+            std::lock_guard queue_lock { m_queue.mutex };
+            m_queue.objects.at( m_queue.end++ ) = &object;
+            m_queue.end %= buffer_size;
+        }
+        m_queue.filled_slots.release();
+    }
+}
+
+template <unsigned int buffer_size>
+void WorkerPool<buffer_size>::worker_thread() {
+    m_queue.filled_slots.acquire();
+    while ( not m_finished ) {
+        ManagedObject * object;
+        {
+            std::lock_guard queue_lock { m_queue.mutex };
+            object = m_queue.objects.at( m_queue.begin++ );
+            m_queue.begin %= buffer_size;
+        }
+        m_queue.empty_slots.release();
+        object->update();
+        m_queue.filled_slots.acquire();
+    }
 }
 
 #endif //DEMO_TD_MANAGER_HPP

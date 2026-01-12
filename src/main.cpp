@@ -146,10 +146,7 @@ void game_thread( Window const & window, std::latch & initialisation_latch ) {
 
         controller_manager.push( std::make_unique<TempController>( i ) );
     }
-
-    for ( auto iterator { controller_manager.begin() }; iterator != controller_manager.end(); ++iterator ) {
-        iterator->update();
-    }
+    controller_manager.update();
 
     // Wait until the other thread is ready as well
     initialisation_latch.arrive_and_wait();
@@ -159,8 +156,8 @@ void game_thread( Window const & window, std::latch & initialisation_latch ) {
     while ( !window.is_closing() ) {
         double const loop_start { Time::loop_start() };
         glfwPollEvents();
-        model_manager.update_models();
-        also_model_manager.update_models();
+        model_manager.update();
+        also_model_manager.update();
 
         // The computations are likely to be done before the next game tick, so this thread needs to sleep briefly
         // At the time of implementation, subtracting the previous margin of error twice seems to be quite accurate
