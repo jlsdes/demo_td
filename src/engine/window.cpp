@@ -12,42 +12,14 @@ Window::Window()
     ) {
 }
 
-Window::Window( unsigned int const width, unsigned int const height, char const * const title )
-    : m_window { nullptr } {
-    // Initialise GLFW
-    if ( !glfwInit() ) {
-        glfwTerminate();
-        throw std::runtime_error( "Failed to initialise GLFW" );
-    }
-    glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, 4 );
-    glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 6 );
-    glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
-    glfwWindowHint( GLFW_SAMPLES, 8 ); // Enable MSAA (anti-aliasing)
-
+Window::Window( unsigned int const width, unsigned int const height, char const * const title ) : m_window { nullptr } {
     // Create the new window using GLFW
     m_window = glfwCreateWindow( static_cast<int>(width), static_cast<int>(height), title, nullptr, nullptr );
     if ( m_window == nullptr ) {
         glfwTerminate();
         throw std::runtime_error( "Failed to create window." );
     }
-
-    // Set the newly created window as active
     focus();
-    // glfwSetInputMode( m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED );
-
-    // Initialise GLAD
-    if ( !gladLoadGL( glfwGetProcAddress ) ) {
-        glfwTerminate();
-        throw std::runtime_error( "Failed to initialise GLAD." );
-    }
-
-    // General setup for OpenGL
-    glClearColor( 0.1f, 0.1f, 0.1f, 1.0f );
-    glDepthFunc( GL_LESS );
-    glEnable( GL_DEPTH_TEST );
-    glCullFace( GL_BACK );
-    glFrontFace( GL_CCW );
-    glEnable( GL_CULL_FACE );
 
     // The window user pointer will allow us to retrieve this object from the GLFW window object; useful for callbacks
     glfwSetWindowUserPointer( m_window, this );

@@ -15,9 +15,6 @@ public:
     Engine();
     ~Engine() = default;
 
-    void initialise_glfw();
-    void initialise_glad();
-
     void push_model_manager( std::unique_ptr<ModelManager> && model_manager );
     bool pop_model_manager( ModelManager const * model_manager );
 
@@ -30,8 +27,10 @@ public:
     void game_loop();
     void render_loop();
 
+    [[nodiscard]] Window & get_window() const; // TODO Decide whether to keep this function
+
 private:
-    Window m_window;
+    std::unique_ptr<Window> m_window;
 
     /// MVC managers
     std::vector<std::unique_ptr<ModelManager>> m_models;

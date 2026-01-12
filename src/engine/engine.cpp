@@ -1,6 +1,9 @@
 #include "engine.hpp"
 #include "utils/log.hpp"
 
+#include <glad/gl.h>
+#include <GLFW/glfw3.h>
+
 #include <string>
 
 
@@ -16,15 +19,41 @@ bool pop_manager( std::vector<std::unique_ptr<T>> & container, T const * manager
     return false;
 }
 
-Engine::Engine() {
-    initialise_glfw();
-    m_window = Window();
-    initialise_glad();
+void initialise_glfw() {
+    if ( not glfwInit() ) {
+        glfwTerminate();
+        throw std::runtime_error( "Failed to initialise GLFW" );
+    }
+    glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, 4 );
+    glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 6 );
+    glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
+    glfwWindowHint( GLFW_SAMPLES, 8 ); // Enable MSAA (anti-aliasing)
 }
 
-void Engine::initialise_glfw() {}
+void initialise_glad() {
+    if ( not gladLoadGL( glfwGetProcAddress ) ) {
+        glfwTerminate();
+        throw std::runtime_error( "Failed to initialise GLAD." );
+    }
+    glClearColor( 0.1f, 0.1f, 0.1f, 1.0f );
+    glDepthFunc( GL_LESS );
+    glEnable( GL_DEPTH_TEST );
+    glCullFace( GL_BACK );
+    glFrontFace( GL_CCW );
+    glEnable( GL_CULL_FACE );
+}
 
-void Engine::initialise_glad() {}
+Engine::Engine() : m_window { nullptr }, m_models {}, m_views {}, m_controllers {} {
+    static bool initialised = false;
+
+    if ( not initialised )
+        initialise_glfw();
+    m_window = std::make_unique<Window>();
+    if ( not initialised )
+        initialise_glad();
+
+    initialised = true;
+}
 
 void Engine::push_model_manager( std::unique_ptr<ModelManager> && model_manager ) {
     m_models.emplace_back( std::move( model_manager ) );
@@ -53,3 +82,7 @@ bool Engine::pop_controller_manager( ControllerManager const * controller_manage
 void Engine::game_loop() {}
 
 void Engine::render_loop() {}
+
+Window & Engine::get_window() const {
+    return *m_window;
+}

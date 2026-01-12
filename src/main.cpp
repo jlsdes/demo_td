@@ -4,6 +4,7 @@
 
 #include "engine/camera.hpp"
 #include "engine/controller_manager.hpp"
+#include "engine/engine.hpp"
 #include "engine/mesh.hpp"
 #include "engine/mesh_builder.hpp"
 #include "engine/model_object.hpp"
@@ -155,7 +156,8 @@ int main() {
     Config::load_config( main_dir / "config.ini" );
     Log::info( "Loaded config ", (main_dir / "config.ini").string() );
 
-    Window window {};
+    Engine const engine {};
+    Window & window { engine.get_window() };
 
     std::latch initialisation_latch { 2 };
 
