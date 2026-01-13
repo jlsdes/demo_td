@@ -11,6 +11,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <filesystem>
+#include <numbers>
 #include <string>
 
 
@@ -87,11 +88,11 @@ bool Engine::pop_controller_manager( ControllerManager const * controller_manage
     return pop_manager( m_controllers, controller_manager, "ControllerManager" );
 }
 
-struct TempController2 : public ControllerObject {
+struct TempController : public ControllerObject {
     unsigned int id;
     unsigned int counter;
 
-    explicit TempController2( unsigned int const id ) : id { id }, counter { 0 } {}
+    explicit TempController( unsigned int const id ) : id { id }, counter { 0 } {}
 
     void update() override { ++counter; }
 };
@@ -104,7 +105,7 @@ void Engine::game_thread() {
     for ( unsigned int i { 0 }; i < 100; ++i ) {
         auto model { std::make_unique<ModelObject>( glm::vec3 { static_cast<float>(i), 0.f, 0.f } ) };
         m_models.at( 0 )->push( std::move( model ) );
-        m_controllers.at( 0 )->push( std::make_unique<TempController2>( i ) );
+        m_controllers.at( 0 )->push( std::make_unique<TempController>( i ) );
     }
     m_controllers.at( 0 )->update();
 
@@ -183,7 +184,7 @@ void Engine::render_thread() {
         renderer.register_object( object );
     }
 
-    float constexpr fov { glm::quarter_pi<float>() }; // 45 degrees
+    float constexpr fov { std::numbers::pi_v<float> / 4.f }; // 45 degrees
     shader.set_uniform( "projection", glm::perspective( fov, 1200.f / 800.f, 0.1f, 100.f ) );
 
     // Wait until the other thread is ready as well
