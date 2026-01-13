@@ -1,5 +1,6 @@
 #include "camera.hpp"
 #include "engine.hpp"
+#include "entity_factory.hpp"
 #include "mesh_builder.hpp"
 #include "shader.hpp"
 #include "utils/config.hpp"
@@ -60,6 +61,14 @@ Engine::Engine() : m_window { nullptr }, m_models {}, m_views {}, m_controllers 
     m_window = std::make_unique<Window>();
     if ( not initialised )
         initialise_glad();
+
+    if ( not initialised ) {
+        m_models.emplace_back( std::make_unique<ModelManager>() );
+        m_views.emplace_back( std::make_unique<ViewManager>() );
+        m_controllers.emplace_back( std::make_unique<ControllerManager>() );
+        EntityFactory & factory { EntityFactory::get_instance() };
+        factory.initialise( m_models.back().get(), m_views.back().get(), m_controllers.back().get() );
+    }
 
     initialised = true;
 }
@@ -167,9 +176,6 @@ void Engine::render_thread() {
     Camera camera { camera_position, camera_target, &shader };
     camera.set_free_view( m_window->get_input_manager() );
 
-    ViewManager view_manager {};
-    std::vector<std::unique_ptr<ViewObject>> render_objects {};
-
     auto builder { MeshBuilder::sphere( 10 ) };
     builder.transform( glm::identity<glm::mat3>() * 0.3f );
     for ( unsigned char i { 0 }; i < 8; ++i ) {
@@ -177,7 +183,7 @@ void Engine::render_thread() {
 
         builder.m_colours = { builder.m_vertices.size(), offset + glm::vec3 { 0.5f } };
         builder.translate( offset );
-        view_manager.push( std::make_unique<ViewObject>( ViewObject::Opaque, builder.get_mesh(), &shader ) );
+        m_views.back().get()->push( std::make_unique<ViewObject>( ViewObject::Opaque, builder.get_mesh(), &shader ) );
         builder.translate( -offset );
     }
 
@@ -190,7 +196,12 @@ void Engine::render_thread() {
     // GLFW handles FPS limiting if VSync is enabled, which it probably is
     while ( not m_window->is_closing() ) {
         m_window->clear();
-        view_manager.draw();
+
+        for ( auto const & view_manager : m_views )
+            view_manager->update();
+        for ( auto const & view_manager : m_views )
+            view_manager->draw();
+
         camera.update();
         m_window->render();
     }

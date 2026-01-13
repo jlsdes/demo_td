@@ -17,3 +17,5 @@ int main() {
     glfwTerminate();
     return 0;
 }
+
+// TODO fix window resizing && the F key callback function not working
