@@ -2,13 +2,11 @@
 #define DEMO_TD_RENDERER_HPP
 
 #include "view_object.hpp"
+#include "utils/manager.hpp"
 
 #include <memory>
 #include <queue>
-#include <vector>
 
-
-class Shader;
 
 /** Abstract base class as an interface for queue implementations. */
 class RenderQueue {
@@ -35,18 +33,14 @@ private:
 };
 
 /** */
-class Renderer {
+class ViewManager : public Manager<ViewObject> {
 public:
-    explicit Renderer( std::unique_ptr<RenderQueue> && queue = nullptr );
-    ~Renderer();
-
-    void register_object( ViewObject const & object );
-    void unregister_object( ViewObject const & object );
+    explicit ViewManager( std::unique_ptr<RenderQueue> && queue = nullptr );
+    ~ViewManager() override;
 
     void draw() const;
 
 private:
-    std::vector<ViewObject const *> m_objects;
     std::unique_ptr<RenderQueue> m_queue;
 };
 

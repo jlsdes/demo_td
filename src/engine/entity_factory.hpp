@@ -1,11 +1,8 @@
 #ifndef DEMO_TD_ENTITY_FACTORY_HPP
 #define DEMO_TD_ENTITY_FACTORY_HPP
 
-#include "controller_manager.hpp"
 #include "controller_object.hpp"
-#include "model_manager.hpp"
 #include "model_object.hpp"
-#include "renderer.hpp"
 #include "view_object.hpp"
 
 #include <functional>
@@ -14,6 +11,12 @@
 #include <string>
 
 
+class ModelManager;
+class ViewManager;
+class ControllerManager;
+
+
+/// Utility struct holding the IDs of newly constructed entities.
 struct Entity {
     unsigned int model_id;
     unsigned int view_id;
@@ -29,12 +32,12 @@ using FactoryFunction = std::function<std::unique_ptr<T>()>;
 /** Creates entities consisting of a model, view, and controller component, and performs the required setup. */
 class EntityFactory {
 public:
-    EntityFactory( ModelManager * model_manager, Renderer * view_manager, ControllerManager * controller_manager );
+    EntityFactory( ModelManager * model_manager, ViewManager * view_manager, ControllerManager * controller_manager );
     ~EntityFactory() = default;
 
     /** Sets a manager under which newly created objects will be registered. */
     void set_model_manager( ModelManager * model_manager );
-    void set_view_manager( Renderer * view_manager );
+    void set_view_manager( ViewManager * view_manager );
     void set_controller_manager( ControllerManager * controller_manager );
 
     /** Registers a new factory function for creating the entity component types. If a factory function with the given
@@ -59,7 +62,7 @@ public:
 private:
     /// Managers to send the created objects to.
     ModelManager * m_model_manager;
-    Renderer * m_view_manager;
+    ViewManager * m_view_manager;
     ControllerManager * m_controller_manager;
 
     /// Individual component creator functions.

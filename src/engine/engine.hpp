@@ -3,7 +3,7 @@
 
 #include "controller_manager.hpp"
 #include "model_manager.hpp"
-#include "renderer.hpp"
+#include "view_manager.hpp"
 #include "window.hpp"
 
 #include <latch>
@@ -19,8 +19,8 @@ public:
     void push_model_manager( std::unique_ptr<ModelManager> && model_manager );
     bool pop_model_manager( ModelManager const * model_manager );
 
-    void push_view_manager( std::unique_ptr<Renderer> && view_manager );
-    bool pop_view_manager( Renderer const * view_manager );
+    void push_view_manager( std::unique_ptr<ViewManager> && view_manager );
+    bool pop_view_manager( ViewManager const * view_manager );
 
     void push_controller_manager( std::unique_ptr<ControllerManager> && controller_manager );
     bool pop_controller_manager( ControllerManager const * controller_manager );
@@ -36,7 +36,7 @@ private:
 
     /// MVC managers
     std::vector<std::unique_ptr<ModelManager>> m_models;
-    std::vector<std::unique_ptr<Renderer>> m_views;
+    std::vector<std::unique_ptr<ViewManager>> m_views;
     std::vector<std::unique_ptr<ControllerManager>> m_controllers;
 
     std::thread m_game_thread;

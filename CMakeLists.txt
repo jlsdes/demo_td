@@ -58,8 +58,8 @@ add_executable(demo_td src/main.cpp
         src/utils/log.hpp
         src/engine/view_object.cpp
         src/engine/view_object.hpp
-        src/engine/renderer.cpp
-        src/engine/renderer.hpp
+        src/engine/view_manager.cpp
+        src/engine/view_manager.hpp
         src/engine/mesh_builder.cpp
         src/engine/mesh_builder.hpp
         src/engine/model_object.cpp

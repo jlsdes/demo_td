@@ -1,8 +1,11 @@
 #include "entity_factory.hpp"
+#include "controller_manager.hpp"
+#include "model_manager.hpp"
+#include "view_manager.hpp"
 #include "utils/log.hpp"
 
 EntityFactory::EntityFactory( ModelManager * const model_manager,
-                              Renderer * const view_manager,
+                              ViewManager * const view_manager,
                               ControllerManager * const controller_manager )
     : m_model_manager( model_manager ), m_view_manager( view_manager ), m_controller_manager( controller_manager ),
       m_model_factories {}, m_view_factories {}, m_controller_factories {} {}
@@ -14,7 +17,7 @@ void EntityFactory::set_model_manager( ModelManager * const model_manager ) {
         Log::error( "Attempted to set an EntityFactory's model manager to null." );
 }
 
-void EntityFactory::set_view_manager( Renderer * const view_manager ) {
+void EntityFactory::set_view_manager( ViewManager * const view_manager ) {
     if ( view_manager )
         m_view_manager = view_manager;
     else
@@ -34,7 +37,7 @@ bool register_factory( std::map<std::string, FactoryFunction<T>> & registry,
                        FactoryFunction<T> const & factory,
                        bool const override ) {
     if ( override ) {
-        registry[name] = factory;
+        registry.insert_or_assign( name, factory );
         return true;
     }
     auto const [_, success] { registry.emplace( name, factory ) };
@@ -82,8 +85,7 @@ Entity EntityFactory::build( std::string const & model_type,
     if ( not controller ) return failed;
 
     unsigned int const model_id { m_model_manager->push( std::move( model ) ) };
-    // unsigned int const view_id { m_view_manager->push( std::move( view ) ) };
-    unsigned int const view_id { 0 };
+    unsigned int const view_id { m_view_manager->push( std::move( view ) ) };
     unsigned int const controller_id { m_controller_manager->push( std::move( controller ) ) };
 
     return { model_id, view_id, controller_id, true };

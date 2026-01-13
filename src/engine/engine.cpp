@@ -72,11 +72,11 @@ bool Engine::pop_model_manager( ModelManager const * model_manager ) {
     return pop_manager( m_models, model_manager, "ModelManager" );
 }
 
-void Engine::push_view_manager( std::unique_ptr<Renderer> && view_manager ) {
+void Engine::push_view_manager( std::unique_ptr<ViewManager> && view_manager ) {
     m_views.emplace_back( std::move( view_manager ) );
 }
 
-bool Engine::pop_view_manager( Renderer const * view_manager ) {
+bool Engine::pop_view_manager( ViewManager const * view_manager ) {
     return pop_manager( m_views, view_manager, "Renderer" );
 }
 
@@ -167,7 +167,7 @@ void Engine::render_thread() {
     Camera camera { camera_position, camera_target, &shader };
     camera.set_free_view( m_window->get_input_manager() );
 
-    Renderer renderer {};
+    ViewManager view_manager {};
     std::vector<std::unique_ptr<ViewObject>> render_objects {};
 
     auto builder { MeshBuilder::sphere( 10 ) };
@@ -177,11 +177,8 @@ void Engine::render_thread() {
 
         builder.m_colours = { builder.m_vertices.size(), offset + glm::vec3 { 0.5f } };
         builder.translate( offset );
-        render_objects.push_back( std::make_unique<ViewObject>( ViewObject::Opaque, builder.get_mesh(), &shader ) );
+        view_manager.push( std::make_unique<ViewObject>( ViewObject::Opaque, builder.get_mesh(), &shader ) );
         builder.translate( -offset );
-
-        ViewObject & object { *render_objects.back() };
-        renderer.register_object( object );
     }
 
     float constexpr fov { std::numbers::pi_v<float> / 4.f }; // 45 degrees
@@ -193,7 +190,7 @@ void Engine::render_thread() {
     // GLFW handles FPS limiting if VSync is enabled, which it probably is
     while ( not m_window->is_closing() ) {
         m_window->clear();
-        renderer.draw();
+        view_manager.draw();
         camera.update();
         m_window->render();
     }
