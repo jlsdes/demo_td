@@ -28,9 +28,7 @@ ObjectVector::const_iterator binary_search( ObjectVector const & objects, unsign
     };
     auto const iterator { std::ranges::lower_bound( objects, id, {}, proj ) };
 
-    if ( iterator == objects.cend() )
-        return objects.cend();
-    return iterator->first == id ? iterator : objects.cend();
+    return iterator != objects.cend() and iterator->first == id ? iterator : objects.cend();
 }
 
 bool Manager::pop( unsigned int const object_id ) {
@@ -78,11 +76,11 @@ Manager::Iterator Manager::Iterator::operator--( int ) {
     return { m_manager, m_index + 1 };
 }
 
-Manager::Iterator Manager::Iterator::operator+( unsigned int const offset ) {
+Manager::Iterator Manager::Iterator::operator+( unsigned int const offset ) const {
     return { m_manager, m_index + offset };
 }
 
-Manager::Iterator Manager::Iterator::operator-( unsigned int const offset ) {
+Manager::Iterator Manager::Iterator::operator-( unsigned int const offset ) const {
     return { m_manager, m_index - offset };
 }
 
@@ -95,7 +93,7 @@ bool Manager::Iterator::operator!=( Iterator const & other ) const {
 }
 
 ManagedObject & Manager::Iterator::operator*() const {
-    return *m_manager.m_objects.at( m_index ).second.get();
+    return *m_manager.m_objects.at( m_index ).second;
 }
 
 ManagedObject * Manager::Iterator::operator->() const {
@@ -111,6 +109,6 @@ Manager::Iterator Manager::end() const {
 }
 
 void Manager::update() const {
-    static WorkerPool<g_workers_per_manager_type> workers {};
+    thread_local WorkerPool<g_workers_per_manager_type> workers {};
     workers.update( *this );
 }

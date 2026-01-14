@@ -66,8 +66,8 @@ public:
         Iterator operator++( int );
         Iterator operator--( int );
 
-        Iterator operator+( unsigned int offset );
-        Iterator operator-( unsigned int offset );
+        Iterator operator+( unsigned int offset ) const;
+        Iterator operator-( unsigned int offset ) const;
 
         bool operator==( Iterator const & other ) const;
         bool operator!=( Iterator const & other ) const;
