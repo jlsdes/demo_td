@@ -3,7 +3,16 @@
 #include <algorithm>
 
 
+void ManagedObject::destroy() {
+    if ( m_manager )
+        m_manager->pop( m_id );
+    m_manager = nullptr;
+    m_id = 0;
+}
+
 unsigned int Manager::push( std::unique_ptr<ManagedObject> && object ) {
+    object->m_manager = this;
+    object->m_id = m_next_id;
     m_objects.emplace_back( m_next_id, std::move( object ) );
     return m_next_id++;
 }

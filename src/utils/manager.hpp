@@ -9,11 +9,23 @@
 #include <vector>
 
 
+class Manager;
+
 /** Abstract base class for types being managed by a Manager object. */
 class ManagedObject {
 public:
     virtual ~ManagedObject() = default;
     virtual void update() = 0;
+
+    /** Removes the object from its manager, and in doing so destroys the unique_ptr and thus itself. */
+    void destroy();
+
+private:
+    /// Attributes to enable the self-destruct function.
+    Manager * m_manager { nullptr };
+    unsigned int m_id { 0 };
+
+    friend class Manager; // To allow the Manager class to change the attributes
 };
 
 
