@@ -47,10 +47,10 @@ void EntityFactory::set_controller_manager( ControllerManager * const controller
         Log::error( "Attempted to set an EntityFactory's controller manager to null." );
 }
 
-template <ManagedType T>
-bool register_factory( std::map<std::string, FactoryFunction<T>> & registry,
+template <typename ManagedType>
+bool register_factory( std::map<std::string, FactoryFunction<ManagedType>> & registry,
                        std::string const & name,
-                       FactoryFunction<T> const & factory,
+                       FactoryFunction<ManagedType> const & factory,
                        bool const override ) {
     if ( override ) {
         registry.insert_or_assign( name, factory );
@@ -81,8 +81,8 @@ bool EntityFactory::register_controller_factory( std::string const & name,
     return register_factory( m_controller_factories, name, factory, override );
 }
 
-template <ManagedType T>
-std::unique_ptr<T> build_component( std::map<std::string, FactoryFunction<T>> const & registry,
+template <typename ManagedType>
+std::unique_ptr<ManagedType> build_component( std::map<std::string, FactoryFunction<ManagedType>> const & registry,
                                     std::string const & name,
                                     std::string const & type_name ) {
     if ( not registry.contains( name ) ) {

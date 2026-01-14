@@ -34,7 +34,7 @@ ViewManager::~ViewManager() = default;
 
 void ViewManager::draw() const {
     for ( auto const & object : std::ranges::views::values( m_objects ) )
-        m_queue->push( object.get() );
+        m_queue->push( dynamic_cast<ViewObject const *>(object.get()) );
     while ( !m_queue->empty() )
         m_queue->pop().draw();
 }

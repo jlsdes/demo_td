@@ -74,6 +74,7 @@ add_executable(demo_td src/main.cpp
         src/engine/engine.hpp
         src/engine/entity_factory.cpp
         src/engine/entity_factory.hpp
+        src/utils/manager.cpp
 )
 
 # Link the necessary libraries

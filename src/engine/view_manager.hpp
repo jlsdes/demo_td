@@ -33,7 +33,7 @@ private:
 };
 
 /** */
-class ViewManager : public Manager<ViewObject> {
+class ViewManager : public Manager {
 public:
     explicit ViewManager( std::unique_ptr<RenderQueue> && queue = nullptr );
     ~ViewManager() override;

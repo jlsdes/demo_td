@@ -26,8 +26,8 @@ struct Entity {
 };
 
 
-template <ManagedType T>
-using FactoryFunction = std::function<std::unique_ptr<T>()>;
+template <typename ManagedType>
+using FactoryFunction = std::function<std::unique_ptr<ManagedType>()>;
 
 
 /** Singleton that creates entities consisting of a model, view, and controller component, and performs the required
