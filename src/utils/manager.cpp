@@ -23,20 +23,14 @@ ObjectVector::const_iterator binary_search( ObjectVector const & objects, unsign
     if ( objects.empty() )
         return objects.cend();
 
-    unsigned int min_index { 0 }, max_index { static_cast<unsigned int>( objects.size() ) };
-    while ( min_index != max_index ) {
-        unsigned int const mid_index { (min_index + max_index) / 2 };
-        auto const iterator { objects.cbegin() + mid_index };
+    auto constexpr proj {
+        []( std::pair<unsigned int, std::unique_ptr<ManagedObject>> const & element ) { return element.first; }
+    };
+    auto const iterator { std::ranges::lower_bound( objects, id, {}, proj ) };
 
-        if ( id == iterator->first )
-            return iterator;
-        if ( id < iterator->first )
-            max_index = mid_index - 1;
-        else // id > iterator->first
-            min_index = mid_index + 1;
-    }
-    auto const iterator { objects.cbegin() + min_index };
-    return id == iterator->first ? iterator : objects.cend();
+    if ( iterator == objects.cend() )
+        return objects.cend();
+    return iterator->first == id ? iterator : objects.cend();
 }
 
 bool Manager::pop( unsigned int const object_id ) {
@@ -120,4 +114,3 @@ void Manager::update() const {
     static WorkerPool<g_workers_per_manager_type> workers {};
     workers.update( *this );
 }
-

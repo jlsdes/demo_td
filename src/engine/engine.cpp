@@ -116,7 +116,6 @@ void Engine::game_thread() {
         m_models.at( 0 )->push( std::move( model ) );
         m_controllers.at( 0 )->push( std::make_unique<TempController>( i ) );
     }
-    m_controllers.at( 0 )->update();
 
     // Wait until the other thread is ready as well
     m_initialisation_latch.arrive_and_wait();
