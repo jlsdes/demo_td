@@ -11,8 +11,10 @@ int main() {
     Config::load_config( main_dir / "config.ini" );
     Log::info( "Loaded config ", (main_dir / "config.ini").string() );
 
-    Engine engine {};
-    engine.run();
+    {
+        Engine engine {};
+        engine.run();
+    }
 
     glfwTerminate();
     return 0;
