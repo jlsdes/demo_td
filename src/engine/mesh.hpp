@@ -19,7 +19,8 @@ std::ostream & operator<<( std::ostream & stream, glm::vec3 const & vector );
 std::ostream & operator<<( std::ostream & stream, Vertex const & vertex );
 
 
-/** A basic mesh. */
+/** A mesh consisting of vertices and faces, optionally defined by vertex indices. This class holds some OpenGL objects,
+ *  and must therefore always be created in the (main) render thread. */
 class Mesh {
 public:
     /** Constructor; creates some underlying OpenGL buffers.
@@ -54,10 +55,6 @@ private:
     /// The mesh data; could be used to modify the buffer data.
     std::vector<Vertex> m_vertices;
     std::vector<unsigned int> m_indices;
-    // std::unique_ptr<Vertex[]> m_vertices;
-    // unsigned long m_nr_vertices;
-    // std::unique_ptr<unsigned int[]> m_indices;
-    // unsigned long m_nr_indices;
 
     /// OpenGL object IDs.
     unsigned int m_vertex_buffer;

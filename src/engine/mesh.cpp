@@ -15,26 +15,7 @@ std::ostream & operator<<( std::ostream & stream, Vertex const & vertex ) {
     return stream << "<Vertex" << vertex.position << ", " << vertex.normal << ", " << vertex.colour << '>';
 }
 
-// /// Helper function for the constructors; initialises an OpenGL buffer object, and copies data into it
-// template <typename ElementType>
-// unsigned int create_buffer( GLenum const buffer_type,
-//                             ElementType const * const data,
-//                             unsigned long const nr_elements ) {
-//     unsigned int buffer;
-//     glGenBuffers( 1, &buffer );
-//     glBindBuffer( buffer_type, buffer );
-//     glBufferData( buffer_type, nr_elements * sizeof( ElementType ), data, GL_STATIC_DRAW );
-//     return buffer;
-// }
-//
-// /// Helper function for the constructors; copies a vector's data into an array.
-// template <typename ElementType>
-// std::unique_ptr<ElementType[]> vector_to_array( std::vector<ElementType> const & data ) {
-//     auto array { std::make_unique<ElementType[]>( data.size() ) };
-//     std::ranges::copy( data.cbegin(), data.cend(), array.get() );
-//     return array;
-// }
-
+/** Creates a new OpenGL buffer and copies data into it. */
 template <typename ElementType>
 unsigned int create_buffer( GLenum const buffer_type, std::vector<ElementType> const & data ) {
     unsigned int buffer;
@@ -50,7 +31,7 @@ unsigned int create_buffer( GLenum const buffer_type, std::vector<ElementType> c
     return buffer;
 }
 
-/// Helper function for the constructor; sets up the attribute pointers in OpenGL for each of the vertex attributes.
+/** Helper function for the constructor; sets up the attribute pointers in OpenGL for each of the vertex attributes. */
 void set_vertex_attributes() {
     // Set the position attribute
     glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, sizeof( Vertex ), nullptr );
@@ -75,13 +56,12 @@ Mesh::Mesh( std::vector<Vertex> const & vertices, std::vector<unsigned int> cons
     set_vertex_attributes();
 }
 
-Mesh::Mesh( Mesh && mesh ) noexcept
-    : m_vertices { std::move( mesh.m_vertices ) },
-      m_indices { std::move( mesh.m_indices ) },
-      m_vertex_buffer { std::exchange( mesh.m_vertex_buffer, 0 ) },
-      m_vertex_array { std::exchange( mesh.m_vertex_array, 0 ) },
-      m_element_buffer { std::exchange( mesh.m_element_buffer, 0 ) },
-      m_default_mode { std::exchange( mesh.m_default_mode, GL_TRIANGLES ) } {}
+Mesh::Mesh( Mesh && mesh ) noexcept : m_vertices { std::move( mesh.m_vertices ) },
+                                      m_indices { std::move( mesh.m_indices ) },
+                                      m_vertex_buffer { std::exchange( mesh.m_vertex_buffer, 0 ) },
+                                      m_vertex_array { std::exchange( mesh.m_vertex_array, 0 ) },
+                                      m_element_buffer { std::exchange( mesh.m_element_buffer, 0 ) },
+                                      m_default_mode { std::exchange( mesh.m_default_mode, GL_TRIANGLES ) } {}
 
 Mesh & Mesh::operator=( Mesh && mesh ) noexcept {
     m_vertices = std::move( mesh.m_vertices );
