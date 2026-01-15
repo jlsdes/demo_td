@@ -7,6 +7,8 @@
 #include "utils/log.hpp"
 #include "utils/time.hpp"
 
+#include "misc/sphere.hpp"
+
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <glm/gtc/matrix_transform.hpp>
@@ -107,18 +109,20 @@ struct TempController : public ControllerObject {
 };
 
 void Engine::game_thread() {
-    // Set up some stuff for some basic testing
-    push_model_manager( std::make_unique<ModelManager>() );
-    push_controller_manager( std::make_unique<ControllerManager>() );
+    auto & entity_factory { EntityFactory::get_instance() };
+    entity_factory.set_model_manager( m_models.back().get() );
+    entity_factory.set_controller_manager( m_controllers.back().get() );
 
-    for ( unsigned int i { 0 }; i < 100; ++i ) {
-        auto model { std::make_unique<ModelObject>( glm::vec3 { static_cast<float>(i), 0.f, 0.f } ) };
-        m_models.at( 0 )->push( std::move( model ) );
-        m_controllers.at( 0 )->push( std::make_unique<TempController>( i ) );
-    }
+    // for ( unsigned int i { 0 }; i < 100; ++i ) {
+    //     auto model { std::make_unique<ModelObject>( glm::vec3 { static_cast<float>(i), 0.f, 0.f } ) };
+    //     m_models.back()->push( std::move( model ) );
+    //     m_controllers.back()->push( std::make_unique<TempController>( i ) );
+    // }
 
     // Wait until the other thread is ready as well
     m_initialisation_latch.arrive_and_wait();
+
+    Sphere::create( glm::vec3 { 0.f }, 0.5f, glm::vec3 { 1.f, 0.f, 0.f } );
 
     double constexpr tick_duration { 1. / 100. };
     double margin { 0. };
@@ -143,11 +147,16 @@ void Engine::game_thread() {
 }
 
 void Engine::render_thread() {
+    auto & entity_factory { EntityFactory::get_instance() };
+    entity_factory.set_view_manager( m_views.back().get() );
+
     // Find and build the main graphics shader
     auto const vertex_shader { get_main_dir() / Config::get<std::string>( "Shader", "vertex_shader" ) };
     auto const fragment_shader { get_main_dir() / Config::get<std::string>( "Shader", "fragment_shader" ) };
     GraphicsShader shader { vertex_shader.c_str(), fragment_shader.c_str() };
     shader.use();
+
+    Sphere::initialise( &shader );
 
     glm::vec3 constexpr ambient_light { 0.1f, 0.1f, 0.1f };
     shader.set_uniform( "ambient_light", ambient_light );
@@ -175,16 +184,16 @@ void Engine::render_thread() {
     Camera camera { camera_position, camera_target, &shader };
     camera.set_free_view( m_window->get_input_manager() );
 
-    auto builder { MeshBuilder::sphere( 10 ) };
-    builder.transform( glm::identity<glm::mat3>() * 0.3f );
-    for ( unsigned char i { 0 }; i < 8; ++i ) {
-        glm::vec3 offset { i & 4 ? -0.5f : 0.5f, i & 2 ? -0.5f : 0.5f, i & 1 ? -0.5f : 0.5f };
-
-        builder.m_colours = { builder.m_vertices.size(), offset + glm::vec3 { 0.5f } };
-        builder.translate( offset );
-        m_views.back().get()->push( std::make_unique<ViewObject>( ViewObject::Opaque, builder.get_mesh(), &shader ) );
-        builder.translate( -offset );
-    }
+    // auto builder { MeshBuilder::sphere( 10 ) };
+    // builder.transform( glm::identity<glm::mat3>() * 0.3f );
+    // for ( unsigned char i { 0 }; i < 8; ++i ) {
+    //     glm::vec3 offset { i & 4 ? -0.5f : 0.5f, i & 2 ? -0.5f : 0.5f, i & 1 ? -0.5f : 0.5f };
+    //
+    //     builder.m_colours = { builder.m_vertices.size(), offset + glm::vec3 { 0.5f } };
+    //     builder.translate( offset );
+    //     m_views.back().get()->push( std::make_unique<ViewObject>( ViewObject::Opaque, builder.get_mesh(), &shader ) );
+    //     builder.translate( -offset );
+    // }
 
     float constexpr fov { std::numbers::pi_v<float> / 4.f }; // 45 degrees
     shader.set_uniform( "projection", glm::perspective( fov, 1200.f / 800.f, 0.1f, 100.f ) );

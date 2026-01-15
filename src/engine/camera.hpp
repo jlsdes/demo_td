@@ -37,18 +37,14 @@ public:
     /** Destructor. */
     ~Camera() = default;
 
-    /** Sets the position of the camera, optionally while changing the direction it's facing as well. */
+    /** Moves the camera to a specific position, or in a given direction. */
     void set_position( glm::vec3 const & position );
-
-    /** Sets the rotation of the camera. */
-    void set_rotation( glm::vec3 const & look_in_direction );
-    void set_rotation( float yaw, float pitch );
-
-    /** Moves the camera in the given direction, for a distance derived from its speed. */
     void translate( glm::vec3 const & direction );
 
-    /** Rotates the camera toward the given direction (which is relative to the camera's current forward direction),
-     *  depending on the camera's speed. */
+    /** Rotates the camera, either by setting the rotation, or adjusting the current rotation of the camera to be more
+     *  towards the given mouse position. */
+    void set_rotation( glm::vec3 const & look_in_direction );
+    void set_rotation( float yaw, float pitch );
     void rotate( glm::vec2 const & mouse_position );
 
     /** Updates the view matrix in the attached shader. */
@@ -62,13 +58,12 @@ public:
      *  specific key and whether it's being pressed or released. This function is used as a callback function registered
      *  to an InputManager object. */
     void toggle_movement( int key, int action );
-    // TODO Separate ^this^ into a subclass so multiple types of cameras can exist or something that achieves this
 
 private:
     /// The current position of the camera.
     glm::vec3 m_position;
     /// The yaw and pitch of the camera, i.e. horizontal and vertical rotation resp.
-    float m_yaw;    // TODO Change to quaternions
+    float m_yaw;
     float m_pitch;
     /// Some vectors related to the current rotation of the camera.
     glm::vec3 m_forward;

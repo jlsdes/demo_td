@@ -75,6 +75,8 @@ add_executable(demo_td src/main.cpp
         src/engine/entity_factory.cpp
         src/engine/entity_factory.hpp
         src/utils/manager.cpp
+        src/misc/sphere.cpp
+        src/misc/sphere.hpp
 )
 
 # Link the necessary libraries

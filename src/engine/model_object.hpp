@@ -37,7 +37,7 @@ class ModelObject : public ManagedObject {
     explicit ModelObject( std::unique_ptr<ModelData[]> && data );
 public:
     /** Other constructors and destructor. */
-    explicit ModelObject( glm::vec3 const & position );
+    explicit ModelObject( glm::vec3 const & position = glm::vec3 { 0.f } );
     ModelObject( ModelObject const & other );
     ModelObject & operator=( ModelObject const & other ) = delete;
     ModelObject( ModelObject && other ) noexcept;
@@ -58,7 +58,7 @@ public:
     /** Returns the model's data. This function simply returns a pointer to the data, and does not block the object's
      *  mutex in any way. Any rendering code should not call this function, but use get_render_data() instead. */
     template <DataType Data>
-    Data const * get_model_data() const;
+    Data * get_model_data() const;
 
     /** Computes the next iteration of the model in the inactive twin, and then activates it. */
     void update() override;
@@ -100,7 +100,7 @@ Accessor<Data> ModelObject::get_render_data() {
 }
 
 template <DataType Data>
-Data const * ModelObject::get_model_data() const {
+Data * ModelObject::get_model_data() const {
     return &m_data[m_active];
 }
 

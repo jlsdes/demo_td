@@ -19,15 +19,17 @@ class ControllerManager;
 
 /// Utility struct holding the IDs of newly constructed entities.
 struct Entity {
-    unsigned int model_id;
-    unsigned int view_id;
-    unsigned int controller_id;
+    std::pair<unsigned int, ModelObject *> model;
+    std::pair<unsigned int, ViewObject *> view;
+    std::pair<unsigned int, ControllerObject *> controller;
     bool success;
 };
 
 
 template <typename ManagedType>
 using FactoryFunction = std::function<std::unique_ptr<ManagedType>()>;
+template <typename ManagedType>
+using FactoryMap = std::map<std::string, FactoryFunction<ManagedType>>;
 
 
 /** Singleton that creates entities consisting of a model, view, and controller component, and performs the required
@@ -45,7 +47,14 @@ public:
 
     /** Returns the same EntityFactory instance every time. */
     static EntityFactory & get_instance();
-    void initialise( ModelManager * model_manager, ViewManager * view_manager, ControllerManager * controller_manager );
+
+    /** Finishes initialising the factory with all managers being non-null afterwards. This function can be used to set
+     *  the managers, but if the given pointers are null then they should've been set earlier. If the currently active
+     *  manager and the given pointer are both null, then an exception will be thrown. This function can be skipped if
+     *  all managers are set correctly using the set_manager_*() functions. */
+    void initialise( ModelManager * model_manager = nullptr,
+                     ViewManager * view_manager = nullptr,
+                     ControllerManager * controller_manager = nullptr );
 
     /** Sets a manager under which newly created objects will be registered. */
     void set_model_manager( ModelManager * model_manager );
@@ -71,6 +80,7 @@ public:
     [[nodiscard]] Entity build( std::string const & model_type,
                                 std::string const & view_type,
                                 std::string const & controller_type );
+    [[nodiscard]] Entity build( std::string const & type );
 
 private:
     bool m_initialised;
@@ -81,9 +91,9 @@ private:
     ControllerManager * m_controller_manager;
 
     /// Individual component creator functions.
-    std::map<std::string, std::function<std::unique_ptr<ModelObject>()>> m_model_factories;
-    std::map<std::string, std::function<std::unique_ptr<ViewObject>()>> m_view_factories;
-    std::map<std::string, std::function<std::unique_ptr<ControllerObject>()>> m_controller_factories;
+    FactoryMap<ModelObject> m_model_factories;
+    FactoryMap<ViewObject> m_view_factories;
+    FactoryMap<ControllerObject> m_controller_factories;
 
     /// Thread synchronisation primitive(s)
     // std::mutex m_model_mutex;

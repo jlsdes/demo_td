@@ -128,6 +128,7 @@ void Camera::set_free_view( InputManager & input_manager ) {
     std::set<int> keys {};
     for ( int const & key : std::views::keys( m_controls ) )
         keys.emplace( key );
+
     input_manager.observe_keyboard( keys, [this]( int const key, int const action ) {
         this->toggle_movement( key, action );
     } );

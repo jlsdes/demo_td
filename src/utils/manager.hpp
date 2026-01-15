@@ -92,8 +92,9 @@ protected:
     std::vector<IdPair> m_objects;
 
 private:
-    /// A counter to prevent multiple objects being registered with the same ID.
-    unsigned int m_next_id { 0 };
+    /// A counter to prevent multiple objects being registered with the same ID. The IDs start at 1, so 0 can be used to
+    /// indicate having no ID / object.
+    unsigned int m_next_id { 1 };
 };
 
 

@@ -4,6 +4,9 @@
 #include "view_manager.hpp"
 #include "utils/log.hpp"
 
+#include <stdexcept>
+
+
 EntityFactory::EntityFactory()
     : m_initialised { false }, m_model_manager { nullptr }, m_view_manager { nullptr },
       m_controller_manager { nullptr }, m_model_factories {}, m_view_factories {}, m_controller_factories {} {}
@@ -17,10 +20,24 @@ void EntityFactory::initialise( ModelManager * const model_manager,
                                 ViewManager * const view_manager,
                                 ControllerManager * const controller_manager ) {
     if ( m_initialised )
-        Log::warning( "Initialised EntityFactory already, overwriting old managers." );
-    set_model_manager( model_manager );
-    set_view_manager( view_manager );
-    set_controller_manager( controller_manager );
+        Log::warning( "Initialised EntityFactory already, overwriting old managers where necessary." );
+
+    if ( model_manager )
+        set_model_manager( model_manager );
+    else if ( not m_model_manager )
+        throw std::runtime_error( "Failed to properly initialise the EntityFactory's ModelManager." );
+
+    if ( view_manager )
+        set_view_manager( view_manager );
+    else if ( not m_view_manager )
+        throw std::runtime_error( "Failed to properly initialise the EntityFactory's ViewManager." );
+
+    if ( controller_manager )
+        set_controller_manager( controller_manager );
+    else if ( not m_controller_manager )
+        throw std::runtime_error( "Failed to properly initialise the EntityFactory's ControllerManager." );
+
+    m_initialised = true;
 }
 
 void EntityFactory::set_model_manager( ModelManager * const model_manager ) {
@@ -28,7 +45,7 @@ void EntityFactory::set_model_manager( ModelManager * const model_manager ) {
         std::lock_guard lock { m_mutex };
         m_model_manager = model_manager;
     } else
-        Log::error( "Attempted to set an EntityFactory's model manager to null." );
+        Log::error( "Attempted to set an EntityFactory's ModelManager to null; keeping the old manager." );
 }
 
 void EntityFactory::set_view_manager( ViewManager * const view_manager ) {
@@ -36,7 +53,7 @@ void EntityFactory::set_view_manager( ViewManager * const view_manager ) {
         std::lock_guard lock { m_mutex };
         m_view_manager = view_manager;
     } else
-        Log::error( "Attempted to set an EntityFactory's view manager to null." );
+        Log::error( "Attempted to set an EntityFactory's ViewManager to null; keeping the old manager." );
 }
 
 void EntityFactory::set_controller_manager( ControllerManager * const controller_manager ) {
@@ -44,7 +61,7 @@ void EntityFactory::set_controller_manager( ControllerManager * const controller
         std::lock_guard lock { m_mutex };
         m_controller_manager = controller_manager;
     } else
-        Log::error( "Attempted to set an EntityFactory's controller manager to null." );
+        Log::error( "Attempted to set an EntityFactory's ControllerManager to null; keeping the old manager." );
 }
 
 template <typename ManagedType>
@@ -82,33 +99,43 @@ bool EntityFactory::register_controller_factory( std::string const & name,
 }
 
 template <typename ManagedType>
-std::unique_ptr<ManagedType> build_component( std::map<std::string, FactoryFunction<ManagedType>> const & registry,
-                                    std::string const & name,
-                                    std::string const & type_name ) {
+std::pair<std::unique_ptr<ManagedType>, bool> build_component( FactoryMap<ManagedType> const & registry,
+                                                               std::string const & name,
+                                                               std::string const & type_name ) {
     if ( not registry.contains( name ) ) {
         Log::error( "Attempted to build an entity with an invalid ", type_name, " type '", name, "'." );
-        return nullptr;
+        return { nullptr, false };
     }
-    return registry.at( name )();
+    return { registry.at( name )(), true };
 }
 
 Entity EntityFactory::build( std::string const & model_type,
                              std::string const & view_type,
                              std::string const & controller_type ) {
-    Entity constexpr failed { 0, 0, 0, false }; // Return value if the entity construction failed
+    // Return value if the entity construction failed
+    Entity constexpr failed { { 0, nullptr }, { 0, nullptr }, { 0, nullptr }, false };
 
     std::lock_guard lock { m_mutex };
 
-    auto model { build_component<ModelObject>( m_model_factories, model_type, "model" ) };
-    if ( not model ) return failed;
-    auto view { build_component<ViewObject>( m_view_factories, view_type, "view" ) };
-    if ( not view ) return failed;
-    auto controller { build_component<ControllerObject>( m_controller_factories, controller_type, "controller" ) };
-    if ( not controller ) return failed;
+    auto [model, valid_model] { build_component<ModelObject>( m_model_factories, model_type, "model" ) };
+    auto [view, valid_view] { build_component<ViewObject>( m_view_factories, view_type, "view" ) };
+    auto [controller, valid_controller] {
+        build_component<ControllerObject>( m_controller_factories, controller_type, "controller" )
+    };
+    if ( not valid_model or not valid_view or not valid_controller )
+        return failed;
 
-    unsigned int const model_id { m_model_manager->push( std::move( model ) ) };
-    unsigned int const view_id { m_view_manager->push( std::move( view ) ) };
-    unsigned int const controller_id { m_controller_manager->push( std::move( controller ) ) };
+    ModelObject * const model_raw { model.get() };
+    ViewObject * const view_raw { view.get() };
+    ControllerObject * const controller_raw { controller.get() };
 
-    return { model_id, view_id, controller_id, true };
+    unsigned int const model_id { model ? m_model_manager->push( std::move( model ) ) : 0 };
+    unsigned int const view_id { view ? m_view_manager->push( std::move( view ) ) : 0 };
+    unsigned int const controller_id { controller ? m_controller_manager->push( std::move( controller ) ) : 0 };
+
+    return { { model_id, model_raw }, { view_id, view_raw }, { controller_id, controller_raw }, true };
+}
+
+Entity EntityFactory::build( std::string const & type ) {
+    return build( type, type, type );
 }
