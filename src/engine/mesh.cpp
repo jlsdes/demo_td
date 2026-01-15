@@ -64,6 +64,8 @@ Mesh::Mesh( Mesh && mesh ) noexcept : m_vertices { std::move( mesh.m_vertices ) 
                                       m_default_mode { std::exchange( mesh.m_default_mode, GL_TRIANGLES ) } {}
 
 Mesh & Mesh::operator=( Mesh && mesh ) noexcept {
+    if ( &mesh == this )
+        return *this;
     m_vertices = std::move( mesh.m_vertices );
     m_indices = std::move( mesh.m_indices );
     m_vertex_buffer = std::exchange( mesh.m_vertex_buffer, 0 );

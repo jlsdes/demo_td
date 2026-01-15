@@ -8,6 +8,29 @@
 #include <vector>
 
 
+template <typename T, unsigned int Tag>
+struct Optional {
+    T value;
+};
+
+template <unsigned int Tag>
+struct Optional<void, Tag> {};
+
+template <bool has_normal, bool has_colour, bool has_texture>
+struct Vertex_ {
+private:
+    using Normal = std::conditional_t<has_normal, glm::vec3, void>;
+    using Colour = std::conditional_t<has_colour, glm::vec3, void>;
+    using Texture = std::conditional_t<has_texture, glm::vec2, void>;
+
+public:
+    glm::vec3 position;
+    [[no_unique_address]] Optional<Normal, 0> normal;
+    [[no_unique_address]] Optional<Colour, 1> colour;
+    [[no_unique_address]] Optional<Texture, 2> texture;
+};
+
+
 struct Vertex {
     glm::vec3 position;
     glm::vec3 normal;
