@@ -122,8 +122,6 @@ void Engine::game_thread() {
     // Wait until the other thread is ready as well
     m_initialisation_latch.arrive_and_wait();
 
-    Sphere::create( glm::vec3 { 0.f }, 0.5f, glm::vec3 { 1.f, 0.f, 0.f } );
-
     double constexpr tick_duration { 1. / 100. };
     double margin { 0. };
     while ( not m_window->is_closing() ) {
@@ -200,6 +198,8 @@ void Engine::render_thread() {
 
     // Wait until the other thread is ready as well
     m_initialisation_latch.arrive_and_wait();
+
+    Sphere::create( glm::vec3 { 0.f }, 0.5f, glm::vec3 { 1.f, 0.f, 0.f } );
 
     // GLFW handles FPS limiting if VSync is enabled, which it probably is
     while ( not m_window->is_closing() ) {
