@@ -4,6 +4,7 @@
 #include <glad/gl.h>
 
 #include <cassert>
+#include <utility>
 
 
 std::ostream & operator<<( std::ostream & stream, glm::vec3 const & vector ) {
@@ -14,24 +15,39 @@ std::ostream & operator<<( std::ostream & stream, Vertex const & vertex ) {
     return stream << "<Vertex" << vertex.position << ", " << vertex.normal << ", " << vertex.colour << '>';
 }
 
-/// Helper function for the constructors; initialises an OpenGL buffer object, and copies data into it
+// /// Helper function for the constructors; initialises an OpenGL buffer object, and copies data into it
+// template <typename ElementType>
+// unsigned int create_buffer( GLenum const buffer_type,
+//                             ElementType const * const data,
+//                             unsigned long const nr_elements ) {
+//     unsigned int buffer;
+//     glGenBuffers( 1, &buffer );
+//     glBindBuffer( buffer_type, buffer );
+//     glBufferData( buffer_type, nr_elements * sizeof( ElementType ), data, GL_STATIC_DRAW );
+//     return buffer;
+// }
+//
+// /// Helper function for the constructors; copies a vector's data into an array.
+// template <typename ElementType>
+// std::unique_ptr<ElementType[]> vector_to_array( std::vector<ElementType> const & data ) {
+//     auto array { std::make_unique<ElementType[]>( data.size() ) };
+//     std::ranges::copy( data.cbegin(), data.cend(), array.get() );
+//     return array;
+// }
+
 template <typename ElementType>
-unsigned int create_buffer( GLenum const buffer_type,
-                            ElementType const * const data,
-                            unsigned long const nr_elements ) {
+unsigned int create_buffer( GLenum const buffer_type, std::vector<ElementType> const & data ) {
     unsigned int buffer;
     glGenBuffers( 1, &buffer );
     glBindBuffer( buffer_type, buffer );
-    glBufferData( buffer_type, nr_elements * sizeof( ElementType ), data, GL_STATIC_DRAW );
-    return buffer;
-}
+    // Creating the buffer with 'nullptr' as its data argument will only allocate memory, and not assign anything
+    glBufferData( buffer_type, data.size() * sizeof( ElementType ), nullptr, GL_STATIC_DRAW );
 
-/// Helper function for the constructors; copies a vector's data into an array.
-template <typename ElementType>
-std::unique_ptr<ElementType[]> vector_to_array( std::vector<ElementType> const & data ) {
-    auto array { std::make_unique<ElementType[]>( data.size() ) };
-    std::ranges::copy( data.cbegin(), data.cend(), array.get() );
-    return array;
+    void * buffer_data { glMapBuffer( buffer_type, GL_WRITE_ONLY ) };
+    std::ranges::copy( data.cbegin(), data.cend(), static_cast<ElementType *>(buffer_data) );
+    glUnmapBuffer( buffer_type );
+
+    return buffer;
 }
 
 /// Helper function for the constructor; sets up the attribute pointers in OpenGL for each of the vertex attributes.
@@ -49,15 +65,32 @@ void set_vertex_attributes() {
 }
 
 Mesh::Mesh( std::vector<Vertex> const & vertices, std::vector<unsigned int> const & indices, int const draw_mode )
-    : m_vertices { vector_to_array( vertices ) }, m_nr_vertices { vertices.size() },
-      m_indices { indices.empty() ? nullptr : vector_to_array( indices ) }, m_nr_indices { indices.size() },
-      m_vertex_buffer { 0 }, m_vertex_array { 0 }, m_element_buffer { 0 }, m_default_mode { draw_mode } {
+    : m_vertices { vertices }, m_indices { indices }, m_vertex_buffer { 0 }, m_vertex_array { 0 },
+      m_element_buffer { 0 }, m_default_mode { draw_mode } {
     glGenVertexArrays( 1, &m_vertex_array );
     glBindVertexArray( m_vertex_array );
-    m_vertex_buffer = create_buffer<Vertex>( GL_ARRAY_BUFFER, m_vertices.get(), m_nr_vertices );
-    if ( m_nr_indices > 0 )
-        m_element_buffer = create_buffer<unsigned int>( GL_ELEMENT_ARRAY_BUFFER, m_indices.get(), m_nr_indices );
+    m_vertex_buffer = create_buffer<Vertex>( GL_ARRAY_BUFFER, m_vertices );
+    if ( not indices.empty() )
+        m_element_buffer = create_buffer<unsigned int>( GL_ELEMENT_ARRAY_BUFFER, m_indices );
     set_vertex_attributes();
+}
+
+Mesh::Mesh( Mesh && mesh ) noexcept
+    : m_vertices { std::move( mesh.m_vertices ) },
+      m_indices { std::move( mesh.m_indices ) },
+      m_vertex_buffer { std::exchange( mesh.m_vertex_buffer, 0 ) },
+      m_vertex_array { std::exchange( mesh.m_vertex_array, 0 ) },
+      m_element_buffer { std::exchange( mesh.m_element_buffer, 0 ) },
+      m_default_mode { std::exchange( mesh.m_default_mode, GL_TRIANGLES ) } {}
+
+Mesh & Mesh::operator=( Mesh && mesh ) noexcept {
+    m_vertices = std::move( mesh.m_vertices );
+    m_indices = std::move( mesh.m_indices );
+    m_vertex_buffer = std::exchange( mesh.m_vertex_buffer, 0 );
+    m_vertex_array = std::exchange( mesh.m_vertex_array, 0 );
+    m_element_buffer = std::exchange( mesh.m_element_buffer, 0 );
+    m_default_mode = std::exchange( mesh.m_default_mode, GL_TRIANGLES );
+    return *this;
 }
 
 Mesh::~Mesh() {
@@ -67,16 +100,6 @@ Mesh::~Mesh() {
         glDeleteBuffers( 1, &m_vertex_buffer );
     if ( m_element_buffer )
         glDeleteBuffers( 1, &m_element_buffer );
-}
-
-Mesh::Mesh( Mesh && mesh ) noexcept
-    : m_vertices { std::move( mesh.m_vertices ) }, m_nr_vertices { mesh.m_nr_vertices },
-      m_indices { mesh.m_indices ? std::move( mesh.m_indices ) : nullptr }, m_nr_indices { mesh.m_nr_indices },
-      m_vertex_buffer { mesh.m_vertex_buffer }, m_vertex_array { mesh.m_vertex_array },
-      m_element_buffer { mesh.m_element_buffer }, m_default_mode { mesh.m_default_mode } {
-    mesh.m_vertex_buffer = 0;
-    mesh.m_vertex_array = 0;
-    mesh.m_element_buffer = 0;
 }
 
 bool Mesh::has_index() const {
@@ -95,7 +118,7 @@ void Mesh::draw( int mode ) const {
 
     glBindVertexArray( m_vertex_array );
     if ( has_index() )
-        glDrawElements( mode, static_cast<int>(m_nr_indices * 3), GL_UNSIGNED_INT, nullptr );
+        glDrawElements( mode, static_cast<int>(m_indices.size() * 3), GL_UNSIGNED_INT, nullptr );
     else
-        glDrawArrays( mode, 0, static_cast<int>(m_nr_vertices) );
+        glDrawArrays( mode, 0, static_cast<int>(m_vertices.size()) );
 }

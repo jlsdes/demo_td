@@ -34,11 +34,11 @@ public:
                    std::vector<unsigned int> const & indices = {},
                    int draw_mode = GL_TRIANGLES );
 
-    /** Destructor; deletes the underlying OpenGL buffer objects. */
-    ~Mesh();
-
-    /** Move constructor. */
+    Mesh( Mesh const & mesh ) = delete;
+    Mesh & operator=( Mesh const & mesh ) = delete;
     Mesh( Mesh && mesh ) noexcept;
+    Mesh & operator=( Mesh && mesh ) noexcept;
+    ~Mesh();
 
     /** Returns whether the mesh has an index array configured. */
     [[nodiscard]] bool has_index() const;
@@ -52,10 +52,12 @@ public:
 
 private:
     /// The mesh data; could be used to modify the buffer data.
-    std::unique_ptr<Vertex[]> m_vertices;
-    unsigned long m_nr_vertices;
-    std::unique_ptr<unsigned int[]> m_indices;
-    unsigned long m_nr_indices;
+    std::vector<Vertex> m_vertices;
+    std::vector<unsigned int> m_indices;
+    // std::unique_ptr<Vertex[]> m_vertices;
+    // unsigned long m_nr_vertices;
+    // std::unique_ptr<unsigned int[]> m_indices;
+    // unsigned long m_nr_indices;
 
     /// OpenGL object IDs.
     unsigned int m_vertex_buffer;
