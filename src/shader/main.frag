@@ -15,9 +15,10 @@ uniform vec3 camera_position;
 out vec4 fragment_colour;
 
 
-// Some constants, these should become material attributes at some point I think
+// Some constants, these should become material attributes at some point
 // No ambient factor; this can be changed by scaling the ambient_light uniform
-#define diffuse_factor 0.1f
+#define ambient_factor 0.1f
+#define diffuse_factor 0.2f
 #define specular_factor 0.01f
 #define shininess 32
 
@@ -43,5 +44,11 @@ vec3 specular_colour( vec3 light_direction, vec3 light_colour ) {
 void main() {
     vec3 sun_diffuse = diffuse_colour( sun_direction, sun_light );
     vec3 sun_specular = specular_colour( sun_direction, sun_light );
-    fragment_colour = vec4( ( ambient_light + sun_diffuse + sun_specular ) * colour, 1.0f );
+    vec3 ambient = ambient_light * ambient_factor;
+    vec3 result = ( ambient + sun_diffuse + sun_specular ) * colour;
+
+    // Gamma correction
+    result = pow( result, vec3( 1.f / 2.2f ) );
+
+    fragment_colour = vec4( result, 1.0f );
 }

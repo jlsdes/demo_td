@@ -1,7 +1,6 @@
 #include "camera.hpp"
 #include "engine.hpp"
 #include "entity_factory.hpp"
-#include "mesh_builder.hpp"
 #include "shader.hpp"
 #include "utils/config.hpp"
 #include "utils/log.hpp"
@@ -113,12 +112,6 @@ void Engine::game_thread() {
     entity_factory.set_model_manager( m_models.back().get() );
     entity_factory.set_controller_manager( m_controllers.back().get() );
 
-    // for ( unsigned int i { 0 }; i < 100; ++i ) {
-    //     auto model { std::make_unique<ModelObject>( glm::vec3 { static_cast<float>(i), 0.f, 0.f } ) };
-    //     m_models.back()->push( std::move( model ) );
-    //     m_controllers.back()->push( std::make_unique<TempController>( i ) );
-    // }
-
     // Wait until the other thread is ready as well
     m_initialisation_latch.arrive_and_wait();
 
@@ -181,17 +174,6 @@ void Engine::render_thread() {
     glm::vec3 const & camera_target { 0.f, 0.f, 0.f };
     Camera camera { camera_position, camera_target, &shader };
     camera.set_free_view( m_window->get_input_manager() );
-
-    // auto builder { MeshBuilder::sphere( 10 ) };
-    // builder.transform( glm::identity<glm::mat3>() * 0.3f );
-    // for ( unsigned char i { 0 }; i < 8; ++i ) {
-    //     glm::vec3 offset { i & 4 ? -0.5f : 0.5f, i & 2 ? -0.5f : 0.5f, i & 1 ? -0.5f : 0.5f };
-    //
-    //     builder.m_colours = { builder.m_vertices.size(), offset + glm::vec3 { 0.5f } };
-    //     builder.translate( offset );
-    //     m_views.back().get()->push( std::make_unique<ViewObject>( ViewObject::Opaque, builder.get_mesh(), &shader ) );
-    //     builder.translate( -offset );
-    // }
 
     float constexpr fov { std::numbers::pi_v<float> / 4.f }; // 45 degrees
     shader.set_uniform( "projection", glm::perspective( fov, 1200.f / 800.f, 0.1f, 100.f ) );
