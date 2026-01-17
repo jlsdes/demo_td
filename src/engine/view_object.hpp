@@ -26,6 +26,9 @@ public:
     ViewObject( Type type, Mesh && mesh, Shader * shader );
     ~ViewObject() override = default;
 
+    /** Initialises the mesh's OpenGL data, only to be called by the render thread. */
+    void initialise_mesh();
+
     /** Updates and draws the object, CPU- and GPU-side respectively (more or less). */
     void update() override;
     void draw() const;

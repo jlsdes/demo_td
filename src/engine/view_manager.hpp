@@ -38,10 +38,11 @@ public:
     explicit ViewManager( std::unique_ptr<RenderQueue> && queue = nullptr );
     ~ViewManager() override;
 
-    void draw() const;
+    void draw();
 
 private:
     std::unique_ptr<RenderQueue> m_queue;
+    unsigned int m_last_id;
 };
 
 

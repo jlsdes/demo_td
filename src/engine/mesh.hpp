@@ -13,22 +13,31 @@
  *  useful if [[no_unique_address]] is used, as the compiler can then hide the Optional<...> member within another data
  *  member of the Vertex_ struct. 'Tag' is only here because it can force instances to be of different types, which is a
  *  requirement for [[no_unique_address]] to fully work. */
-template <typename T, bool exists, unsigned int Tag>
+template <typename T, bool exists_, unsigned int Tag>
 struct Optional {
     T value;
-    T & operator()() { return value; }
+
+    T & operator*() { return value; }
+    T * operator->() { return &value; }
+
+    static constexpr bool exists { exists_ };
 };
+
 template <typename T, unsigned int Tag>
 struct Optional<T, false, Tag> {};
 
 /** A modular struct with some optional data fields. Depending on the template parameters some of the members can be
  *  empty. For example, if 'has_colour' is false, then 'colour' is an empty struct and 'colour.value' does not exist. */
-template <bool has_normal, bool has_colour, bool has_texture>
+template <bool has_normal_, bool has_colour_, bool has_texture_>
 struct Vertex_ {
     glm::vec3 position;
-    [[no_unique_address]] Optional<glm::vec3, has_normal, 0> normal;
-    [[no_unique_address]] Optional<glm::vec3, has_colour, 1> colour;
-    [[no_unique_address]] Optional<glm::vec2, has_texture, 2> texture;
+    [[no_unique_address]] Optional<glm::vec3, has_normal_, 0> normal;
+    [[no_unique_address]] Optional<glm::vec3, has_colour_, 1> colour;
+    [[no_unique_address]] Optional<glm::vec2, has_texture_, 2> texture;
+
+    static constexpr bool has_normal { has_normal_ };
+    static constexpr bool has_colour { has_colour_ };
+    static constexpr bool has_texture { has_texture_ };
 };
 
 using LineVertex = Vertex_<false, true, false>;
@@ -66,6 +75,9 @@ public:
     Mesh & operator=( Mesh && mesh ) noexcept;
     ~Mesh();
 
+    /** Initialises the mesh's OpenGL data, only to be called by the main render thread. */
+    void initialise();
+
     /** Returns whether the mesh has an index array configured. */
     [[nodiscard]] bool has_index() const;
 
@@ -88,6 +100,8 @@ private:
 
     /// The current default mode for drawing this mesh.
     int m_default_mode;
+
+    bool m_initialised;
 };
 
 

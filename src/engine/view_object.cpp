@@ -11,6 +11,10 @@ ViewObject::ViewObject( Type const type, Mesh && mesh, Shader * const shader )
         Log::warning( "RenderObject was not provided with a Shader object." );
 }
 
+void ViewObject::initialise_mesh() {
+    m_mesh.initialise();
+}
+
 void ViewObject::update() {}
 
 void ViewObject::draw() const {

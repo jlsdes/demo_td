@@ -28,13 +28,22 @@ bool NaiveRenderQueue::empty() {
 }
 
 ViewManager::ViewManager( std::unique_ptr<RenderQueue> && queue )
-    : m_queue { queue ? std::move( queue ) : std::make_unique<NaiveRenderQueue>() } {}
+    : m_queue { queue ? std::move( queue ) : std::make_unique<NaiveRenderQueue>() }, m_last_id { 0 } {}
 
 ViewManager::~ViewManager() = default;
 
-void ViewManager::draw() const {
-    for ( auto const & object : std::ranges::views::values( m_objects ) )
-        m_queue->push( dynamic_cast<ViewObject const *>(object.get()) );
+void ViewManager::draw() {
+    for ( auto const & [object_id, object] : m_objects ) {
+        auto const view_object { dynamic_cast<ViewObject *>( object.get() ) };
+        m_queue->push( view_object );
+
+        // Object IDs are generated in ascending order, so by keeping track of the last ID that currently exists, new
+        // objects can be detected and initialised
+        if ( object_id > m_last_id ) {
+            view_object->initialise_mesh();
+            m_last_id = object_id;
+        }
+    }
     while ( !m_queue->empty() )
         m_queue->pop().draw();
 }
