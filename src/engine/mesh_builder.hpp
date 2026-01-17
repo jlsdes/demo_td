@@ -35,7 +35,7 @@ public:
     MeshBuilder & generate_vertex_normals();
 
     /** Returns the shape data in a more sesh-friendly format. */
-    [[nodiscard]] std::vector<Vertex> get_mesh_vertices() const;
+    [[nodiscard]] std::vector<ColourVertex> get_mesh_vertices() const;
     [[nodiscard]] std::vector<unsigned int> get_mesh_face_indices() const;
     [[nodiscard]] Mesh get_mesh() const;
 

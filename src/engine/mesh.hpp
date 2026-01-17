@@ -8,38 +8,40 @@
 #include <vector>
 
 
-template <typename T, unsigned int Tag>
+/** A variable that may not exist, primarily as a utility struct for the Vertex_ implementation. If 'exists' is true,
+ *  then this struct has a single member 'value' with type 'T', but if it's false then this struct is empty. This can be
+ *  useful if [[no_unique_address]] is used, as the compiler can then hide the Optional<...> member within another data
+ *  member of the Vertex_ struct. 'Tag' is only here because it can force instances to be of different types, which is a
+ *  requirement for [[no_unique_address]] to fully work. */
+template <typename T, bool exists, unsigned int Tag>
 struct Optional {
     T value;
+    T & operator()() { return value; }
 };
+template <typename T, unsigned int Tag>
+struct Optional<T, false, Tag> {};
 
-template <unsigned int Tag>
-struct Optional<void, Tag> {};
-
+/** A modular struct with some optional data fields. Depending on the template parameters some of the members can be
+ *  empty. For example, if 'has_colour' is false, then 'colour' is an empty struct and 'colour.value' does not exist. */
 template <bool has_normal, bool has_colour, bool has_texture>
 struct Vertex_ {
-private:
-    using Normal = std::conditional_t<has_normal, glm::vec3, void>;
-    using Colour = std::conditional_t<has_colour, glm::vec3, void>;
-    using Texture = std::conditional_t<has_texture, glm::vec2, void>;
-
-public:
     glm::vec3 position;
-    [[no_unique_address]] Optional<Normal, 0> normal;
-    [[no_unique_address]] Optional<Colour, 1> colour;
-    [[no_unique_address]] Optional<Texture, 2> texture;
+    [[no_unique_address]] Optional<glm::vec3, has_normal, 0> normal;
+    [[no_unique_address]] Optional<glm::vec3, has_colour, 1> colour;
+    [[no_unique_address]] Optional<glm::vec2, has_texture, 2> texture;
 };
 
+using LineVertex = Vertex_<false, true, false>;
+using ColourVertex = Vertex_<true, true, false>;
+using TextureVertex = Vertex_<true, false, true>;
+using Vertex = Vertex_<true, true, true>;
 
-struct Vertex {
-    glm::vec3 position;
-    glm::vec3 normal;
-    glm::vec3 colour;
-    // TODO add texture coordinates? Although I might not use them in this project
-};
 
-std::ostream & operator<<( std::ostream & stream, glm::vec3 const & vector );
-std::ostream & operator<<( std::ostream & stream, Vertex const & vertex );
+template <glm::length_t size, typename T>
+std::ostream & operator<<( std::ostream & stream, glm::vec<size, T> const & vector );
+
+template <bool has_normal, bool has_colour, bool has_texture>
+std::ostream & operator<<( std::ostream & stream, Vertex_<has_normal, has_colour, has_texture> const & vertex );
 
 
 /** A mesh consisting of vertices and faces, optionally defined by vertex indices. This class holds some OpenGL objects,
@@ -54,7 +56,7 @@ public:
      * @param draw_mode The default draw mode for the mesh as used in OpenGL. The default value 'GL_TRIANGLES' means
      *  that groups of three vertices will be combined to define some triangles.
      */
-    explicit Mesh( std::vector<Vertex> const & vertices,
+    explicit Mesh( std::vector<ColourVertex> const & vertices,
                    std::vector<unsigned int> const & indices = {},
                    int draw_mode = GL_TRIANGLES );
 
@@ -76,7 +78,7 @@ public:
 
 private:
     /// The mesh data; could be used to modify the buffer data.
-    std::vector<Vertex> m_vertices;
+    std::vector<ColourVertex> m_vertices;
     std::vector<unsigned int> m_indices;
 
     /// OpenGL object IDs.
@@ -87,6 +89,29 @@ private:
     /// The current default mode for drawing this mesh.
     int m_default_mode;
 };
+
+
+// Template definitions
+
+template <glm::length_t size, typename T>
+std::ostream & operator<<( std::ostream & stream, glm::vec<size, T> const & vector ) {
+    stream << '<' << vector[0];
+    for ( unsigned int i { 1 }; i < size; ++i )
+        stream << ", " << vector[i];
+    return stream << '>';
+}
+
+template <bool has_normal, bool has_colour, bool has_texture>
+std::ostream & operator<<( std::ostream & stream, Vertex_<has_normal, has_colour, has_texture> const & vertex ) {
+    stream << "<Vertex position=" << vertex.position;
+    if ( has_normal )
+        stream << " normal=" << vertex.normal();
+    if ( has_colour )
+        stream << " colour=" << vertex.colour();
+    if ( has_texture )
+        stream << " texture=" << vertex.texture();
+    return stream << ">";
+}
 
 
 #endif //DEMO_TD_MESH_HPP

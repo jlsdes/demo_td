@@ -142,11 +142,11 @@ bool is_valid_attribute_vector( std::string const & name,
     return size == expected;
 }
 
-std::vector<Vertex> MeshBuilder::get_mesh_vertices() const {
+std::vector<ColourVertex> MeshBuilder::get_mesh_vertices() const {
     bool const has_normals { is_valid_attribute_vector( "normal", m_normals, m_vertices ) };
     bool const has_colours { is_valid_attribute_vector( "colour", m_colours, m_vertices ) };
 
-    std::vector<Vertex> vertex_data { m_vertices.size() };
+    std::vector<ColourVertex> vertex_data { m_vertices.size() };
     for ( unsigned int i { 0 }; i < m_vertices.size(); ++i ) {
         glm::vec3 constexpr zeroes { 0.f };
         auto const normal { has_normals ? m_normals.at( i ) : zeroes };

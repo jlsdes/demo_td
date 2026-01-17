@@ -7,14 +7,6 @@
 #include <utility>
 
 
-std::ostream & operator<<( std::ostream & stream, glm::vec3 const & vector ) {
-    return stream << '<' << vector.x << ", " << vector.y << ", " << vector.z << '>';
-}
-
-std::ostream & operator<<( std::ostream & stream, Vertex const & vertex ) {
-    return stream << "<Vertex" << vertex.position << ", " << vertex.normal << ", " << vertex.colour << '>';
-}
-
 /** Creates a new OpenGL buffer and copies data into it. */
 template <typename ElementType>
 unsigned int create_buffer( GLenum const buffer_type, std::vector<ElementType> const & data ) {
@@ -34,23 +26,23 @@ unsigned int create_buffer( GLenum const buffer_type, std::vector<ElementType> c
 /** Helper function for the constructor; sets up the attribute pointers in OpenGL for each of the vertex attributes. */
 void set_vertex_attributes() {
     // Set the position attribute
-    glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, sizeof( Vertex ), nullptr );
+    glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, sizeof( ColourVertex ), nullptr );
     glEnableVertexAttribArray( 0 );
     // Set the normal vectors
-    glVertexAttribPointer( 1, 3, GL_FLOAT, GL_FALSE, sizeof( Vertex ), reinterpret_cast<void *>(sizeof( glm::vec3 )) );
+    glVertexAttribPointer( 1, 3, GL_FLOAT, GL_FALSE, sizeof( ColourVertex ), reinterpret_cast<void *>(sizeof( glm::vec3 )) );
     glEnableVertexAttribArray( 1 );
     // Set the colour values
-    glVertexAttribPointer( 2, 3, GL_FLOAT, GL_FALSE, sizeof( Vertex ),
+    glVertexAttribPointer( 2, 3, GL_FLOAT, GL_FALSE, sizeof( ColourVertex ),
                            reinterpret_cast<void *>(2 * sizeof( glm::vec3 )) );
     glEnableVertexAttribArray( 2 );
 }
 
-Mesh::Mesh( std::vector<Vertex> const & vertices, std::vector<unsigned int> const & indices, int const draw_mode )
+Mesh::Mesh( std::vector<ColourVertex> const & vertices, std::vector<unsigned int> const & indices, int const draw_mode )
     : m_vertices { vertices }, m_indices { indices }, m_vertex_buffer { 0 }, m_vertex_array { 0 },
       m_element_buffer { 0 }, m_default_mode { draw_mode } {
     glGenVertexArrays( 1, &m_vertex_array );
     glBindVertexArray( m_vertex_array );
-    m_vertex_buffer = create_buffer<Vertex>( GL_ARRAY_BUFFER, m_vertices );
+    m_vertex_buffer = create_buffer<ColourVertex>( GL_ARRAY_BUFFER, m_vertices );
     if ( not indices.empty() )
         m_element_buffer = create_buffer<unsigned int>( GL_ELEMENT_ARRAY_BUFFER, m_indices );
     set_vertex_attributes();
