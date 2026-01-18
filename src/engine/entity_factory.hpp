@@ -26,10 +26,9 @@ struct Entity {
 };
 
 
-template <typename ManagedType>
-using FactoryFunction = std::function<std::unique_ptr<ManagedType>()>;
-template <typename ManagedType>
-using FactoryMap = std::map<std::string, FactoryFunction<ManagedType>>;
+using ModelFactory = std::function<std::unique_ptr<ModelObject>()>;
+using ViewFactory = std::function<std::unique_ptr<ViewObject>( ModelObject * )>;
+using ControllerFactory = std::function<std::unique_ptr<ControllerObject>( ModelObject * )>;
 
 
 /** Singleton that creates entities consisting of a model, view, and controller component, and performs the required
@@ -64,14 +63,10 @@ public:
     /** Registers a new factory function for creating the entity component types. If a factory function with the given
      *  name already exists, then the new one will only replace it if 'override' is true. If not, nothing happens and
      *  false is returned. */
-    bool register_model_factory( std::string const & name,
-                                 FactoryFunction<ModelObject> const & factory,
-                                 bool override = false );
-    bool register_view_factory( std::string const & name,
-                                FactoryFunction<ViewObject> const & factory,
-                                bool override = false );
+    bool register_model_factory( std::string const & name, ModelFactory const & factory, bool override = false );
+    bool register_view_factory( std::string const & name, ViewFactory const & factory, bool override = false );
     bool register_controller_factory( std::string const & name,
-                                      FactoryFunction<ControllerObject> const & factory,
+                                      ControllerFactory const & factory,
                                       bool override = false );
 
     /** Creates a new entity consisting of a model, view, and controller component. Returns an Entity struct containing
@@ -91,14 +86,11 @@ private:
     ControllerManager * m_controller_manager;
 
     /// Individual component creator functions.
-    FactoryMap<ModelObject> m_model_factories;
-    FactoryMap<ViewObject> m_view_factories;
-    FactoryMap<ControllerObject> m_controller_factories;
+    std::map<std::string, ModelFactory> m_model_factories;
+    std::map<std::string, ViewFactory> m_view_factories;
+    std::map<std::string, ControllerFactory> m_controller_factories;
 
     /// Thread synchronisation primitive(s)
-    // std::mutex m_model_mutex;
-    // std::mutex m_view_mutex;
-    // std::mutex m_controller_mutex;
     std::mutex m_mutex;
 };
 

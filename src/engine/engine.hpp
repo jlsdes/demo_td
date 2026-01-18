@@ -11,6 +11,7 @@
 #include <vector>
 
 
+/** Main class for running the entire application's backend. */
 class Engine {
 public:
     Engine();

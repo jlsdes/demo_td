@@ -98,15 +98,6 @@ bool Engine::pop_controller_manager( ControllerManager const * controller_manage
     return pop_manager( m_controllers, controller_manager, "ControllerManager" );
 }
 
-struct TempController : public ControllerObject {
-    unsigned int id;
-    unsigned int counter;
-
-    explicit TempController( unsigned int const id ) : id { id }, counter { 0 } {}
-
-    void update() override { ++counter; }
-};
-
 void Engine::game_thread() {
     auto & entity_factory { EntityFactory::get_instance() };
     entity_factory.set_model_manager( m_models.back().get() );
@@ -115,7 +106,12 @@ void Engine::game_thread() {
     // Wait until the other thread is ready as well
     m_initialisation_latch.arrive_and_wait();
 
-    Sphere::create( glm::vec3 { 0.f }, 0.5f, glm::vec3 { 1.f, 0.f, 0.f } );
+    // Create 8 spheres with different colours
+    for ( unsigned int i { 0 }; i < 8; ++i ) {
+        glm::vec3 const position { i & 4 ? -0.5f : 0.5f, i & 2 ? -0.5f : 0.5f, i & 1 ? -0.5f : 0.5f };
+        glm::vec3 const colour { i & 4 ? 0.f : 1.f, i & 2 ? 0.f : 1.f, i & 1 ? 0.f : 1.f, };
+        Sphere::create( position, 0.3f, colour );
+    }
 
     double constexpr tick_duration { 1. / 100. };
     double margin { 0. };

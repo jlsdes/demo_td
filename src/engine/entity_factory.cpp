@@ -64,10 +64,10 @@ void EntityFactory::set_controller_manager( ControllerManager * const controller
         Log::error( "Attempted to set an EntityFactory's ControllerManager to null; keeping the old manager." );
 }
 
-template <typename ManagedType>
-bool register_factory( std::map<std::string, FactoryFunction<ManagedType>> & registry,
+template <typename FactoryType>
+bool register_factory( std::map<std::string, FactoryType> & registry,
                        std::string const & name,
-                       FactoryFunction<ManagedType> const & factory,
+                       FactoryType const & factory,
                        bool const override ) {
     if ( override ) {
         registry.insert_or_assign( name, factory );
@@ -78,35 +78,24 @@ bool register_factory( std::map<std::string, FactoryFunction<ManagedType>> & reg
 }
 
 bool EntityFactory::register_model_factory( std::string const & name,
-                                            FactoryFunction<ModelObject> const & factory,
+                                            ModelFactory const & factory,
                                             bool const override ) {
     std::lock_guard lock { m_mutex };
     return register_factory( m_model_factories, name, factory, override );
 }
 
 bool EntityFactory::register_view_factory( std::string const & name,
-                                           FactoryFunction<ViewObject> const & factory,
+                                           ViewFactory const & factory,
                                            bool const override ) {
     std::lock_guard lock { m_mutex };
     return register_factory( m_view_factories, name, factory, override );
 }
 
 bool EntityFactory::register_controller_factory( std::string const & name,
-                                                 FactoryFunction<ControllerObject> const & factory,
+                                                 ControllerFactory const & factory,
                                                  bool const override ) {
     std::lock_guard lock { m_mutex };
     return register_factory( m_controller_factories, name, factory, override );
-}
-
-template <typename ManagedType>
-std::pair<std::unique_ptr<ManagedType>, bool> build_component( FactoryMap<ManagedType> const & registry,
-                                                               std::string const & name,
-                                                               std::string const & type_name ) {
-    if ( not registry.contains( name ) ) {
-        Log::error( "Attempted to build an entity with an invalid ", type_name, " type '", name, "'." );
-        return { nullptr, false };
-    }
-    return { registry.at( name )(), true };
 }
 
 Entity EntityFactory::build( std::string const & model_type,
@@ -115,18 +104,26 @@ Entity EntityFactory::build( std::string const & model_type,
     // Return value if the entity construction failed
     Entity constexpr failed { { 0, nullptr }, { 0, nullptr }, { 0, nullptr }, false };
 
+    if ( not m_model_factories.contains( model_type ) ) {
+        Log::error( "Attempted to build an entity with an invalid model type '", model_type, "'." );
+        return failed;
+    }
+    if ( not m_view_factories.contains( view_type ) ) {
+        Log::error( "Attempted to build an entity with an invalid view type '", view_type, "'." );
+        return failed;
+    }
+    if ( not m_controller_factories.contains( controller_type ) ) {
+        Log::error( "Attempted to build an entity with an invalid controller type '", controller_type, "'." );
+        return failed;
+    }
+
     std::lock_guard lock { m_mutex };
 
-    auto [model, valid_model] { build_component<ModelObject>( m_model_factories, model_type, "model" ) };
-    auto [view, valid_view] { build_component<ViewObject>( m_view_factories, view_type, "view" ) };
-    auto [controller, valid_controller] {
-        build_component<ControllerObject>( m_controller_factories, controller_type, "controller" )
-    };
-    if ( not valid_model or not valid_view or not valid_controller )
-        return failed;
-
+    auto model { m_model_factories.at( model_type )() };
     ModelObject * const model_raw { model.get() };
+    auto view { m_view_factories.at( view_type )( model.get() ) };
     ViewObject * const view_raw { view.get() };
+    auto controller { m_controller_factories.at( controller_type )( model.get() ) };
     ControllerObject * const controller_raw { controller.get() };
 
     unsigned int const model_id { model ? m_model_manager->push( std::move( model ) ) : 0 };

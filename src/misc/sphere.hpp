@@ -17,14 +17,14 @@ public:
 
     class View : public ViewObject {
     public:
-        explicit View();
+        explicit View( Model * model );
 
         void update() override;
     };
 
     class Controller : public ControllerObject {
     public:
-        Controller();
+        explicit Controller( Model * model );
 
         void update() override;
     };

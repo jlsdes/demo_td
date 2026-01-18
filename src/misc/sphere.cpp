@@ -13,8 +13,10 @@ void Sphere::initialise( Shader * const shader ) {
 
     auto & factory { EntityFactory::get_instance() };
     factory.register_model_factory( "sphere", std::make_unique<Model> );
-    factory.register_view_factory( "sphere", std::make_unique<View> );
-    factory.register_controller_factory( "sphere", std::make_unique<Controller> );
+    factory.register_view_factory( "sphere", []( Model * const model ) { return std::make_unique<View>( model ); } );
+    factory.register_controller_factory( "sphere", []( Model * const model ) {
+        return std::make_unique<Controller>( model );
+    } );
 }
 
 Entity Sphere::create( glm::vec3 const & position, float const radius, glm::vec3 const & colour ) {
@@ -26,8 +28,8 @@ Entity Sphere::create( glm::vec3 const & position, float const radius, glm::vec3
     model->get_model_data<ModelData>()->position = position;
 
     auto const [view_id, view] { sphere.view };
-    view->scale( radius );
     view->translate( position );
+    view->scale( radius );
 
     return sphere;
 }
@@ -38,12 +40,12 @@ Mesh<ColourVertex> get_coloured_mesh() {
     return sphere.get_mesh();
 }
 
-Sphere::View::View() : ViewObject { Opaque, std::move( get_coloured_mesh() ), s_shader } {}
+Sphere::View::View( Model * const model ) : ViewObject { model, Opaque, std::move( get_coloured_mesh() ), s_shader } {}
 
 void Sphere::View::update() {
     ViewObject::update();
 }
 
-Sphere::Controller::Controller() = default;
+Sphere::Controller::Controller( Model * const model ) : ControllerObject { model } {}
 
 void Sphere::Controller::update() {}

@@ -42,7 +42,6 @@ add_executable(demo_td src/main.cpp
         src/engine/window.hpp
         src/engine/shader.cpp
         src/engine/shader.hpp
-        src/engine/mesh.cpp
         src/engine/mesh.hpp
         src/engine/camera.cpp
         src/engine/camera.hpp
@@ -77,6 +76,7 @@ add_executable(demo_td src/main.cpp
         src/utils/manager.cpp
         src/misc/sphere.cpp
         src/misc/sphere.hpp
+        src/engine/controller_object.cpp
 )
 
 # Link the necessary libraries

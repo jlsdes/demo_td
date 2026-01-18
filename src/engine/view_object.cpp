@@ -5,10 +5,12 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 
-ViewObject::ViewObject( Type const type, Mesh<ColourVertex> && mesh, Shader * const shader )
-    : m_type { type }, m_mesh { std::move( mesh ) }, m_shader { shader }, m_transform { 1.f } {
+ViewObject::ViewObject( ModelObject * const model, Type const type, Mesh<ColourVertex> && mesh, Shader * const shader )
+    : m_model { model }, m_type { type }, m_mesh { std::move( mesh ) }, m_shader { shader }, m_transform { 1.f } {
+    if ( not m_model )
+        Log::warning( "Created a ViewObject without a ModelObject attached." );
     if (shader == nullptr)
-        Log::warning( "RenderObject was not provided with a Shader object." );
+        Log::warning( "Created a ViewObject without providing a Shader." );
 }
 
 void ViewObject::initialise_mesh() {

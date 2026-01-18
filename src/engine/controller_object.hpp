@@ -4,14 +4,19 @@
 #include "utils/manager.hpp"
 
 
+class ModelObject;
+
 /** (Base) class for all controllers, i.e. the behaviour of the entities and player input handler. */
 class ControllerObject: public ManagedObject {
 public:
-    // TODO Figure out how to do this, because atm this is just identical to ManagedObject
-    ControllerObject() = default;
+    explicit ControllerObject( ModelObject * model );
     ~ControllerObject() override = default;
 
     void update() override = 0;
+
+protected:
+    /// The model being controlled.
+    ModelObject * m_model;
 };
 
 

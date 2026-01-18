@@ -7,6 +7,7 @@
 #include <glm/glm.hpp>
 
 
+class ModelObject;
 class Shader;
 
 
@@ -23,7 +24,7 @@ public:
     };
 
     /** Constructor and destructor. */
-    ViewObject( Type type, Mesh<ColourVertex> && mesh, Shader * shader );
+    ViewObject( ModelObject * model, Type type, Mesh<ColourVertex> && mesh, Shader * shader );
     ~ViewObject() override = default;
 
     /** Initialises the mesh's OpenGL data, only to be called by the render thread. */
@@ -44,10 +45,11 @@ public:
     void scale( float scale );
 
 private:
-    /// The type of object this is.
-    Type m_type;
+    /// The model object that is being drawn.
+    ModelObject * m_model;
 
     /// The main components for drawing this object.
+    Type m_type;
     Mesh<ColourVertex> m_mesh;
     Shader * m_shader;
 
