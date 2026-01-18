@@ -32,7 +32,7 @@ Entity Sphere::create( glm::vec3 const & position, float const radius, glm::vec3
     return sphere;
 }
 
-Mesh get_coloured_mesh() {
+Mesh<ColourVertex> get_coloured_mesh() {
     auto sphere { MeshBuilder::sphere( 10 ) };
     sphere.m_colours = { sphere.m_vertices.size(), g_colour };
     return sphere.get_mesh();

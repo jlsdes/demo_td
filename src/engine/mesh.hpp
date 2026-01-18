@@ -1,12 +1,15 @@
 #ifndef DEMO_TD_MESH_HPP
 #define DEMO_TD_MESH_HPP
 
+#include "utils/log.hpp"
+
 #include <glad/gl.h>
 #include <glm/glm.hpp>
 
 #include <memory>
 #include <thread>
 #include <vector>
+#include <utility>
 
 
 /** A variable that may not exist, primarily as a utility struct for the Vertex_ implementation. If 'exists' is true,
@@ -60,6 +63,7 @@ std::ostream & operator<<( std::ostream & stream, V const & vertex );
 
 /** A mesh consisting of vertices and faces, optionally defined by vertex indices. This class holds some OpenGL objects,
  *  and must therefore always be created in the (main) render thread. */
+template <VertexType V>
 class Mesh {
 public:
     /** Constructor; creates some underlying OpenGL buffers.
@@ -70,7 +74,7 @@ public:
      * @param draw_mode The default draw mode for the mesh as used in OpenGL. The default value 'GL_TRIANGLES' means
      *  that groups of three vertices will be combined to define some triangles.
      */
-    explicit Mesh( std::vector<ColourVertex> const & vertices,
+    explicit Mesh( std::vector<V> const & vertices,
                    std::vector<unsigned int> const & indices = {},
                    int draw_mode = GL_TRIANGLES );
 
@@ -81,7 +85,8 @@ public:
     ~Mesh();
 
     /** Initialises the mesh's OpenGL data, only to be called by the main render thread. */
-    void initialise();
+    void initialise_gl_objects();
+    void destroy_gl_objects();
 
     /** Returns whether the mesh has an index array configured. */
     [[nodiscard]] bool has_index() const;
@@ -95,7 +100,7 @@ public:
 
 private:
     /// The mesh data; could be used to modify the buffer data.
-    std::vector<ColourVertex> m_vertices;
+    std::vector<V> m_vertices;
     std::vector<unsigned int> m_indices;
 
     /// OpenGL object IDs.
@@ -133,5 +138,131 @@ std::ostream & operator<<( std::ostream & stream, V const & vertex ) {
     return stream << ">";
 }
 
+/** Creates a new OpenGL buffer and copies data into it. */
+template <typename ElementType>
+unsigned int create_buffer( GLenum const buffer_type, std::vector<ElementType> const & data ) {
+    unsigned int buffer;
+    glGenBuffers( 1, &buffer );
+    glBindBuffer( buffer_type, buffer );
+    // Creating the buffer with 'nullptr' as its data argument will only allocate memory, and not assign anything
+    glBufferData( buffer_type, data.size() * sizeof( ElementType ), nullptr, GL_STATIC_DRAW );
+
+    void * buffer_data { glMapBuffer( buffer_type, GL_WRITE_ONLY ) };
+    std::ranges::copy( data.cbegin(), data.cend(), static_cast<ElementType *>(buffer_data) );
+    glUnmapBuffer( buffer_type );
+
+    return buffer;
+}
+
+template <VertexType V>
+void set_attribute( unsigned int & index, unsigned int & offset, int const size ) {
+    glVertexAttribPointer( index, size, GL_FLOAT, GL_FALSE, sizeof( V ), reinterpret_cast<void *>(offset) );
+    glEnableVertexAttribArray( index++ );
+    offset += size * sizeof( float );
+}
+
+/** Helper function for the constructor; sets up the attribute pointers in OpenGL for each of the vertex attributes. */
+template <VertexType V>
+void set_vertex_attributes() {
+    unsigned int index { 0 };
+    unsigned int offset { 0 };
+
+    set_attribute<V>( index, offset, 3 );
+    if constexpr ( V::has_normal )
+        set_attribute<V>( index, offset, 3 );
+    if constexpr ( V::has_colour )
+        set_attribute<V>( index, offset, 3 );
+    if constexpr ( V::has_normal )
+        set_attribute<V>( index, offset, 2 );
+}
+
+template <VertexType V>
+Mesh<V>::Mesh( std::vector<V> const & vertices, std::vector<unsigned int> const & indices, int const draw_mode )
+    : m_vertices { vertices }, m_indices { indices }, m_vertex_buffer { 0 }, m_vertex_array { 0 },
+      m_element_buffer { 0 }, m_default_mode { draw_mode }, m_initialised { false }, m_creation_thread { 0 } {}
+
+template <VertexType V>
+Mesh<V>::Mesh( Mesh && mesh ) noexcept : m_vertices { std::move( mesh.m_vertices ) },
+                                      m_indices { std::move( mesh.m_indices ) },
+                                      m_vertex_buffer { std::exchange( mesh.m_vertex_buffer, 0 ) },
+                                      m_vertex_array { std::exchange( mesh.m_vertex_array, 0 ) },
+                                      m_element_buffer { std::exchange( mesh.m_element_buffer, 0 ) },
+                                      m_default_mode { std::exchange( mesh.m_default_mode, GL_TRIANGLES ) },
+                                      m_initialised { std::exchange( mesh.m_initialised, false ) },
+                                      m_creation_thread { mesh.m_creation_thread } {}
+
+template <VertexType V>
+Mesh<V> & Mesh<V>::operator=( Mesh && mesh ) noexcept {
+    if ( &mesh == this )
+        return *this;
+    m_vertices = std::move( mesh.m_vertices );
+    m_indices = std::move( mesh.m_indices );
+    m_vertex_buffer = std::exchange( mesh.m_vertex_buffer, 0 );
+    m_vertex_array = std::exchange( mesh.m_vertex_array, 0 );
+    m_element_buffer = std::exchange( mesh.m_element_buffer, 0 );
+    m_default_mode = std::exchange( mesh.m_default_mode, GL_TRIANGLES );
+    m_initialised = std::exchange( mesh.m_initialised, false );
+    m_creation_thread = mesh.m_creation_thread;
+    return *this;
+}
+
+template <VertexType V>
+Mesh<V>::~Mesh() {
+    destroy_gl_objects();
+}
+
+template <VertexType V>
+void Mesh<V>::initialise_gl_objects() {
+    if ( m_initialised ) {
+        Log::warning( "Attempted to initialise a Mesh twice, skipping second attempt." );
+        return;
+    }
+    glGenVertexArrays( 1, &m_vertex_array );
+    glBindVertexArray( m_vertex_array );
+    m_vertex_buffer = create_buffer<ColourVertex>( GL_ARRAY_BUFFER, m_vertices );
+    if ( not m_indices.empty() )
+        m_element_buffer = create_buffer<unsigned int>( GL_ELEMENT_ARRAY_BUFFER, m_indices );
+    set_vertex_attributes<ColourVertex>();
+
+    // GL functions should only be called from the render thread, so creation and deletion of the buffers should happen
+    // in the same thread.
+    m_creation_thread = std::this_thread::get_id(); // Presumably the render thread
+    m_initialised = true;
+}
+
+template <VertexType V>
+void Mesh<V>::destroy_gl_objects() {
+    if ( m_initialised and std::this_thread::get_id() != m_creation_thread )
+        // Issue an error, but attempt to destroy it anyway
+        Log::warning( "Deleted GL data in a different thread to the one it was created in; may be leaking." );
+    glDeleteVertexArrays( 1, &m_vertex_array ); // Silently ignores zeroes, so no existence check is required
+    glDeleteBuffers( 1, &m_vertex_buffer );
+    glDeleteBuffers( 1, &m_element_buffer );
+    m_initialised = false;
+}
+
+template <VertexType V>
+bool Mesh<V>::has_index() const {
+    return not m_indices.empty();
+}
+
+template <VertexType V>
+void Mesh<V>::set_draw_mode( int const mode ) {
+    assert( mode >= 0 && mode <= 6 );
+    m_default_mode = mode;
+}
+
+template <VertexType V>
+void Mesh<V>::draw( int mode ) const {
+    if ( mode == -1 )
+        mode = m_default_mode;
+    assert( mode >= 0 && mode <= 6 );
+
+    glBindVertexArray( m_vertex_array );
+    if ( has_index() )
+        glDrawElements( mode, static_cast<int>(m_indices.size() * 3), GL_UNSIGNED_INT, nullptr );
+    else
+        glDrawArrays( mode, 0, static_cast<int>(m_vertices.size()) );
+}
 
 #endif //DEMO_TD_MESH_HPP

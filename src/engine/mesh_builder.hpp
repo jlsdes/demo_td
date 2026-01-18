@@ -37,7 +37,7 @@ public:
     /** Returns the shape data in a more sesh-friendly format. */
     [[nodiscard]] std::vector<ColourVertex> get_mesh_vertices() const;
     [[nodiscard]] std::vector<unsigned int> get_mesh_face_indices() const;
-    [[nodiscard]] Mesh get_mesh() const;
+    [[nodiscard]] Mesh<ColourVertex> get_mesh() const;
 
     /** Merges another builder's vertices and faces into this builder. */
     MeshBuilder & merge( MeshBuilder const & other );

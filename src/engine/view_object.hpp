@@ -23,7 +23,7 @@ public:
     };
 
     /** Constructor and destructor. */
-    ViewObject( Type type, Mesh && mesh, Shader * shader );
+    ViewObject( Type type, Mesh<ColourVertex> && mesh, Shader * shader );
     ~ViewObject() override = default;
 
     /** Initialises the mesh's OpenGL data, only to be called by the render thread. */
@@ -48,7 +48,7 @@ private:
     Type m_type;
 
     /// The main components for drawing this object.
-    Mesh m_mesh;
+    Mesh<ColourVertex> m_mesh;
     Shader * m_shader;
 
     /// The transformation matrix defining where and how the object is located.

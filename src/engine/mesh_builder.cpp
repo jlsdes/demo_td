@@ -166,7 +166,7 @@ std::vector<unsigned int> MeshBuilder::get_mesh_face_indices() const {
     return indices;
 }
 
-Mesh MeshBuilder::get_mesh() const {
+Mesh<ColourVertex> MeshBuilder::get_mesh() const {
     return Mesh { get_mesh_vertices(), get_mesh_face_indices(), GL_TRIANGLES };
 }
 
