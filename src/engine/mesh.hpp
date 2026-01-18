@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 
 #include <memory>
+#include <thread>
 #include <vector>
 
 
@@ -45,12 +46,16 @@ using ColourVertex = Vertex_<true, true, false>;
 using TextureVertex = Vertex_<true, false, true>;
 using Vertex = Vertex_<true, true, true>;
 
+/// Requires a type to be an instantiation of the Vertex_ template.
+template <class T>
+concept VertexType = requires( T v ) { { Vertex_ { v } } -> std::same_as<T>; };
 
-template <glm::length_t size, typename T>
-std::ostream & operator<<( std::ostream & stream, glm::vec<size, T> const & vector );
 
-template <bool has_normal, bool has_colour, bool has_texture>
-std::ostream & operator<<( std::ostream & stream, Vertex_<has_normal, has_colour, has_texture> const & vertex );
+template <glm::length_t size, typename Number>
+std::ostream & operator<<( std::ostream & stream, glm::vec<size, Number> const & vector );
+
+template <VertexType V>
+std::ostream & operator<<( std::ostream & stream, V const & vertex );
 
 
 /** A mesh consisting of vertices and faces, optionally defined by vertex indices. This class holds some OpenGL objects,
@@ -102,27 +107,28 @@ private:
     int m_default_mode;
 
     bool m_initialised;
+    std::thread::id m_creation_thread;
 };
 
 
 // Template definitions
 
-template <glm::length_t size, typename T>
-std::ostream & operator<<( std::ostream & stream, glm::vec<size, T> const & vector ) {
+template <glm::length_t size, typename Number>
+std::ostream & operator<<( std::ostream & stream, glm::vec<size, Number> const & vector ) {
     stream << '<' << vector[0];
     for ( unsigned int i { 1 }; i < size; ++i )
         stream << ", " << vector[i];
     return stream << '>';
 }
 
-template <bool has_normal, bool has_colour, bool has_texture>
-std::ostream & operator<<( std::ostream & stream, Vertex_<has_normal, has_colour, has_texture> const & vertex ) {
+template <VertexType V>
+std::ostream & operator<<( std::ostream & stream, V const & vertex ) {
     stream << "<Vertex position=" << vertex.position;
-    if ( has_normal )
+    if constexpr ( V::has_normal )
         stream << " normal=" << vertex.normal();
-    if ( has_colour )
+    if constexpr ( V::has_colour )
         stream << " colour=" << vertex.colour();
-    if ( has_texture )
+    if constexpr ( V::has_texture )
         stream << " texture=" << vertex.texture();
     return stream << ">";
 }

@@ -4,6 +4,7 @@
 #include <glad/gl.h>
 
 #include <cassert>
+#include <thread>
 #include <utility>
 
 
@@ -23,34 +24,31 @@ unsigned int create_buffer( GLenum const buffer_type, std::vector<ElementType> c
     return buffer;
 }
 
-template <class T>
-concept VertexType = requires( T v ) { { Vertex_ { v } } -> std::same_as<T>; };
-
-template <VertexType T>
+template <VertexType V>
 void set_attribute( unsigned int & index, unsigned int & offset, int const size ) {
-    glVertexAttribPointer( index, size, GL_FLOAT, GL_FALSE, sizeof( T ), reinterpret_cast<void *>(offset) );
+    glVertexAttribPointer( index, size, GL_FLOAT, GL_FALSE, sizeof( V ), reinterpret_cast<void *>(offset) );
     glEnableVertexAttribArray( index++ );
     offset += size * sizeof( float );
 }
 
 /** Helper function for the constructor; sets up the attribute pointers in OpenGL for each of the vertex attributes. */
-template <VertexType T>
+template <VertexType V>
 void set_vertex_attributes() {
     unsigned int index { 0 };
     unsigned int offset { 0 };
 
-    set_attribute<T>( index, offset, 3 );
-    if constexpr ( T::has_normal )
-        set_attribute<T>( index, offset, 3 );
-    if constexpr ( T::has_colour )
-        set_attribute<T>( index, offset, 3 );
-    if constexpr ( T::has_normal )
-        set_attribute<T>( index, offset, 2 );
+    set_attribute<V>( index, offset, 3 );
+    if constexpr ( V::has_normal )
+        set_attribute<V>( index, offset, 3 );
+    if constexpr ( V::has_colour )
+        set_attribute<V>( index, offset, 3 );
+    if constexpr ( V::has_normal )
+        set_attribute<V>( index, offset, 2 );
 }
 
 Mesh::Mesh( std::vector<ColourVertex> const & vertices, std::vector<unsigned int> const & indices, int const draw_mode )
     : m_vertices { vertices }, m_indices { indices }, m_vertex_buffer { 0 }, m_vertex_array { 0 },
-      m_element_buffer { 0 }, m_default_mode { draw_mode }, m_initialised { false } {}
+      m_element_buffer { 0 }, m_default_mode { draw_mode }, m_initialised { false }, m_creation_thread { 0 } {}
 
 Mesh::Mesh( Mesh && mesh ) noexcept : m_vertices { std::move( mesh.m_vertices ) },
                                       m_indices { std::move( mesh.m_indices ) },
@@ -58,7 +56,8 @@ Mesh::Mesh( Mesh && mesh ) noexcept : m_vertices { std::move( mesh.m_vertices ) 
                                       m_vertex_array { std::exchange( mesh.m_vertex_array, 0 ) },
                                       m_element_buffer { std::exchange( mesh.m_element_buffer, 0 ) },
                                       m_default_mode { std::exchange( mesh.m_default_mode, GL_TRIANGLES ) },
-                                      m_initialised { std::exchange( mesh.m_initialised, false ) } {}
+                                      m_initialised { std::exchange( mesh.m_initialised, false ) },
+                                      m_creation_thread { mesh.m_creation_thread } {}
 
 Mesh & Mesh::operator=( Mesh && mesh ) noexcept {
     if ( &mesh == this )
@@ -70,10 +69,13 @@ Mesh & Mesh::operator=( Mesh && mesh ) noexcept {
     m_element_buffer = std::exchange( mesh.m_element_buffer, 0 );
     m_default_mode = std::exchange( mesh.m_default_mode, GL_TRIANGLES );
     m_initialised = std::exchange( mesh.m_initialised, false );
+    m_creation_thread = mesh.m_creation_thread;
     return *this;
 }
 
 Mesh::~Mesh() {
+    if ( m_initialised and std::this_thread::get_id() != m_creation_thread )
+        Log::error( "Deleted a Mesh in a thread that is not the same as the one it was created in; may be leaking." );
     if ( m_vertex_array )
         glDeleteVertexArrays( 1, &m_vertex_array );
     if ( m_vertex_buffer )
@@ -83,12 +85,21 @@ Mesh::~Mesh() {
 }
 
 void Mesh::initialise() {
+    if ( m_initialised ) {
+        Log::warning( "Attempted to initialise a Mesh twice, skipping second attempt." );
+        return;
+    }
     glGenVertexArrays( 1, &m_vertex_array );
     glBindVertexArray( m_vertex_array );
     m_vertex_buffer = create_buffer<ColourVertex>( GL_ARRAY_BUFFER, m_vertices );
     if ( not m_indices.empty() )
         m_element_buffer = create_buffer<unsigned int>( GL_ELEMENT_ARRAY_BUFFER, m_indices );
     set_vertex_attributes<ColourVertex>();
+
+    // GL functions should only be called from the render thread, so creation and deletion of the buffers should happen
+    // in the same thread.
+    m_creation_thread = std::this_thread::get_id(); // Presumably the render thread
+    m_initialised = true;
 }
 
 bool Mesh::has_index() const {
