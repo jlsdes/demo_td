@@ -1,39 +1,75 @@
 #include "model_object.hpp"
+#include "view_object.hpp"
+#include "controller_object.hpp"
 #include "utils/log.hpp"
 
+#include <cassert>
 
-/** Generates a new unique ID. These IDs are simply sequentially ascending from 0. */
-unsigned int generate_id() {
-    static unsigned int id { 0 };
-    return id++;
+
+unsigned int ModelObject::s_old_iteration { 0 };
+unsigned int ModelObject::s_new_iteration { 1 };
+unsigned int ModelObject::s_render_data { 0 };
+std::mutex ModelObject::m_mutex {};
+
+
+ModelObject::ModelObject() : m_data { nullptr }, m_view { nullptr }, m_controller { nullptr } {}
+
+ModelObject::~ModelObject() {
+    if ( m_controller )
+        m_controller->destroy();
+    if ( m_view )
+        m_view->deferred_destroy();
 }
 
-ModelObject::ModelObject( std::unique_ptr<ModelData[]> && data )
-    : m_data { std::move( data ) }, m_active { 0 }, m_mutex {}, m_id { generate_id() } {}
-
-ModelObject::ModelObject( glm::vec3 const & position )
-    : ModelObject { std::make_unique_for_overwrite<ModelData[]>( 2 ) } {
-    m_data[0] = { position };
+void ModelObject::set_view( ViewObject * const view ) {
+    if ( m_view )
+        Log::warning( "Attempted to set a ModelObject's view twice; ignoring second ViewObject." );
+    else
+        m_view = view;
 }
 
-ModelObject::ModelObject( ModelObject const & other )
-    : m_data { std::make_unique_for_overwrite<ModelData[]>( 2 ) }, m_active { other.m_active }, m_mutex {},
-      m_id { generate_id() } {
-    m_data[0] = other.m_data[0];
-    m_data[1] = other.m_data[1];
+void ModelObject::set_controller( ControllerObject * const controller ) {
+    if ( m_controller )
+        Log::warning( "Attempted to set a ModelObject's controller twice; ignoring second ControllerObject." );
+    else
+        m_controller = controller;
 }
 
-ModelObject::ModelObject( ModelObject && other ) noexcept
-    : m_data { std::move( other.m_data ) }, m_active { other.m_active }, m_mutex {}, m_id { other.m_id } {}
-
-void ModelObject::update() {
-    m_data[1 - m_active] = m_data[m_active];
+ModelData const * ModelObject::get_render_data() const {
+    return m_data[s_render_data];
 }
 
-void ModelObject::next() {
-    std::chrono::milliseconds constexpr timeout { 10 };
-    std::unique_lock const lock { m_mutex, timeout };
-    if ( !lock )
-        Log::error( "Failed to acquire ModelObject's mutex within ", timeout, "; forcing update anyway." );
-    m_active = 1 - m_active;
+ModelData const * ModelObject::get_old_data() const {
+    return m_data[s_old_iteration];
+}
+
+ModelData * ModelObject::get_new_data() const {
+    return m_data[s_new_iteration];
+}
+
+void ModelObject::update() {}
+
+void ModelObject::swap_model_state() {
+    assert( s_new_iteration != s_old_iteration );
+    assert( s_new_iteration != s_render_data );
+
+    std::lock_guard lock { m_mutex };
+    // Currently, render_data could be equal to old_iteration, and new_iteration is different from both of them
+    s_old_iteration = s_new_iteration;
+    // => new_iteration == old_iteration != render_data
+    s_new_iteration = 0 ^ 1 ^ 2 ^ s_old_iteration ^ s_render_data;
+    // => old_iteration != new_iteration != render_data
+
+    assert( s_new_iteration != s_old_iteration );
+    assert( s_new_iteration != s_render_data );
+    assert( s_old_iteration != s_render_data );
+}
+
+void ModelObject::set_render_state() {
+    std::lock_guard lock { m_mutex };
+    s_render_data = s_old_iteration;
+}
+
+void ModelObject::initialise_data( std::array<ModelData *, 3> && data ) {
+    m_data = std::move( data );
 }

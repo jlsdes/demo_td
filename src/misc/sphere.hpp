@@ -13,7 +13,22 @@ public:
     static void initialise( Shader * shader );
     static Entity create( glm::vec3 const & position, float radius, glm::vec3 const & colour );
 
-    using Model = ModelObject;
+    struct Data : public ModelData {
+        glm::vec3 position { 0.f } ;
+        float radius { 1.f };
+
+        ~Data() override = default;
+    };
+
+    class Model : public ModelObject {
+    public:
+        Model();
+
+        void update() override;
+
+    private:
+        std::unique_ptr<Data[]> m_data;
+    };
 
     class View : public ViewObject {
     public:

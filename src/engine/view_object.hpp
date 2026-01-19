@@ -44,10 +44,11 @@ public:
     void scale( glm::vec3 const & scale );
     void scale( float scale );
 
-private:
+protected:
     /// The model object that is being drawn.
     ModelObject * m_model;
 
+private:
     /// The main components for drawing this object.
     Type m_type;
     Mesh<ColourVertex> m_mesh;

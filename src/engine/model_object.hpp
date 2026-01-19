@@ -3,105 +3,92 @@
 
 #include "utils/manager.hpp"
 
-#include <glm/glm.hpp>
-
+#include <array>
 #include <chrono>
 #include <memory>
 #include <mutex>
 
 
-/** Base struct for the in-game model data. */
+class ViewObject;
+class ControllerObject;
+class EntityFactory;
+
+
+/** Base struct used for the model's data. */
 struct ModelData {
-    glm::vec3 position;
+    virtual ~ModelData() = default;
 };
 
-/// A concept requiring a typename to be a subclass of ModelData.
-template <typename Data>
-concept DataType = std::is_base_of_v<ModelData, Data>;
-
-/** Holds the model's data, while preventing any updates to it. This object should be destroyed as soon as possible. */
-template <DataType Data>
-struct Accessor {
-    Data const * data;
-    std::unique_lock<std::timed_mutex> lock;
-
-    Accessor( Data const * data, std::timed_mutex & mutex );
-
-    Data const & operator*();
-};
+/** Requires a struct to be derived from ModelObject::ModelData. */
+template <typename Type>
+concept DataType = requires( Type ) { std::is_base_of_v<ModelData, Type>; };
 
 
-/** Base class for the in-game interaction models. */
+/** Base class for all models. Any derived classes should also derive the ModelData struct to hold any data they want to
+ *  be updated and used in its controller and/or view. */
 class ModelObject : public ManagedObject {
-    /** Base constructor. */
-    explicit ModelObject( std::unique_ptr<ModelData[]> && data );
 public:
-    /** Other constructors and destructor. */
-    explicit ModelObject( glm::vec3 const & position = glm::vec3 { 0.f } );
-    ModelObject( ModelObject const & other );
-    ModelObject & operator=( ModelObject const & other ) = delete;
-    ModelObject( ModelObject && other ) noexcept;
-    ModelObject & operator=( ModelObject && other ) = delete;
-    ~ModelObject() override = default;
+    ModelObject();
+    ModelObject( ModelObject const & model ) = delete;
+    ModelObject & operator=( ModelObject const & model ) = delete;
+    ModelObject( ModelObject && model ) noexcept = default;
+    ModelObject & operator=( ModelObject && model ) noexcept = default;
+    ~ModelObject() override;
 
-protected:
-    /** Constructor for subclasses that uses a subclass of ModelData as its data type. */
-    template <DataType Data, typename... Args>
-    explicit ModelObject( Args const &... args );
+    /** Sets the model's view if there isn't one already; if there is, a warning is logged and nothing happens. */
+    void set_view( ViewObject * view );
+    /** Sets the model's controller if there isn't one already; if there is, a warning is logged and nothing happens. */
+    void set_controller( ControllerObject * controller );
 
-public:
-    /** Returns the model's data. This function will return an Accessor object that locks the object's mutex until
-     *  it's destroyed, and should thus not be held for long. This is to ensure that next() can't suddenly change the
-     *  object's data while it's being rendered. */
+    /** Returns the data of the model that should be used for rendering it. This is not necessarily the current state of
+     *  the model, but is consistent with all other models being drawn within the same render pass. */
+    [[nodiscard]] ModelData const * get_render_data() const;
+    /** Returns the model's current data. This is the computed state from the last game loop iteration while the
+     *  controllers are being updated, but may or may not be updated already while the models are being updated. */
+    [[nodiscard]] ModelData const * get_old_data() const;
     template <DataType Data>
-    Accessor<Data> get_render_data();
-    /** Returns the model's data. This function simply returns a pointer to the data, and does not block the object's
-     *  mutex in any way. Any rendering code should not call this function, but use get_render_data() instead. */
+    [[nodiscard]] Data const * get_old_data() const;
+    /** Returns the location of the model's next state. */
+    [[nodiscard]] ModelData * get_new_data() const;
     template <DataType Data>
-    Data * get_model_data() const;
+    [[nodiscard]] Data * get_new_data() const;
 
-    /** Computes the next iteration of the model in the inactive twin, and then activates it. */
+    /** To be overridden by subclasses; doesn't actually update anything in this class. */
     void update() override;
-    virtual void next();
+
+    /** Moves from the old model state to the newly computed state. */
+    static void swap_model_state();
+    /** Saves the last fully computed model state as the new render state. */
+    static void set_render_state();
 
 protected:
-    /// Two data structs; one for holding the current iteration's data, and one for building the next iteration's data
-    /// in. 'm_active' holds the index of the current iteration's data.
-    std::unique_ptr<ModelData[]> m_data;
-    unsigned int m_active;
-    /// A mutex governing access to the active twin. Locked during activate_next(), and while the returned Accessor from
-    /// get_data() exists.
-    std::timed_mutex m_mutex;
-    /// A unique ID, which should be consistent between identical runs of the program.
-    unsigned int const m_id;
-};
+    void initialise_data( std::array<ModelData *, 3> && data );
 
+private:
+    /// 3 pointers to instances of the model's data, which should be stored by the derived classes.
+    std::array<ModelData *, 3> m_data;
+    /// Indices into the m_data arrays, synchronised across all ModelObject instances.
+    static unsigned int s_render_data;
+    static unsigned int s_old_iteration;
+    static unsigned int s_new_iteration;
+    static std::mutex m_mutex;
+
+    /// Pointers to the model's (optional) view and controller.
+    ViewObject * m_view;
+    ControllerObject * m_controller;
+};
 
 // Template definitions
 
 template <DataType Data>
-Accessor<Data>::Accessor( Data const * data, std::timed_mutex & mutex )
-    : data { data }, lock { mutex } {}
-
-template <DataType Data>
-Data const & Accessor<Data>::operator*() {
-    return *data;
-}
-
-template <DataType Data, typename... Args>
-ModelObject::ModelObject( Args const &... args )
-    : ModelObject { std::make_unique_for_overwrite<Data[]>( 2 ) } {
-    m_data[0] = Data { args... };
+Data const * ModelObject::get_old_data() const {
+    return dynamic_cast<Data const *>(get_old_data());
 }
 
 template <DataType Data>
-Accessor<Data> ModelObject::get_render_data() {
-    return { &m_data[m_active], m_mutex };
+Data * ModelObject::get_new_data() const {
+    return dynamic_cast<Data *>(get_new_data());
 }
 
-template <DataType Data>
-Data * ModelObject::get_model_data() const {
-    return &m_data[m_active];
-}
 
 #endif //DEMO_TD_MODEL_OBJECT_HPP

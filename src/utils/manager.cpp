@@ -10,6 +10,14 @@ void ManagedObject::destroy() {
     m_id = 0;
 }
 
+void ManagedObject::deferred_destroy() {
+    m_to_be_destroyed = true;
+}
+
+bool ManagedObject::is_to_be_destroyed() const {
+    return m_to_be_destroyed;
+}
+
 unsigned int Manager::push( std::unique_ptr<ManagedObject> && object ) {
     object->m_manager = this;
     object->m_id = m_next_id;
@@ -108,7 +116,7 @@ Manager::Iterator Manager::end() const {
     return { *this, size() };
 }
 
-void Manager::update() const {
+void Manager::update() {
     thread_local WorkerPool<g_workers_per_manager_type> workers {};
     workers.update( *this );
 }

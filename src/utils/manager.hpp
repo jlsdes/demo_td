@@ -19,11 +19,14 @@ public:
 
     /** Removes the object from its manager, and in doing so destroys the unique_ptr and thus itself. */
     void destroy();
+    void deferred_destroy();
+    [[nodiscard]] bool is_to_be_destroyed() const;
 
 private:
     /// Attributes to enable the self-destruct function.
     Manager * m_manager { nullptr };
     unsigned int m_id { 0 };
+    bool m_to_be_destroyed { false };
 
     friend class Manager; // To allow the Manager class to change the attributes
 };
@@ -83,7 +86,7 @@ public:
     [[nodiscard]] Iterator begin() const;
     [[nodiscard]] Iterator end() const;
 
-    void update() const;
+    void update();
 
 protected:
     using IdPair = std::pair<unsigned int, std::unique_ptr<ManagedObject>>;
@@ -110,7 +113,7 @@ public:
     WorkerPool & operator=( WorkerPool && ) = default;
 
     /** Updates all of a manager's registered objects in parallel. */
-    void update( Manager const & manager );
+    void update( Manager & manager );
 
 private:
     /** The main function for the worker threads. These threads sleep until the queue gets populated, and then they call
@@ -151,8 +154,19 @@ WorkerPool<buffer_size>::~WorkerPool() {
 }
 
 template <unsigned int buffer_size>
-void WorkerPool<buffer_size>::update( Manager const & manager ) {
-    for ( ManagedObject & object : manager ) {
+void WorkerPool<buffer_size>::update( Manager & manager ) {
+    for ( auto iterator { manager.begin() }; iterator != manager.end(); ++iterator ) {
+        ManagedObject & object { *iterator };
+
+        if ( object.is_to_be_destroyed() ) {
+            // destroy() modifies the container that is (indirectly) being iterated over. However, the iterator advances
+            // an index rather than a pointer, and thus this doesn't invalidate the iterator. The iterator does need to
+            // be reversed once to avoid skipping over the next item.
+            object.destroy(); // Also, this does modify the manager, which is why it's not marked as 'const'.
+            --iterator;
+            continue;
+        }
+
         m_queue.empty_slots.acquire();
         {
             std::lock_guard queue_lock { m_queue.mutex };
