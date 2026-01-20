@@ -10,18 +10,18 @@ include(FetchContent)
 # GLFW may still require some dev packages, e.g. xorg-dev
 FetchContent_Declare(
         glfw
-        GIT_REPOSITORY  https://github.com/glfw/glfw.git
-        GIT_TAG         3.4
+        GIT_REPOSITORY https://github.com/glfw/glfw.git
+        GIT_TAG 3.4
 )
 FetchContent_MakeAvailable(glfw)
 
 # Fetch GLAD
 FetchContent_Declare(
         glad
-        GIT_REPOSITORY  https://github.com/Dav1dde/glad.git
-        GIT_TAG         v2.0.8
-        GIT_PROGRESS    TRUE
-        SOURCE_SUBDIR   cmake
+        GIT_REPOSITORY https://github.com/Dav1dde/glad.git
+        GIT_TAG v2.0.8
+        GIT_PROGRESS TRUE
+        SOURCE_SUBDIR cmake
 )
 FetchContent_MakeAvailable(glad)
 glad_add_library(glad_gl_core_46 STATIC REPRODUCIBLE LOADER API gl:core=4.6)
@@ -29,54 +29,55 @@ glad_add_library(glad_gl_core_46 STATIC REPRODUCIBLE LOADER API gl:core=4.6)
 # Fetch GLM
 FetchContent_Declare(
         glm
-        GIT_REPOSITORY  https://github.com/g-truc/glm.git
-        GIT_TAG         1.0.2
+        GIT_REPOSITORY https://github.com/g-truc/glm.git
+        GIT_TAG 1.0.2
 )
 FetchContent_MakeAvailable(glm)
 
 include_directories(src)
 
 # Build the main executable
-add_executable(demo_td src/main.cpp
-        src/engine/window.cpp
-        src/engine/window.hpp
-        src/engine/shader.cpp
-        src/engine/shader.hpp
-        src/engine/mesh.hpp
+add_executable(demo_td
+        src/main.cpp
+
         src/engine/camera.cpp
         src/engine/camera.hpp
+        src/engine/controller_manager.cpp
+        src/engine/controller_manager.hpp
+        src/engine/controller_object.hpp
+        src/engine/controller_object.cpp
+        src/engine/engine.cpp
+        src/engine/engine.hpp
+        src/engine/entity_factory.cpp
+        src/engine/entity_factory.hpp
         src/engine/input_manager.cpp
         src/engine/input_manager.hpp
-        src/utils/time.cpp
-        src/utils/time.hpp
+        src/engine/mesh.hpp
+        src/engine/mesh_builder.cpp
+        src/engine/mesh_builder.hpp
+        src/engine/model_manager.cpp
+        src/engine/model_manager.hpp
+        src/engine/model_object.cpp
+        src/engine/model_object.hpp
+        src/engine/shader.cpp
+        src/engine/shader.hpp
+        src/engine/view_manager.cpp
+        src/engine/view_manager.hpp
+        src/engine/view_object.cpp
+        src/engine/view_object.hpp
+        src/engine/window.cpp
+        src/engine/window.hpp
+
         src/utils/config.cpp
         src/utils/config.hpp
         src/utils/ini_reader.cpp
         src/utils/ini_reader.hpp
         src/utils/log.cpp
         src/utils/log.hpp
-        src/engine/view_object.cpp
-        src/engine/view_object.hpp
-        src/engine/view_manager.cpp
-        src/engine/view_manager.hpp
-        src/engine/mesh_builder.cpp
-        src/engine/mesh_builder.hpp
-        src/engine/model_object.cpp
-        src/engine/model_object.hpp
-        src/engine/model_manager.cpp
-        src/engine/model_manager.hpp
-        src/engine/controller_object.hpp
-        src/engine/controller_manager.cpp
-        src/engine/controller_manager.hpp
-        src/utils/manager.hpp
-        src/engine/engine.cpp
-        src/engine/engine.hpp
-        src/engine/entity_factory.cpp
-        src/engine/entity_factory.hpp
         src/utils/manager.cpp
-        src/misc/sphere.cpp
-        src/misc/sphere.hpp
-        src/engine/controller_object.cpp
+        src/utils/manager.hpp
+        src/utils/time.hpp
+        src/utils/time.cpp
 )
 
 # Link the necessary libraries
