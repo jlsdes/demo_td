@@ -1,5 +1,6 @@
 #include "sphere.hpp"
 #include "engine/entity_factory.hpp"
+#include "engine/mesh_builder.hpp"
 
 
 Shader * Sphere::s_shader;

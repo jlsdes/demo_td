@@ -2,7 +2,6 @@
 #define DEMO_TD_SPHERE_HPP
 
 #include "engine/controller_object.hpp"
-#include "engine/mesh_builder.hpp"
 #include "engine/model_object.hpp"
 #include "engine/view_object.hpp"
 

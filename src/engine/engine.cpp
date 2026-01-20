@@ -69,37 +69,35 @@ Engine::Engine() : m_window { nullptr }, m_models {}, m_views {}, m_controllers 
 struct WireframeMode {
     struct Data : public ModelData {
         bool active { false };
-        bool changed { true };
+        bool changed { false };
     };
 
     struct Model : public DataModel<Data> {
-        bool change { false };
-
         void update() override {
-            auto const current { get_old_data() };
-            auto const next { get_new_data() };
-            next->active = current->active != change;
-            next->changed = change;
-            change = false;
+            if ( not get_new_data()->changed )
+                get_new_data()->active = get_old_data()->active;
+            get_new_data()->changed = false;
         }
     };
 
     struct View : public ViewObject {
-        explicit View( Model * model ) : ViewObject { model } {}
+        Shader * shader;
 
-        void update() override {
+        explicit View( Model * model ) : ViewObject { model }, shader { nullptr } {}
+
+        void update() override {}
+
+        void draw() const override {
             auto const model { dynamic_cast<Model *>(m_model) };
             auto const data { model->get_render_data() };
 
-            if ( not data->changed )
-                return;
             if ( data->active ) {
                 glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-                // shader.set_uniform( "ambient_light", glm::vec3 { 1.f, 1.f, 1.f } );
+                shader->set_uniform( "ambient_light", glm::vec3 { 1.f } );
                 glDisable( GL_CULL_FACE );
             } else {
                 glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-                // shader.set_uniform( "ambient_light", ambient_light );
+                shader->set_uniform( "ambient_light", glm::vec3 { 0.01f } );
                 glEnable( GL_CULL_FACE );
             }
         }
@@ -112,28 +110,30 @@ struct WireframeMode {
             factory.register_model_factory( "framer", std::make_unique<Model> );
             factory.register_view_factory( "framer", get_view_factory<View, Model>() );
             factory.register_controller_factory( "framer", []( ModelObject * ) { return nullptr; } );
-            // The InputManager callback function will act as the ControllerObject, sort of
         }
         initialised = true;
     }
 
-    Entity self;
-
-    static Entity build( InputManager & input_manager ) {
+    static Entity build( InputManager & input_manager, Shader * const shader ) {
         init();
         auto const entity { EntityFactory::get_instance().build( "framer" ) };
 
         auto const model { dynamic_cast<Model *>(entity.model.second) };
-        input_manager.observe_keyboard( GLFW_KEY_F, [&model]( int, int const action ) {
+        input_manager.observe_keyboard( GLFW_KEY_F, [model]( int, int const action ) {
             // GLFW_REPEAT is also a possible action value, but it should be ignored
-            if ( action == GLFW_PRESS or action == GLFW_RELEASE )
-                model->change = true;
+            if ( action == GLFW_PRESS ) {
+                model->get_new_data()->active = true;
+                model->get_new_data()->changed = true;
+            } else if ( action == GLFW_RELEASE ) {
+                model->get_new_data()->active = false;
+                model->get_new_data()->changed = true;
+            }
         } );
+
+        dynamic_cast<View *>(entity.view.second)->shader = shader;
 
         return entity;
     }
-
-    explicit WireframeMode( InputManager & input_manager ) : self { build( input_manager ) } {}
 };
 
 void Engine::initialise() {
@@ -150,7 +150,7 @@ void Engine::initialise() {
     m_shader = std::make_unique<GraphicsShader>( vertex_shader.c_str(), fragment_shader.c_str() );
     m_shader->use();
 
-    glm::vec3 constexpr ambient_light { 1.f, 1.f, 1.f };
+    glm::vec3 constexpr ambient_light { 0.01f };
     m_shader->set_uniform( "ambient_light", ambient_light );
     m_shader->set_uniform( "sun_light", glm::vec3 { 1.f, 1.f, 1.f } );
     glm::vec3 constexpr sun_direction { -0.2f, 1.f, -0.5f };
@@ -158,7 +158,7 @@ void Engine::initialise() {
 
     // Draw triangles as wireframes when F is being pressed
     auto & input_manager { m_window->get_input_manager() };
-    WireframeMode framer { input_manager };
+    WireframeMode::build( input_manager, m_shader.get() );
 
     float constexpr fov { std::numbers::pi_v<float> / 4.f }; // 45 degrees
     m_shader->set_uniform( "projection", glm::perspective( fov, 1200.f / 800.f, 0.1f, 100.f ) );
