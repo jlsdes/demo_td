@@ -123,6 +123,7 @@ void Engine::game_thread() {
             controller_manager->update();
         for ( auto const & model_manager : m_models )
             model_manager->update();
+        ModelObject::swap_model_state();
 
         // The computations are likely to be done before the next game tick, so this thread needs to sleep briefly
         // At the time of implementation, subtracting the previous margin of error twice seems to be quite accurate
@@ -183,6 +184,7 @@ void Engine::render_thread() {
     while ( not m_window->is_closing() ) {
         m_window->clear();
 
+        ModelObject::set_render_state();
         for ( auto const & view_manager : m_views )
             view_manager->update();
         for ( auto const & view_manager : m_views )

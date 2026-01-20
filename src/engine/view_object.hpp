@@ -38,11 +38,16 @@ public:
     void hide();
     void show();
 
-    /** Some basic transformations. */
     void translate( glm::vec3 const & translation );
+    void set_position( glm::vec3 const & position );
+
     void rotate( glm::vec3 const & axis, float angle );
+    void set_rotation( glm::mat4 const & rotation );
+
     void scale( glm::vec3 const & scale );
     void scale( float scale );
+    void set_scale( glm::vec3 const & scale );
+    void set_scale( float scale );
 
 protected:
     /// The model object that is being drawn.
@@ -54,8 +59,10 @@ private:
     Mesh<ColourVertex> m_mesh;
     Shader * m_shader;
 
-    /// The transformation matrix defining where and how the object is located.
-    glm::mat4 m_transform;
+    /// The transformations defining where and how the object is located.
+    glm::vec3 m_position;
+    glm::vec3 m_scale;
+    glm::mat4 m_rotation;
 
     /// A toggle that can be used to skip this object during rendering.
     bool m_hidden { false };

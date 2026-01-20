@@ -1,6 +1,8 @@
 #include "sphere.hpp"
 #include "engine/mesh_builder.hpp"
 #include "engine/shader.hpp"
+#include "utils/log.hpp"
+#include "utils/time.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -31,14 +33,19 @@ Entity Sphere::create( glm::vec3 const & position, float const radius, glm::vec3
     sphere_model->get_new_data()->position = position;
 
     auto const [view_id, view] { sphere.view };
-    view->translate( position );
-    view->scale( radius );
+    view->set_position( position );
+    view->set_scale( radius );
 
     return sphere;
 }
 
 void Sphere::Model::update() {
-    ModelObject::update();
+    auto const current { get_old_data() };
+    auto const next { get_new_data() };
+
+    next->position = current->position;
+    next->radius = 0.3f * static_cast<float>(std::sin( Time::get_time() ));
+    next->radius *= next->radius;
 }
 
 Mesh<ColourVertex> get_coloured_mesh() {
@@ -50,9 +57,10 @@ Mesh<ColourVertex> get_coloured_mesh() {
 Sphere::View::View( Model * const model ) : ViewObject { model, Opaque, std::move( get_coloured_mesh() ), s_shader } {}
 
 void Sphere::View::update() {
-    float radius;
-
-    ViewObject::update();
+    auto const model { dynamic_cast<DataModel<Data> *>(m_model) };
+    auto const data { model->get_render_data() };
+    // set_position( data->position );
+    set_scale( data->radius );
 }
 
 Sphere::Controller::Controller( Model * const model ) : ControllerObject { model } {}
