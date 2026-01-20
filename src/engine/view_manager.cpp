@@ -40,7 +40,7 @@ void ViewManager::draw() {
         // Object IDs are generated in ascending order, so by keeping track of the last ID that currently exists, new
         // objects can be detected and initialised
         if ( object_id > m_last_id ) {
-            view_object->initialise_mesh();
+            view_object->initialise();
             m_last_id = object_id;
         }
     }

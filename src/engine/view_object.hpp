@@ -11,8 +11,33 @@ class ModelObject;
 class Shader;
 
 
-/** The (base) class for any object that can be drawn. */
+/** The (base) class for any view object. View objects comprise any system that transforms the model's state into a
+ *  rendered frame. Often these are entities being drawn, but also the camera class (will/) can be included in this. */
 class ViewObject : public ManagedObject {
+public:
+    explicit ViewObject( ModelObject * model );
+    ~ViewObject() override = default;
+
+    /** Initialises any OpenGL data the ViewObject may need. This function must only be called in the render thread. */
+    virtual void initialise();
+
+    /** Updates and draws the object, CPU- and GPU-side respectively (more or less). */
+    void update() override = 0;
+    virtual void draw() const {}
+
+protected:
+    /// The model object that is being drawn.
+    ModelObject * m_model;
+};
+
+
+/** Concept that requires types derived from the ViewObject class. */
+template <typename Type>
+concept ViewType = std::is_base_of_v<ViewObject, Type>;
+
+
+/** Base class for ViewObject derivations that want to actually draw something. */
+class VisibleObject : public ViewObject {
 public:
     /** Types of renderable stuff, in the order in which they'll be drawn. */
     enum Type : unsigned int {
@@ -23,16 +48,11 @@ public:
         Transparent
     };
 
-    /** Constructor and destructor. */
-    ViewObject( ModelObject * model, Type type, Mesh<ColourVertex> && mesh, Shader * shader );
-    ~ViewObject() override = default;
+    VisibleObject( ModelObject * model, Type type, Mesh<ColourVertex> && mesh, Shader * shader );
+    ~VisibleObject() override = default;
 
     /** Initialises the mesh's OpenGL data, only to be called by the render thread. */
-    void initialise_mesh();
-
-    /** Updates and draws the object, CPU- and GPU-side respectively (more or less). */
-    void update() override;
-    void draw() const;
+    void initialise() override;
 
     /** Toggles whether the object should actually be rendered. */
     void hide();
@@ -49,9 +69,8 @@ public:
     void set_scale( glm::vec3 const & scale );
     void set_scale( float scale );
 
-protected:
-    /// The model object that is being drawn.
-    ModelObject * m_model;
+    void update() override = 0;
+    void draw() const override;
 
 private:
     /// The main components for drawing this object.

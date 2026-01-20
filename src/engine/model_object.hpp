@@ -81,6 +81,11 @@ private:
 };
 
 
+/** Concept that requires types derived from the ModelObject class. */
+template <typename Type>
+concept ModelType = std::is_base_of_v<ModelObject, Type>;
+
+
 // Template definitions
 
 template <DataType Data>

@@ -31,6 +31,15 @@ using ViewFactory = std::function<std::unique_ptr<ViewObject>( ModelObject * )>;
 using ControllerFactory = std::function<std::unique_ptr<ControllerObject>( ModelObject * )>;
 
 
+/** Returns a basic ViewFactory for views that take their associated model as the only constructor parameter. */
+template <ViewType View, ModelType Model>
+ViewFactory get_view_factory();
+
+/** Returns a basic ControllerFactory for controllers that take their model as the only constructor parameter. */
+template <ControllerType Controller, ModelType Model>
+ControllerFactory get_controller_factory();
+
+
 /** Singleton that creates entities consisting of a model, view, and controller component, and performs the required
  *  setup. */
 class EntityFactory {
@@ -93,6 +102,20 @@ private:
     /// Thread synchronisation primitive(s)
     std::mutex m_mutex;
 };
+
+
+// Template definitions
+
+
+template <ViewType View, ModelType Model>
+ViewFactory get_view_factory() {
+    return []( ModelObject * model ) { return std::make_unique<View>( dynamic_cast<Model *>(model) ); };
+}
+
+template <ControllerType Controller, ModelType Model>
+ControllerFactory get_controller_factory() {
+    return []( ModelObject * model ) { return std::make_unique<Controller>( dynamic_cast<Model *>(model) ); };
+}
 
 
 #endif //DEMO_TD_ENTITY_FACTORY_HPP

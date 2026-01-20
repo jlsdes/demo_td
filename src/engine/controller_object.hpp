@@ -20,4 +20,9 @@ protected:
 };
 
 
+/** Concept that requires types derived from the ControllerObject class. */
+template <typename Type>
+concept ControllerType = std::is_base_of_v<ControllerObject, Type>;
+
+
 #endif //DEMO_TD_CONTROLLER_OBJECT_HPP

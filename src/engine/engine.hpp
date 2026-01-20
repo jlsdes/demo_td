@@ -33,6 +33,8 @@ public:
     [[nodiscard]] Window & get_window() const; // TODO Decide whether to keep this function
 
 private:
+    void initialise();
+
     std::unique_ptr<Window> m_window;
 
     /// MVC managers

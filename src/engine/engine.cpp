@@ -53,23 +53,115 @@ void initialise_glad() {
 
 Engine::Engine() : m_window { nullptr }, m_models {}, m_views {}, m_controllers {}, m_game_thread {},
                    m_initialisation_latch { 2 } {
-    static bool initialised = false;
-
-    if ( not initialised )
-        initialise_glfw();
+    initialise_glfw();
     m_window = std::make_unique<Window>();
-    if ( not initialised )
-        initialise_glad();
+    initialise_glad();
 
-    if ( not initialised ) {
-        m_models.emplace_back( std::make_unique<ModelManager>() );
-        m_views.emplace_back( std::make_unique<ViewManager>() );
-        m_controllers.emplace_back( std::make_unique<ControllerManager>() );
-        EntityFactory & factory { EntityFactory::get_instance() };
-        factory.initialise( m_models.back().get(), m_views.back().get(), m_controllers.back().get() );
+    initialise();
+}
+
+struct WireframeMode {
+    struct Data : public ModelData {
+        bool active { false };
+        bool changed { true };
+    };
+
+    struct Model : public DataModel<Data> {
+        bool change { false };
+
+        void update() override {
+            auto const current { get_old_data() };
+            auto const next { get_new_data() };
+            next->active = current->active != change;
+            next->changed = change;
+            change = false;
+        }
+    };
+
+    struct View : public ViewObject {
+        explicit View( Model * model ) : ViewObject { model } {}
+
+        void update() override {
+            auto const model { dynamic_cast<Model *>(m_model) };
+            auto const data { model->get_render_data() };
+
+            if ( not data->changed )
+                return;
+            if ( data->active ) {
+                glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+                // shader.set_uniform( "ambient_light", glm::vec3 { 1.f, 1.f, 1.f } );
+                glDisable( GL_CULL_FACE );
+            } else {
+                glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+                // shader.set_uniform( "ambient_light", ambient_light );
+                glEnable( GL_CULL_FACE );
+            }
+        }
+    };
+
+    static void init() {
+        static bool initialised { false };
+        if ( not initialised ) {
+            auto & factory { EntityFactory::get_instance() };
+            factory.register_model_factory( "framer", std::make_unique<Model> );
+            factory.register_view_factory( "framer", get_view_factory<View, Model>() );
+            factory.register_controller_factory( "framer", []( ModelObject * ) { return nullptr; } );
+            // The InputManager callback function will act as the ControllerObject, sort of
+        }
+        initialised = true;
     }
 
-    initialised = true;
+    Entity self;
+
+    static Entity build( InputManager & input_manager ) {
+        init();
+        auto const entity { EntityFactory::get_instance().build( "framer" ) };
+
+        auto const model { dynamic_cast<Model *>(entity.model.second) };
+        input_manager.observe_keyboard( GLFW_KEY_F, [&model]( int, int const action ) {
+            // GLFW_REPEAT is also a possible action value, but it should be ignored
+            if ( action == GLFW_PRESS or action == GLFW_RELEASE )
+                model->change = true;
+        } );
+
+        return entity;
+    }
+
+    explicit WireframeMode( InputManager & input_manager ) : self { build( input_manager ) } {}
+};
+
+void Engine::initialise() {
+    m_models.emplace_back( std::make_unique<ModelManager>() );
+    m_views.emplace_back( std::make_unique<ViewManager>() );
+    m_controllers.emplace_back( std::make_unique<ControllerManager>() );
+
+    auto & factory { EntityFactory::get_instance() };
+    factory.initialise( m_models.back().get(), m_views.back().get(), m_controllers.back().get() );
+
+    // Find and build the main graphics shader
+    auto const vertex_shader { get_main_dir() / Config::get<std::string>( "Shader", "vertex_shader" ) };
+    auto const fragment_shader { get_main_dir() / Config::get<std::string>( "Shader", "fragment_shader" ) };
+    GraphicsShader shader { vertex_shader.c_str(), fragment_shader.c_str() };
+    shader.use();
+
+    glm::vec3 constexpr ambient_light { 1.f, 1.f, 1.f };
+    shader.set_uniform( "ambient_light", ambient_light );
+    shader.set_uniform( "sun_light", glm::vec3 { 1.f, 1.f, 1.f } );
+    glm::vec3 constexpr sun_direction { -0.2f, 1.f, -0.5f };
+    shader.set_uniform( "sun_direction", sun_direction );
+
+    // Draw triangles as wireframes when F is being pressed
+    auto & input_manager { m_window->get_input_manager() };
+    WireframeMode framer { input_manager };
+
+    // Create a camera object and attach it to the shader
+    glm::vec3 const & camera_position { 0.f, 1.f, -3.f };
+    glm::vec3 const & camera_target { 0.f, 0.f, 0.f };
+    Camera camera { camera_position, camera_target, &shader };
+    camera.set_free_view( m_window->get_input_manager() );
+
+    float constexpr fov { std::numbers::pi_v<float> / 4.f }; // 45 degrees
+    shader.set_uniform( "projection", glm::perspective( fov, 1200.f / 800.f, 0.1f, 100.f ) );
 }
 
 void Engine::push_model_manager( std::unique_ptr<ModelManager> && model_manager ) {
@@ -97,10 +189,6 @@ bool Engine::pop_controller_manager( ControllerManager const * controller_manage
 }
 
 void Engine::game_thread() {
-    auto & entity_factory { EntityFactory::get_instance() };
-    entity_factory.set_model_manager( m_models.back().get() );
-    entity_factory.set_controller_manager( m_controllers.back().get() );
-
     // Wait until the other thread is ready as well
     m_initialisation_latch.arrive_and_wait();
 
@@ -128,44 +216,6 @@ void Engine::game_thread() {
 }
 
 void Engine::render_thread() {
-    auto & entity_factory { EntityFactory::get_instance() };
-    entity_factory.set_view_manager( m_views.back().get() );
-
-    // Find and build the main graphics shader
-    auto const vertex_shader { get_main_dir() / Config::get<std::string>( "Shader", "vertex_shader" ) };
-    auto const fragment_shader { get_main_dir() / Config::get<std::string>( "Shader", "fragment_shader" ) };
-    GraphicsShader shader { vertex_shader.c_str(), fragment_shader.c_str() };
-    shader.use();
-
-    glm::vec3 constexpr ambient_light { 0.1f, 0.1f, 0.1f };
-    shader.set_uniform( "ambient_light", ambient_light );
-    shader.set_uniform( "sun_light", glm::vec3 { 1.f, 1.f, 1.f } );
-    glm::vec3 constexpr sun_direction { -0.2f, 1.f, -0.5f };
-    shader.set_uniform( "sun_direction", sun_direction );
-
-    // Draw triangles as wireframes when F is being pressed
-    auto & input_manager { m_window->get_input_manager() };
-    input_manager.observe_keyboard( GLFW_KEY_F, [&]( int const, int const action ) {
-        if ( action == GLFW_PRESS ) {
-            glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-            shader.set_uniform( "ambient_light", glm::vec3 { 1.f, 1.f, 1.f } );
-            glDisable( GL_CULL_FACE );
-        } else if ( action == GLFW_RELEASE ) {
-            glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-            shader.set_uniform( "ambient_light", ambient_light );
-            glEnable( GL_CULL_FACE );
-        }
-    } );
-
-    // Create a camera object and attach it to the shader
-    glm::vec3 const & camera_position { 0.f, 1.f, -3.f };
-    glm::vec3 const & camera_target { 0.f, 0.f, 0.f };
-    Camera camera { camera_position, camera_target, &shader };
-    camera.set_free_view( m_window->get_input_manager() );
-
-    float constexpr fov { std::numbers::pi_v<float> / 4.f }; // 45 degrees
-    shader.set_uniform( "projection", glm::perspective( fov, 1200.f / 800.f, 0.1f, 100.f ) );
-
     // Wait until the other thread is ready as well
     m_initialisation_latch.arrive_and_wait();
 
@@ -179,7 +229,7 @@ void Engine::render_thread() {
         for ( auto const & view_manager : m_views )
             view_manager->draw();
 
-        camera.update();
+        // camera.update();
         m_window->render();
     }
 }
