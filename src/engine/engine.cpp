@@ -106,13 +106,6 @@ void Engine::game_thread() {
     // Wait until the other thread is ready as well
     m_initialisation_latch.arrive_and_wait();
 
-    // Create 8 spheres with different colours
-    for ( unsigned int i { 0 }; i < 8; ++i ) {
-        glm::vec3 const position { i & 4 ? -0.5f : 0.5f, i & 2 ? -0.5f : 0.5f, i & 1 ? -0.5f : 0.5f };
-        glm::vec3 const colour { i & 4 ? 0.f : 1.f, i & 2 ? 0.f : 1.f, i & 1 ? 0.f : 1.f, };
-        Sphere::create( position, 0.3f, colour );
-    }
-
     double constexpr tick_duration { 1. / 100. };
     double margin { 0. };
     while ( not m_window->is_closing() ) {
@@ -145,8 +138,6 @@ void Engine::render_thread() {
     auto const fragment_shader { get_main_dir() / Config::get<std::string>( "Shader", "fragment_shader" ) };
     GraphicsShader shader { vertex_shader.c_str(), fragment_shader.c_str() };
     shader.use();
-
-    Sphere::initialise( &shader );
 
     glm::vec3 constexpr ambient_light { 0.1f, 0.1f, 0.1f };
     shader.set_uniform( "ambient_light", ambient_light );
