@@ -27,17 +27,14 @@ Entity Sphere::create( glm::vec3 const & position, float const radius, glm::vec3
     Entity sphere { EntityFactory::get_instance().build( "sphere" ) };
 
     auto const [model_id, model] { sphere.model };
-    model->get_new_data<Data>()->position = position;
+    auto const sphere_model { dynamic_cast<Model *>(model) };
+    sphere_model->get_new_data()->position = position;
 
     auto const [view_id, view] { sphere.view };
     view->translate( position );
     view->scale( radius );
 
     return sphere;
-}
-
-Sphere::Model::Model() : ModelObject {}, m_data { std::make_unique<Data[]>( 3 ) } {
-    initialise_data( { m_data.get(), m_data.get() + 1, m_data.get() + 2 } );
 }
 
 void Sphere::Model::update() {
@@ -54,9 +51,6 @@ Sphere::View::View( Model * const model ) : ViewObject { model, Opaque, std::mov
 
 void Sphere::View::update() {
     float radius;
-    {
-        auto data { m_model->get_render_data() };
-    }
 
     ViewObject::update();
 }

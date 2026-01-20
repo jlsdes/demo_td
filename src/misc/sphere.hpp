@@ -20,19 +20,18 @@ public:
         ~Data() override = default;
     };
 
-    class Model : public ModelObject {
+    class Model : public DataModel<Data> {
     public:
-        Model();
+        Model() = default;
+        ~Model() override = default;
 
         void update() override;
-
-    private:
-        std::unique_ptr<Data[]> m_data;
     };
 
     class View : public ViewObject {
     public:
         explicit View( Model * model );
+        ~View() override = default;
 
         void update() override;
     };
@@ -40,6 +39,7 @@ public:
     class Controller : public ControllerObject {
     public:
         explicit Controller( Model * model );
+        ~Controller() override = default;
 
         void update() override;
     };
