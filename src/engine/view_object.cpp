@@ -29,6 +29,14 @@ void VisibleObject::show() {
     m_hidden = false;
 }
 
+void VisibleObject::set_type( Type const type ) {
+    m_type = type;
+}
+
+void VisibleObject::set_shader( Shader * const shader ) {
+    m_shader = shader;
+}
+
 void VisibleObject::translate( glm::vec3 const & translation ) {
     m_position += translation;
 }

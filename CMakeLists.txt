@@ -78,6 +78,8 @@ add_executable(demo_td
         src/utils/manager.hpp
         src/utils/time.hpp
         src/utils/time.cpp
+        src/misc/sphere.cpp
+        src/misc/sphere.hpp
 )
 
 # Link the necessary libraries

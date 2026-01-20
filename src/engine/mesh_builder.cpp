@@ -127,6 +127,11 @@ MeshBuilder & MeshBuilder::generate_vertex_normals() {
     return *this;
 }
 
+MeshBuilder & MeshBuilder::colour( glm::vec3 const & colour ) {
+    m_colours = { m_vertices.size(), colour };
+    return *this;
+}
+
 /// Helper function for get_mesh_vertices.
 bool is_valid_attribute_vector( std::string const & name,
                                 std::vector<glm::vec3> const & data,
@@ -135,7 +140,7 @@ bool is_valid_attribute_vector( std::string const & name,
     auto const size { data.size() };
     auto const expected { vertices.size() };
     if ( size == 0 )
-        Log::warning( "Generating vertex data, but the normal vectors are missing." );
+        Log::warning( "Generating vertex data, but the ", name, " vectors are missing." );
     else if ( size != expected )
         Log::error( "Generating vertex data, but the number of vertices (", expected,
                     ") does not match the number of ", name, " vectors (", size, ")." );

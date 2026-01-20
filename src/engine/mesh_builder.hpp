@@ -34,6 +34,9 @@ public:
     MeshBuilder & generate_face_normals();
     MeshBuilder & generate_vertex_normals();
 
+    /** Set every vertex to the given colour. */
+    MeshBuilder & colour( glm::vec3 const & colour );
+
     /** Returns the shape data in a more sesh-friendly format. */
     [[nodiscard]] std::vector<ColourVertex> get_mesh_vertices() const;
     [[nodiscard]] std::vector<unsigned int> get_mesh_face_indices() const;

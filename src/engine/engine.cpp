@@ -14,6 +14,12 @@
 #include <numbers>
 #include <string>
 
+#include "mesh_builder.hpp"
+#include "misc/sphere.hpp"
+
+
+GraphicsShader * Engine::s_shader;
+
 
 template <typename T>
 bool pop_manager( std::vector<std::unique_ptr<T>> & container, T const * manager, std::string const & name ) {
@@ -141,27 +147,23 @@ void Engine::initialise() {
     // Find and build the main graphics shader
     auto const vertex_shader { get_main_dir() / Config::get<std::string>( "Shader", "vertex_shader" ) };
     auto const fragment_shader { get_main_dir() / Config::get<std::string>( "Shader", "fragment_shader" ) };
-    GraphicsShader shader { vertex_shader.c_str(), fragment_shader.c_str() };
-    shader.use();
+    m_shader = std::make_unique<GraphicsShader>( vertex_shader.c_str(), fragment_shader.c_str() );
+    m_shader->use();
 
     glm::vec3 constexpr ambient_light { 1.f, 1.f, 1.f };
-    shader.set_uniform( "ambient_light", ambient_light );
-    shader.set_uniform( "sun_light", glm::vec3 { 1.f, 1.f, 1.f } );
+    m_shader->set_uniform( "ambient_light", ambient_light );
+    m_shader->set_uniform( "sun_light", glm::vec3 { 1.f, 1.f, 1.f } );
     glm::vec3 constexpr sun_direction { -0.2f, 1.f, -0.5f };
-    shader.set_uniform( "sun_direction", sun_direction );
+    m_shader->set_uniform( "sun_direction", sun_direction );
 
     // Draw triangles as wireframes when F is being pressed
     auto & input_manager { m_window->get_input_manager() };
     WireframeMode framer { input_manager };
 
-    // Create a camera object and attach it to the shader
-    glm::vec3 const & camera_position { 0.f, 1.f, -3.f };
-    glm::vec3 const & camera_target { 0.f, 0.f, 0.f };
-    Camera camera { camera_position, camera_target, &shader };
-    camera.set_free_view( m_window->get_input_manager() );
-
     float constexpr fov { std::numbers::pi_v<float> / 4.f }; // 45 degrees
-    shader.set_uniform( "projection", glm::perspective( fov, 1200.f / 800.f, 0.1f, 100.f ) );
+    m_shader->set_uniform( "projection", glm::perspective( fov, 1200.f / 800.f, 0.1f, 100.f ) );
+
+    Sphere::initialise( m_shader.get() );
 }
 
 void Engine::push_model_manager( std::unique_ptr<ModelManager> && model_manager ) {
@@ -192,6 +194,9 @@ void Engine::game_thread() {
     // Wait until the other thread is ready as well
     m_initialisation_latch.arrive_and_wait();
 
+    auto & factory { EntityFactory::get_instance() };
+    auto entity { factory.build( "sphere" ) };
+
     double constexpr tick_duration { 1. / 100. };
     double margin { 0. };
     while ( not m_window->is_closing() ) {
@@ -216,6 +221,12 @@ void Engine::game_thread() {
 }
 
 void Engine::render_thread() {
+    // Create a camera object and attach it to the shader
+    glm::vec3 const & camera_position { 0.f, 1.f, -3.f };
+    glm::vec3 const & camera_target { 0.f, 0.f, 0.f };
+    Camera camera { camera_position, camera_target, m_shader.get() };
+    camera.set_free_view( m_window->get_input_manager() );
+
     // Wait until the other thread is ready as well
     m_initialisation_latch.arrive_and_wait();
 
@@ -229,7 +240,7 @@ void Engine::render_thread() {
         for ( auto const & view_manager : m_views )
             view_manager->draw();
 
-        // camera.update();
+        camera.update();
         m_window->render();
     }
 }

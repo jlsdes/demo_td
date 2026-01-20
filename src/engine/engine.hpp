@@ -3,6 +3,7 @@
 
 #include "controller_manager.hpp"
 #include "model_manager.hpp"
+#include "shader.hpp"
 #include "view_manager.hpp"
 #include "window.hpp"
 
@@ -32,6 +33,8 @@ public:
 
     [[nodiscard]] Window & get_window() const; // TODO Decide whether to keep this function
 
+    static GraphicsShader * s_shader;
+
 private:
     void initialise();
 
@@ -44,6 +47,8 @@ private:
 
     std::thread m_game_thread;
     std::latch m_initialisation_latch;
+
+    std::unique_ptr<GraphicsShader> m_shader;
 };
 
 

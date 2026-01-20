@@ -58,6 +58,9 @@ public:
     void hide();
     void show();
 
+    void set_type( Type type );
+    void set_shader( Shader * shader );
+
     void translate( glm::vec3 const & translation );
     void set_position( glm::vec3 const & position );
 
