@@ -42,29 +42,13 @@ add_executable(demo_td
 
         src/engine/camera.cpp
         src/engine/camera.hpp
-        src/engine/controller_manager.cpp
-        src/engine/controller_manager.hpp
-        src/engine/controller_object.hpp
-        src/engine/controller_object.cpp
-        src/engine/engine.cpp
-        src/engine/engine.hpp
-        src/engine/entity_factory.cpp
-        src/engine/entity_factory.hpp
         src/engine/input_manager.cpp
         src/engine/input_manager.hpp
         src/engine/mesh.hpp
         src/engine/mesh_builder.cpp
         src/engine/mesh_builder.hpp
-        src/engine/model_manager.cpp
-        src/engine/model_manager.hpp
-        src/engine/model_object.cpp
-        src/engine/model_object.hpp
         src/engine/shader.cpp
         src/engine/shader.hpp
-        src/engine/view_manager.cpp
-        src/engine/view_manager.hpp
-        src/engine/view_object.cpp
-        src/engine/view_object.hpp
         src/engine/window.cpp
         src/engine/window.hpp
 
@@ -74,12 +58,15 @@ add_executable(demo_td
         src/utils/ini_reader.hpp
         src/utils/log.cpp
         src/utils/log.hpp
-        src/utils/manager.cpp
-        src/utils/manager.hpp
         src/utils/time.hpp
         src/utils/time.cpp
-        src/misc/sphere.cpp
-        src/misc/sphere.hpp
+
+        src/engine/entity.cpp
+        src/engine/entity.hpp
+        src/engine/component.cpp
+        src/engine/component.hpp
+        src/engine/system.cpp
+        src/engine/system.hpp
 )
 
 # Link the necessary libraries
