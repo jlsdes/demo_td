@@ -118,6 +118,11 @@ void ComponentManager::insert_component( Entity const entity ) {
 }
 
 template <SubComponent ComponentType>
+void ComponentManager::insert_component( Entity entity, ComponentType const & component ) {
+    get_component_array<ComponentType>().insert( entity, component );
+}
+
+template <SubComponent ComponentType>
 void ComponentManager::remove_component( Entity const entity ) {
     get_component_array<ComponentType>().remove( entity );
 }

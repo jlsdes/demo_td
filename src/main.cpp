@@ -4,7 +4,7 @@
 #include "utils/config.hpp"
 #include "utils/log.hpp"
 
-#include "engine/component.hpp"
+#include "engine/component_manager.hpp"
 
 
 struct Position : Component {

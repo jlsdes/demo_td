@@ -61,12 +61,14 @@ add_executable(demo_td
         src/utils/time.hpp
         src/utils/time.cpp
 
-        src/engine/entity.cpp
-        src/engine/entity.hpp
-        src/engine/component.cpp
-        src/engine/component.hpp
+        src/engine/entity_manager.cpp
+        src/engine/entity_manager.hpp
+        src/engine/component_manager.cpp
+        src/engine/component_manager.hpp
         src/engine/system.cpp
         src/engine/system.hpp
+        src/engine/component.hpp
+        src/engine/entity.hpp
 )
 
 # Link the necessary libraries
