@@ -8,6 +8,13 @@
 #include <map>
 
 
+/** The two main groups of systems; other values can be used as well. */
+enum SystemGroup : unsigned int {
+    General = 0,
+    Render = 1,
+};
+
+
 /** Manages all systems. */
 class SystemManager {
 public:
@@ -19,12 +26,6 @@ public:
 
     SystemManager( SystemManager && ) = default;
     SystemManager & operator=( SystemManager && ) = default;
-
-    /** The two main groups of systems; other values can be used as well. */
-    enum Group : unsigned int {
-        General = 0,
-        Render = 1,
-    };
 
     template <SubSysten SystemType>
     void insert_system( ComponentFlag flags, unsigned int group_type = General );

@@ -21,8 +21,12 @@ struct Position : Component {
 
 class MovingSystem : public System {
 public:
-    MovingSystem( ComponentManager * const component_manager ) : System { 1ull, component_manager } {}
+    MovingSystem( ComponentFlag const flags, ComponentManager * const component_manager )
+        : System { flags, component_manager } {}
 
+    void run() override {
+        Log::debug( "RUNNING" );
+    }
 };
 
 
@@ -36,7 +40,23 @@ int main() {
     component_manager.create_store<Position>();
 
     SystemManager system_manager { &component_manager };
-    system_manager.add_system( Group::General, std::make_unique<MovingSystem>() )
+    system_manager.insert_system<MovingSystem>( SystemGroup::General );
+
+    EntityManager entity_manager {};
+    for ( unsigned int i { 0 }; i < 200; ++i ) {
+        entity_manager.create( i );
+    }
+
+    std::cout << std::hex;
+
+    unsigned int counter { 0 };
+    for ( auto iterator { entity_manager.begin( 6ull ) }; iterator != entity_manager.end(); ++iterator ) {
+        Log::debug( *iterator );
+        if ( ++counter >= 500 )
+            break;
+    }
+
+    std::cout << std::dec;
 
     return 0;
 }

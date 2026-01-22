@@ -76,3 +76,31 @@ bool EntityManager::entity_has_components( Entity const entity, ComponentFlag co
     ComponentFlag const relevant_flags { component_flags & flags };
     return relevant_flags == flags;
 }
+
+EntityManager::Iterator::Iterator( EntityManager & manager, Entity const initial_entity, ComponentFlag const filter )
+    : m_manager { manager }, m_current { initial_entity }, m_filter { filter } {}
+
+EntityManager::Iterator & EntityManager::Iterator::operator++() {
+    while ( ++m_current < m_manager.m_nr_entities ) {
+        if ( m_manager.entity_has_components( m_current, m_filter ) )
+            return *this;
+    }
+    return *this;
+}
+
+Entity EntityManager::Iterator::operator*() const {
+    return m_current;
+}
+
+bool EntityManager::Iterator::operator==( Iterator const & other ) const {
+    assert( &m_manager == &other.m_manager );
+    return m_current == other.m_current;
+}
+
+EntityManager::Iterator EntityManager::begin( ComponentFlag const filter ) {
+    return { *this, 0, filter };
+}
+
+EntityManager::Iterator EntityManager::end() {
+    return { *this, m_nr_entities, 0ull };
+}
