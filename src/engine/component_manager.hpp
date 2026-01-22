@@ -79,9 +79,14 @@ public:
     template <SubComponent ComponentType>
     void remove_store();
 
+    /** Returns a reference to the appropriate component store, if possible. */
+    ComponentStore * get_component_store( ComponentFlag flag ) const;
     /** Returns all components of the specified type, if possible. */
     template <SubComponent ComponentType>
     ComponentArray<ComponentType> & get_component_array() const;
+
+    /** Returns whether the component flag is being used. */
+    [[nodiscard]] bool flag_exists( ComponentFlag flag ) const;
     /** Returns the component's type flag, if possible. If not, an error is thrown. */
     template <SubComponent ComponentType>
     ComponentFlag get_component_flag() const;
