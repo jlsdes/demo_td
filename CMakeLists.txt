@@ -69,6 +69,9 @@ add_executable(demo_td
         src/engine/system.hpp
         src/engine/component.hpp
         src/engine/entity.hpp
+        src/engine/system_manager.cpp
+        src/engine/system_manager.hpp
+        src/engine/system_manager.ipp
 )
 
 # Link the necessary libraries

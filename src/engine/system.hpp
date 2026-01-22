@@ -4,6 +4,8 @@
 #include "engine/component.hpp"
 #include "engine/component_manager.hpp"
 
+#include <type_traits>
+
 
 /** A system operates on all components of (a) certain type(s). */
 class System {
@@ -11,11 +13,14 @@ public:
     System( ComponentFlag flags, ComponentManager * component_manager );
     virtual ~System() = default;
 
-    System( System const & system ) = delete;
-    System & operator = ( System const & system ) = delete;
+    System( System const & ) = delete;
+    System & operator = ( System const & ) = delete;
 
-    System( System && system ) noexcept = default;
-    System & operator= ( System && system ) noexcept = delete;
+    System( System && ) noexcept = default;
+    System & operator= ( System && ) = delete;
+
+    /** Abstract function where derived types should implement their functionality. */
+    virtual void run() = 0;
 
 protected:
     /** Returns the component store/array associated with the component flag/type. */
@@ -29,6 +34,11 @@ private:
     /// The associated ComponentManager holding the components the system needs to operate on.
     ComponentManager * m_component_manager;
 };
+
+
+/// Concept that requires a type to be derived from the System base class.
+template <typename DerivedSystem>
+concept SubSysten = requires( DerivedSystem system ) { std::is_base_of_v<System, DerivedSystem>; };
 
 
 // Template definitions
