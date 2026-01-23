@@ -1,7 +1,7 @@
 #ifndef DEMO_TD_ENTITY_MANAGER_HPP
 #define DEMO_TD_ENTITY_MANAGER_HPP
 
-#include "component.hpp"
+#include "component/component.hpp"
 #include "entity.hpp"
 
 #include <array>

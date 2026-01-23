@@ -1,8 +1,8 @@
 #ifndef DEMO_TD_SYSTEM_HPP
 #define DEMO_TD_SYSTEM_HPP
 
-#include "engine/component.hpp"
-#include "engine/component_manager.hpp"
+#include "component/component.hpp"
+#include "component/component_manager.hpp"
 
 #include <type_traits>
 

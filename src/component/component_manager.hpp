@@ -4,7 +4,7 @@
 // Based on https://austinmorlan.com/posts/entity_component_system/
 
 #include "component.hpp"
-#include "entity.hpp"
+#include "entity/entity.hpp"
 #include "utils/log.hpp"
 
 #include <array>

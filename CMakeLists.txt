@@ -61,20 +61,21 @@ add_executable(demo_td
         src/utils/time.hpp
         src/utils/time.cpp
 
-        src/engine/entity_manager.cpp
-        src/engine/entity_manager.hpp
-        src/engine/component_manager.cpp
-        src/engine/component_manager.hpp
-        src/engine/system.cpp
-        src/engine/system.hpp
-        src/engine/component.hpp
-        src/engine/entity.hpp
-        src/engine/system_manager.cpp
-        src/engine/system_manager.hpp
-        src/engine/system_manager.ipp
+        src/entity/entity_manager.cpp
+        src/entity/entity_manager.hpp
+        src/component/component_manager.cpp
+        src/component/component_manager.hpp
+        src/system/system.cpp
+        src/system/system.hpp
+        src/component/component.hpp
+        src/entity/entity.hpp
+        src/system/system_manager.cpp
+        src/system/system_manager.hpp
+        src/system/system_manager.ipp
         src/engine/coordinator.cpp
         src/engine/coordinator.hpp
         src/engine/coordinator.ipp
+        src/component/drawable.hpp
 )
 
 # Link the necessary libraries

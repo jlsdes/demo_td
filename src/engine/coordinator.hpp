@@ -1,9 +1,9 @@
 #ifndef DEMO_TD_GENERAL_MANAGER_HPP
 #define DEMO_TD_GENERAL_MANAGER_HPP
 
-#include "component_manager.hpp"
-#include "entity_manager.hpp"
-#include "system_manager.hpp"
+#include "component/component_manager.hpp"
+#include "entity/entity_manager.hpp"
+#include "system/system_manager.hpp"
 
 
 /** Manages an entire Entity-Component-System cluster. */
@@ -18,23 +18,32 @@ public:
     Coordinator( Coordinator && ) = default;
     Coordinator & operator=( Coordinator && ) = default;
 
+    /** Adds a new component type, and returns the new representative component flag. */
     template <SubComponent ComponentType>
-    void insert_component_type();
+    ComponentFlag insert_component_type();
+    /** Removes the component type, after removing all existing components of that type. This removal does not happen if
+     *  'purge' is set to false; this should probably only happen if all such components have been removed already. */
     template <SubComponent ComponentType>
     void remove_component_type( bool purge = true );
 
-    template <SubSystem SystemType>
-    void insert_system( ComponentFlag required_components );
-    template <SubSystem SystemType>
-    void remove_system();
-
-    Entity insert_entity();
-    void remove_entity( Entity entity );
+    template <SubComponent ComponentType>
+    [[nodiscard]] ComponentFlag get_component_flag() const;
 
     template <SubComponent ComponentType>
     void insert_component( Entity entity, ComponentType const & component );
     template <SubComponent ComponentType>
     void remove_component( Entity entity );
+
+    template <SubSystem SystemType>
+    void insert_system( ComponentFlag required_components, unsigned int group = SystemGroup::General );
+    template <SubSystem SystemType>
+    void remove_system();
+
+    /** Runs a group of systems. 'group' can be any number, but if no system has that group number, nothing happens. */
+    void run_systems( unsigned int group ) const;
+
+    Entity insert_entity();
+    void remove_entity( Entity entity );
 
 private:
     ComponentManager m_components;

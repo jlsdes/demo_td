@@ -1,8 +1,8 @@
 #ifndef DEMO_TD_SYSTEM_MANAGER_HPP
 #define DEMO_TD_SYSTEM_MANAGER_HPP
 
-#include "component_manager.hpp"
-#include "engine/system.hpp"
+#include "component/component_manager.hpp"
+#include "system.hpp"
 
 #include <memory>
 #include <map>

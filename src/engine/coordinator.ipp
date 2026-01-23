@@ -3,8 +3,9 @@
 
 
 template <SubComponent ComponentType>
-void Coordinator::insert_component_type() {
+ComponentFlag Coordinator::insert_component_type() {
     m_components.create_store<ComponentType>();
+    return m_components.get_component_flag<ComponentType>();
 }
 
 template <SubComponent ComponentType>
@@ -17,14 +18,9 @@ void Coordinator::remove_component_type( bool const purge ) {
     m_components.remove_store<ComponentType>();
 }
 
-template <SubSystem SystemType>
-void Coordinator::insert_system( ComponentFlag const required_components ) {
-    m_systems.insert_system<SystemType>( required_components );
-}
-
-template <SubSystem SystemType>
-void Coordinator::remove_system() {
-    m_systems.remove_system<SystemType>();
+template <SubComponent ComponentType>
+ComponentFlag Coordinator::get_component_flag() const {
+    return m_components.get_component_flag<ComponentType>();
 }
 
 template <SubComponent ComponentType>
@@ -44,6 +40,16 @@ void Coordinator::remove_component( Entity const entity ) {
 
     m_components.remove_component<ComponentType>(entity);
     m_entities.toggle_flags( entity, flag );
+}
+
+template <SubSystem SystemType>
+void Coordinator::insert_system( ComponentFlag const required_components, unsigned int const group ) {
+    m_systems.insert_system<SystemType>( required_components, group );
+}
+
+template <SubSystem SystemType>
+void Coordinator::remove_system() {
+    m_systems.remove_system<SystemType>();
 }
 
 
