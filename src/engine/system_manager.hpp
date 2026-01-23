@@ -27,13 +27,13 @@ public:
     SystemManager( SystemManager && ) = default;
     SystemManager & operator=( SystemManager && ) = default;
 
-    template <SubSysten SystemType>
+    template <SubSystem SystemType>
     void insert_system( ComponentFlag flags, unsigned int group_type = General );
-    template <SubSysten SystemType>
+    template <SubSystem SystemType>
     void remove_system();
 
     /** Updates the group the system belongs to. Systems can only belong to one group at a time. */
-    template <SubSysten SystemType>
+    template <SubSystem SystemType>
     void set_group( unsigned int group_type );
 
     /** Runs all systems in the given group. */

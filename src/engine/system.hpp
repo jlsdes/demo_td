@@ -19,6 +19,9 @@ public:
     System( System && ) noexcept = default;
     System & operator= ( System && ) = delete;
 
+    /** Returns the flags of the components the system operates on. */
+    [[nodiscard]] ComponentFlag get_required_components() const;
+
     /** Abstract function where derived types should implement their functionality. */
     virtual void run() = 0;
 
@@ -38,7 +41,7 @@ private:
 
 /// Concept that requires a type to be derived from the System base class.
 template <typename DerivedSystem>
-concept SubSysten = requires( DerivedSystem system ) { std::is_base_of_v<System, DerivedSystem>; };
+concept SubSystem = requires( DerivedSystem system ) { std::is_base_of_v<System, DerivedSystem>; };
 
 
 // Template definitions

@@ -72,6 +72,9 @@ add_executable(demo_td
         src/engine/system_manager.cpp
         src/engine/system_manager.hpp
         src/engine/system_manager.ipp
+        src/engine/coordinator.cpp
+        src/engine/coordinator.hpp
+        src/engine/coordinator.ipp
 )
 
 # Link the necessary libraries

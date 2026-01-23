@@ -19,13 +19,15 @@ public:
     EntityManager( EntityManager && other ) = default;
     EntityManager & operator=( EntityManager && other ) = default;
 
-    Entity create( ComponentFlag flags );
+    Entity create();
     void remove( Entity entity );
 
     [[nodiscard]] bool entity_exists( Entity entity ) const;
+    [[nodiscard]] bool entity_has_components( Entity entity, ComponentFlag flags ) const;
 
     [[nodiscard]] ComponentFlag get_flags( Entity entity ) const;
-    [[nodiscard]] bool entity_has_components( Entity entity, ComponentFlag flags ) const;
+    void set_flags( Entity entity, ComponentFlag flags );
+    void toggle_flags( Entity entity, ComponentFlag flags );
 
     /** Iterates over all entities, filtering them on their component flags if requested. */
     class Iterator {

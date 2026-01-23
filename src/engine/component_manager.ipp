@@ -1,7 +1,6 @@
 #ifndef DEMO_TD_COMPONENT_IPP
 #define DEMO_TD_COMPONENT_IPP
 
-
 #include <bit>
 
 
@@ -18,6 +17,11 @@ template <SubComponent ComponentType>
 void ComponentArray<ComponentType>::insert( Entity const entity, ComponentType const & component ) {
     assert( m_nr_components < g_max_entities );
 
+    if ( m_entity_to_component.contains( entity ) ) {
+        Log::error( "Attempted to add two ", typeid( ComponentType ).name(), " components to one entity ", entity,
+                    ", skipping duplicate." );
+        return;
+    }
     m_components.at( m_nr_components ) = component;
     m_entities.at( m_nr_components ) = entity;
     m_entity_to_component.emplace( entity, m_nr_components );
@@ -62,6 +66,16 @@ ComponentType * ComponentArray<ComponentType>::end() {
 }
 
 template <SubComponent ComponentType>
+unsigned int ComponentArray<ComponentType>::size() const {
+    return m_nr_components;
+}
+
+template <SubComponent ComponentType>
+bool ComponentArray<ComponentType>::empty() const {
+    return m_nr_components == 0;
+}
+
+template <SubComponent ComponentType>
 constexpr std::type_index ComponentManager::type_id() {
     return { typeid( ComponentType ) };
 }
@@ -89,6 +103,8 @@ void ComponentManager::remove_store() {
         Log::warning( "Attempted to remove a ComponentArray object that can't be found, removing nothing." );
         return;
     }
+    if ( not m_stores.at( type )->empty() )
+        Log::warning( "Removed a component store that isn't empty, entities' ComponentFlags may need to be reset." );
 
     m_used_flags &= ~m_component_types.at( type );
     m_component_types.erase( type );
@@ -104,7 +120,7 @@ template <SubComponent ComponentType>
 ComponentArray<ComponentType> & ComponentManager::get_component_array() const {
     auto const iterator { m_stores.find( type_id<ComponentType>() ) };
     assert( iterator != m_stores.end() );
-    return *dynamic_cast<ComponentArray<ComponentType> *>( iterator->second.get() );
+    return *dynamic_cast<ComponentArray<ComponentType> *>(iterator->second.get());
 }
 
 template <SubComponent ComponentType>

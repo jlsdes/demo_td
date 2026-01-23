@@ -23,6 +23,9 @@ public:
     virtual void insert( Entity entity ) = 0;
     /** Removes the component associated with the given entity. */
     virtual void remove( Entity entity ) = 0;
+
+    [[nodiscard]] virtual unsigned int size() const = 0;
+    [[nodiscard]] virtual bool empty() const = 0;
 };
 
 
@@ -47,6 +50,9 @@ public:
 
     ComponentType * begin();
     ComponentType * end();
+
+    [[nodiscard]] unsigned int size() const override;
+    [[nodiscard]] bool empty() const override;
 
 private:
     /// All components of this specific type. There exists at most one per entity, so this can't exceed that.
@@ -102,6 +108,7 @@ public:
     /** Removes an entity's component from the appropriate component store. */
     template <SubComponent ComponentType>
     void remove_component( Entity entity );
+    void remove_component( Entity entity, ComponentFlag flag );
 
 private:
     /** Returns a type ID that is unique per component type. */

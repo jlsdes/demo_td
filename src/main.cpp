@@ -43,20 +43,9 @@ int main() {
     system_manager.insert_system<MovingSystem>( SystemGroup::General );
 
     EntityManager entity_manager {};
-    for ( unsigned int i { 0 }; i < 200; ++i ) {
+    for ( unsigned int i { 0 }; i < g_max_entities; ++i ) {
         entity_manager.create( i );
     }
-
-    std::cout << std::hex;
-
-    unsigned int counter { 0 };
-    for ( auto iterator { entity_manager.begin( 6ull ) }; iterator != entity_manager.end(); ++iterator ) {
-        Log::debug( *iterator );
-        if ( ++counter >= 500 )
-            break;
-    }
-
-    std::cout << std::dec;
 
     return 0;
 }

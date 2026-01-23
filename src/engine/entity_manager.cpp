@@ -18,16 +18,16 @@ inline bool get_bit( unsigned long long const segment, unsigned int const bit_in
     return segment & (1ull << bit_index);
 }
 
-Entity EntityManager::create( ComponentFlag const flags ) {
+Entity EntityManager::create() {
     assert( m_nr_entities < g_max_entities );
 
     auto [segment_index, bit_index] = get_bit_location( m_next_entity, s_segment_size );
     SegmentType * segment { m_existing.data() + segment_index };
 
-    // Check whether an entity with this ID already exists
+    // Check whether an entity with the m_next_entity ID already exists, and if so find a different ID that is available
     if ( get_bit( *segment, bit_index ) ) {
+        // Full segments can quickly be skipped
         while ( *segment == ~0ull ) {
-            // Skip full segments
             ++segment_index;
             if ( segment_index < s_array_size )
                 ++segment;
@@ -36,14 +36,16 @@ Entity EntityManager::create( ComponentFlag const flags ) {
                 segment = m_existing.data();
             }
         }
-        // Get the first open spot within this segment, which could be before the previous entity in the same segment
+        // Get the first open spot within this segment
         bit_index = std::countr_one( *segment );
         m_next_entity = segment_index * s_segment_size + bit_index;
     }
-    m_component_flags.at( m_next_entity ) = flags;
+    m_component_flags.at( m_next_entity ) = 0;
     *segment |= 1ull << bit_index;
     ++m_nr_entities;
-    return m_next_entity++;
+
+    m_next_entity = (m_next_entity + 1) % g_max_entities;
+    return m_next_entity;
 }
 
 void EntityManager::remove( Entity const entity ) {
@@ -62,6 +64,13 @@ bool EntityManager::entity_exists( Entity const entity ) const {
     return get_bit( m_existing.at( segment_index ), bit_index );
 }
 
+bool EntityManager::entity_has_components( Entity const entity, ComponentFlag const flags ) const {
+    // There could be multiple flags set to 1, in which case a true result would indicate they're all present
+    ComponentFlag const component_flags { get_flags( entity ) };
+    ComponentFlag const relevant_flags { component_flags & flags };
+    return relevant_flags == flags;
+}
+
 ComponentFlag EntityManager::get_flags( Entity const entity ) const {
     if ( not entity_exists( entity ) ) {
         Log::warning( "Attempted to get the component flags of a non-existent entity ", entity, ", returning 0." );
@@ -70,18 +79,25 @@ ComponentFlag EntityManager::get_flags( Entity const entity ) const {
     return m_component_flags.at( entity );
 }
 
-bool EntityManager::entity_has_components( Entity const entity, ComponentFlag const flags ) const {
-    // There could be multiple flags set to 1, in which case a true result would indicate they're all present
-    ComponentFlag const component_flags { get_flags( entity ) };
-    ComponentFlag const relevant_flags { component_flags & flags };
-    return relevant_flags == flags;
+void EntityManager::set_flags( Entity const entity, ComponentFlag const flags ) {
+    if ( not entity_exists( entity ) )
+        Log::warning( "Attempted to set the component flags of a non-existent entity ", entity, ", ignoring." );
+    else
+        m_component_flags.at( entity ) = flags;
+}
+
+void EntityManager::toggle_flags( Entity const entity, ComponentFlag const flags ) {
+    if ( not entity_exists( entity ) )
+        Log::warning( "Attempted to set the component flags of a non-existent entity ", entity, ", ignoring." );
+    else
+        m_component_flags.at( entity ) ^= flags;
 }
 
 EntityManager::Iterator::Iterator( EntityManager & manager, Entity const initial_entity, ComponentFlag const filter )
     : m_manager { manager }, m_current { initial_entity }, m_filter { filter } {}
 
 EntityManager::Iterator & EntityManager::Iterator::operator++() {
-    while ( ++m_current < m_manager.m_nr_entities ) {
+    while ( ++m_current < g_max_entities ) {
         if ( m_manager.entity_has_components( m_current, m_filter ) )
             return *this;
     }
@@ -102,5 +118,5 @@ EntityManager::Iterator EntityManager::begin( ComponentFlag const filter ) {
 }
 
 EntityManager::Iterator EntityManager::end() {
-    return { *this, m_nr_entities, 0ull };
+    return { *this, g_max_entities, 0ull };
 }
