@@ -5,10 +5,8 @@
 #include <cassert>
 #include <iomanip>
 
-#include "glm/gtc/bitfield.hpp"
 
-
-EntityManager::EntityManager() : m_component_flags { 0 }, m_existing { 0 }, m_nr_entities { 0 }, m_next_entity { 0 } {}
+EntityManager::EntityManager() : m_existing { 0 }, m_nr_entities { 0 }, m_next_entity { 0 } {}
 
 inline std::pair<unsigned int, unsigned int> get_bit_location( Entity const entity, unsigned int const segment_size ) {
     return { entity / segment_size, entity % segment_size };
@@ -40,7 +38,6 @@ Entity EntityManager::create() {
         bit_index = std::countr_one( *segment );
         m_next_entity = segment_index * s_segment_size + bit_index;
     }
-    m_component_flags.at( m_next_entity ) = 0;
     *segment |= 1ull << bit_index;
     ++m_nr_entities;
 
@@ -55,7 +52,6 @@ void EntityManager::remove( Entity const entity ) {
     }
     auto const [segment_index, bit_index] { get_bit_location( entity, s_segment_size ) };
     m_existing.at( segment_index ) &= ~(1ull << bit_index);
-    m_component_flags.at( entity ) = 0ull;
     --m_nr_entities;
 }
 
@@ -64,41 +60,12 @@ bool EntityManager::entity_exists( Entity const entity ) const {
     return get_bit( m_existing.at( segment_index ), bit_index );
 }
 
-bool EntityManager::entity_has_components( Entity const entity, ComponentFlag const flags ) const {
-    // There could be multiple flags set to 1, in which case a true result would indicate they're all present
-    ComponentFlag const component_flags { get_flags( entity ) };
-    ComponentFlag const relevant_flags { component_flags & flags };
-    return relevant_flags == flags;
-}
-
-ComponentFlag EntityManager::get_flags( Entity const entity ) const {
-    if ( not entity_exists( entity ) ) {
-        Log::warning( "Attempted to get the component flags of a non-existent entity ", entity, ", returning 0." );
-        return 0;
-    }
-    return m_component_flags.at( entity );
-}
-
-void EntityManager::set_flags( Entity const entity, ComponentFlag const flags ) {
-    if ( not entity_exists( entity ) )
-        Log::warning( "Attempted to set the component flags of a non-existent entity ", entity, ", ignoring." );
-    else
-        m_component_flags.at( entity ) = flags;
-}
-
-void EntityManager::toggle_flags( Entity const entity, ComponentFlag const flags ) {
-    if ( not entity_exists( entity ) )
-        Log::warning( "Attempted to set the component flags of a non-existent entity ", entity, ", ignoring." );
-    else
-        m_component_flags.at( entity ) ^= flags;
-}
-
-EntityManager::Iterator::Iterator( EntityManager & manager, Entity const initial_entity, ComponentFlag const filter )
-    : m_manager { manager }, m_current { initial_entity }, m_filter { filter } {}
+EntityManager::Iterator::Iterator( EntityManager & manager, Entity const initial_entity )
+    : m_manager { manager }, m_current { initial_entity } {}
 
 EntityManager::Iterator & EntityManager::Iterator::operator++() {
     while ( ++m_current < g_max_entities ) {
-        if ( m_manager.entity_has_components( m_current, m_filter ) )
+        if ( m_manager.entity_exists( m_current ) ) // Could be slow
             return *this;
     }
     return *this;
@@ -113,10 +80,10 @@ bool EntityManager::Iterator::operator==( Iterator const & other ) const {
     return m_current == other.m_current;
 }
 
-EntityManager::Iterator EntityManager::begin( ComponentFlag const filter ) {
-    return { *this, 0, filter };
+EntityManager::Iterator EntityManager::begin() {
+    return { *this, 0 };
 }
 
 EntityManager::Iterator EntityManager::end() {
-    return { *this, g_max_entities, 0ull };
+    return { *this, g_max_entities };
 }

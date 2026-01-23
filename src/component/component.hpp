@@ -1,6 +1,7 @@
 #ifndef DEMO_TD_COMPONENT_HPP
 #define DEMO_TD_COMPONENT_HPP
 
+#include <bit>
 #include <type_traits>
 
 
@@ -13,9 +14,23 @@ unsigned int constexpr g_max_component_types { 64 };
 struct Component {};
 
 
-/// An ID for the components' type, and also to be used by entities to indicate which components they consist of by
-/// adding the flags of their respective components together.
-using ComponentFlag = unsigned long long;
+/// A unique ID per component type per component manager. The ID value also represents the indicator bit in
+/// ComponentFlags for the same type.
+using ComponentTypeID = unsigned char;
+
+/// An "array" of bits indicating the relevant component types. Different component managers use different
+/// representations.
+using ComponentFlags = unsigned long long;
+
+
+/** Returns the flag used to indicate the same type as the ID. */
+inline ComponentFlags id_to_flag( ComponentTypeID const id ) {
+    return 1ull << id;
+}
+/** Returns the ID of the type represented by the rightmost 1 bit in the flag. */
+inline ComponentTypeID flag_to_id( ComponentFlags const flag ) {
+    return std::countr_zero( flag );
+}
 
 
 /** Requires a type derived from the Component base struct. */

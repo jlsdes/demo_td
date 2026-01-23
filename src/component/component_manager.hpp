@@ -24,8 +24,11 @@ public:
     /** Removes the component associated with the given entity. */
     virtual void remove( Entity entity ) = 0;
 
+    virtual Component & get( Entity entity ) = 0 ;
+
     [[nodiscard]] virtual unsigned int size() const = 0;
     [[nodiscard]] virtual bool empty() const = 0;
+    [[nodiscard]] virtual bool contains( Entity entity ) const = 0;
 };
 
 
@@ -46,13 +49,14 @@ public:
     void insert( Entity entity, ComponentType const & component );
     void remove( Entity entity ) override;
 
-    ComponentType & get( Entity entity );
+    ComponentType & get( Entity entity ) override; // Can I override like this with different return types???
 
     ComponentType * begin();
     ComponentType * end();
 
     [[nodiscard]] unsigned int size() const override;
     [[nodiscard]] bool empty() const override;
+    [[nodiscard]] bool contains( Entity entity ) const override;
 
 private:
     /// All components of this specific type. There exists at most one per entity, so this can't exceed that.
@@ -69,7 +73,7 @@ private:
 /** Manages ComponentStore objects for all Component subtypes. */
 class ComponentManager {
 public:
-    ComponentManager() = default;
+    ComponentManager();
     ~ComponentManager() = default;
 
     ComponentManager( ComponentManager const & ) = delete;
@@ -80,47 +84,66 @@ public:
 
     /** Adds a component store holding the given component type, unless one is already registered. */
     template <SubComponent ComponentType>
-    void create_store();
+    ComponentTypeID create_store();
     /** Removes the component store associated with the given component type, if possible. */
-    template <SubComponent ComponentType>
-    void remove_store();
+    void remove_store( ComponentTypeID id );
 
-    /** Returns a reference to the appropriate component store, if possible. */
-    ComponentStore * get_component_store( ComponentFlag flag ) const;
+    /** Returns a pointer to the appropriate component store, if possible. */
+    [[nodiscard]] ComponentStore * get_component_store( ComponentFlags flag ) const;
     /** Returns all components of the specified type, if possible. */
     template <SubComponent ComponentType>
-    ComponentArray<ComponentType> & get_component_array() const;
+    [[nodiscard]] ComponentArray<ComponentType> & get_component_array() const;
 
-    /** Returns whether the component flag is being used. */
-    [[nodiscard]] bool flag_exists( ComponentFlag flag ) const;
-    /** Returns the component's type flag, if possible. If not, an error is thrown. */
+    /** Returns whether the type ID/flag is currently in use. */
+    [[nodiscard]] bool id_exists( ComponentTypeID id ) const;
+    [[nodiscard]] bool flag_exists( ComponentFlags flag ) const;
     template <SubComponent ComponentType>
-    ComponentFlag get_component_flag() const;
+    [[nodiscard]] bool type_exists() const;
+
+    /** Returns the type ID/flag of the given type. */
+    template <SubComponent ComponentType>
+    [[nodiscard]] ComponentTypeID get_type_id() const;
+    template <SubComponent ComponentType>
+    [[nodiscard]] ComponentFlags get_component_flag() const;
 
     /** Returns the entity's component of the specified type, if possible. */
+    [[nodiscard]] Component & get_component( Entity entity, ComponentTypeID id ) const;
     template <SubComponent ComponentType>
-    ComponentType & get_component( Entity entity ) const;
+    [[nodiscard]] ComponentType & get_component( Entity entity ) const;
+
     /** Inserts a new component into the appropriate component store. */
+    void insert_component( Entity entity, ComponentTypeID id );
     template <SubComponent ComponentType>
     void insert_component( Entity entity );
     template <SubComponent ComponentType>
     void insert_component( Entity entity, ComponentType const & component );
+
     /** Removes an entity's component from the appropriate component store. */
     template <SubComponent ComponentType>
     void remove_component( Entity entity );
-    void remove_component( Entity entity, ComponentFlag flag );
+    void remove_component( Entity entity, ComponentTypeID id );
+
+    /** Removes an entity and all its components. */
+    void remove_entity( Entity entity );
 
 private:
     /** Returns a type ID that is unique per component type. */
     template <SubComponent ComponentType>
     static constexpr std::type_index type_id();
 
-    /// All registered component stores.
-    std::unordered_map<std::type_index, std::unique_ptr<ComponentStore>> m_stores;
-    /// All registered component types and their respective flags.
-    std::unordered_map<std::type_index, ComponentFlag> m_component_types;
+    struct StoredStore {
+        std::unique_ptr<ComponentStore> store { nullptr };
+        std::unique_ptr<std::type_index> type_id { nullptr };
+    };
 
-    ComponentFlag m_used_flags { 0 };
+    /// All registered component stores and their respective type identifiers.
+    std::array<StoredStore, g_max_component_types> m_stores;
+
+    /// Slots for all entities, where the flags indicate which components each entity contains.
+    std::array<ComponentFlags, g_max_entities> m_entity_flags;
+
+    /// A bitfield indicating which flags are currently in use (i.e. 1 = used, 0 = unused).
+    ComponentFlags m_used_flags;
 };
 
 

@@ -19,7 +19,7 @@ struct Position : Component {
 
 class MovingSystem : public System {
 public:
-    MovingSystem( ComponentFlag const flags, ComponentManager * const component_manager )
+    MovingSystem( ComponentFlags const flags, ComponentManager * const component_manager )
         : System { flags, component_manager } {}
 
     void run() override {
@@ -36,7 +36,7 @@ int main() {
 
     Coordinator coordinator {};
 
-    ComponentFlag const flag { coordinator.insert_component_type<Position>() };
+    ComponentFlags const flag { coordinator.insert_component_type<Position>() };
     coordinator.insert_system<MovingSystem>( flag );
 
     Entity entity { coordinator.insert_entity() };

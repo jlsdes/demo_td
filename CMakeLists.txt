@@ -76,6 +76,8 @@ add_executable(demo_td
         src/engine/coordinator.hpp
         src/engine/coordinator.ipp
         src/component/drawable.hpp
+        src/system/renderer.cpp
+        src/system/renderer.hpp
 )
 
 # Link the necessary libraries

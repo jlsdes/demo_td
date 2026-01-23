@@ -76,39 +76,29 @@ bool ComponentArray<ComponentType>::empty() const {
 }
 
 template <SubComponent ComponentType>
+bool ComponentArray<ComponentType>::contains( Entity entity ) const {
+    return m_entity_to_component.contains( entity );
+}
+
+template <SubComponent ComponentType>
 constexpr std::type_index ComponentManager::type_id() {
     return { typeid( ComponentType ) };
 }
 
 template <SubComponent ComponentType>
-void ComponentManager::create_store() {
-    auto const type { type_id<ComponentType>() };
-    if ( m_stores.contains( type ) ) {
+ComponentTypeID ComponentManager::create_store() {
+    auto id { get_type_id<ComponentType>() };
+    if ( id < g_max_component_types ) {
         Log::warning( "Attempted to add two ComponentArray objects to the same manager, ignoring the second one." );
-        return;
+        return id;
     }
+    id = static_cast<unsigned char>(std::countr_one( m_used_flags ));
+    ComponentFlags const flag { 1ull << id };
+    assert( id < g_max_component_types );
 
-    ComponentFlag const flag { 1ull << std::countr_one( m_used_flags ) };
-    assert( flag != 0 ); // Fails if m_used_flags is all ones, i.e. the maximum allowed number of types is exceeded
-
-    m_stores.emplace( type, std::make_unique<ComponentArray<ComponentType>>() );
-    m_component_types.emplace( type, flag );
+    m_stores.at( id ) = std::make_unique<ComponentArray<ComponentType>>();
     m_used_flags |= flag;
-}
-
-template <SubComponent ComponentType>
-void ComponentManager::remove_store() {
-    auto const type { type_id<ComponentType>() };
-    if ( not m_stores.contains( type ) ) {
-        Log::warning( "Attempted to remove a ComponentArray object that can't be found, removing nothing." );
-        return;
-    }
-    if ( not m_stores.at( type )->empty() )
-        Log::warning( "Removed a component store that isn't empty, entities' ComponentFlags may need to be reset." );
-
-    m_used_flags &= ~m_component_types.at( type );
-    m_component_types.erase( type );
-    m_stores.erase( type );
+    return flag;
 }
 
 template <SubComponent ComponentType>
@@ -118,14 +108,29 @@ ComponentType & ComponentManager::get_component( Entity const entity ) const {
 
 template <SubComponent ComponentType>
 ComponentArray<ComponentType> & ComponentManager::get_component_array() const {
-    auto const iterator { m_stores.find( type_id<ComponentType>() ) };
-    assert( iterator != m_stores.end() );
-    return *dynamic_cast<ComponentArray<ComponentType> *>(iterator->second.get());
+    auto const id { get_type_id<ComponentType>() };
+    assert( id != g_max_component_types );
+    return *m_stores.at( id ).store;
 }
 
 template <SubComponent ComponentType>
-ComponentFlag ComponentManager::get_component_flag() const {
-    return m_component_types.at( type_id<ComponentType>() );
+bool ComponentManager::type_exists() const {
+    return get_type_id<ComponentType>() == g_max_component_types;
+}
+
+template <SubComponent ComponentType>
+ComponentTypeID ComponentManager::get_type_id() const {
+    std::type_index const target { typeid(ComponentType) };
+    for ( ComponentTypeID id { 0 }; id < g_max_component_types; ++id ) {
+        if ( target == *m_stores.at(id).type_id )
+            return id;
+    }
+    return g_max_component_types;
+}
+
+template <SubComponent ComponentType>
+ComponentFlags ComponentManager::get_component_flag() const {
+    return id_to_flag( get_type_id<ComponentType>() );
 }
 
 template <SubComponent ComponentType>

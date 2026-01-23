@@ -28,7 +28,7 @@ public:
     SystemManager & operator=( SystemManager && ) = default;
 
     template <SubSystem SystemType>
-    void insert_system( ComponentFlag flags, unsigned int group_type = General );
+    void insert_system( ComponentFlags flags, unsigned int group_type = General );
     template <SubSystem SystemType>
     void remove_system();
 

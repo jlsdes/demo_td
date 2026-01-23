@@ -20,14 +20,14 @@ public:
 
     /** Adds a new component type, and returns the new representative component flag. */
     template <SubComponent ComponentType>
-    ComponentFlag insert_component_type();
+    ComponentFlags insert_component_type();
     /** Removes the component type, after removing all existing components of that type. This removal does not happen if
      *  'purge' is set to false; this should probably only happen if all such components have been removed already. */
     template <SubComponent ComponentType>
     void remove_component_type( bool purge = true );
 
     template <SubComponent ComponentType>
-    [[nodiscard]] ComponentFlag get_component_flag() const;
+    [[nodiscard]] ComponentFlags get_component_flag() const;
 
     template <SubComponent ComponentType>
     void insert_component( Entity entity, ComponentType const & component );
@@ -35,7 +35,7 @@ public:
     void remove_component( Entity entity );
 
     template <SubSystem SystemType>
-    void insert_system( ComponentFlag required_components, unsigned int group = SystemGroup::General );
+    void insert_system( ComponentFlags required_components, unsigned int group = SystemGroup::General );
     template <SubSystem SystemType>
     void remove_system();
 

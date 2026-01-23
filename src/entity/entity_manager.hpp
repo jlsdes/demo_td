@@ -1,7 +1,6 @@
 #ifndef DEMO_TD_ENTITY_MANAGER_HPP
 #define DEMO_TD_ENTITY_MANAGER_HPP
 
-#include "component/component.hpp"
 #include "entity.hpp"
 
 #include <array>
@@ -19,22 +18,20 @@ public:
     EntityManager( EntityManager && other ) = default;
     EntityManager & operator=( EntityManager && other ) = default;
 
+    /** Assigns an ID to the new entity. */
     Entity create();
+    /** Removes the entity. This function does not check for left-over components. */
     void remove( Entity entity );
 
+    /** Returns whether an entity currently exists with the given ID. */
     [[nodiscard]] bool entity_exists( Entity entity ) const;
-    [[nodiscard]] bool entity_has_components( Entity entity, ComponentFlag flags ) const;
 
-    [[nodiscard]] ComponentFlag get_flags( Entity entity ) const;
-    void set_flags( Entity entity, ComponentFlag flags );
-    void toggle_flags( Entity entity, ComponentFlag flags );
-
-    /** Iterates over all entities, filtering them on their component flags if requested. */
+    /** Iterates over all existing entities. */
     class Iterator {
     public:
-        Iterator( EntityManager & manager, Entity initial_entity, ComponentFlag filter = 0 );
+        Iterator( EntityManager & manager, Entity initial_entity );
 
-        /** Advances the iterator to the next entity matching the filter. */
+        /** Advances the iterator to the next entity. */
         Iterator & operator++();
         /** Returns the current entity's ID. */
         Entity operator*() const;
@@ -46,18 +43,12 @@ public:
         EntityManager & m_manager;
         /// The entity that is currently being pointed at.
         Entity m_current;
-        /// The filter determines which entities to skip. If an entity has a 0 bit where the filter is 1, then it's
-        /// skipped. Bits of the filter that are 0 are ignored, and thus filter = 0 doesn't filter at all.
-        ComponentFlag m_filter;
     };
 
-    Iterator begin( ComponentFlag filter = 0 );
+    Iterator begin();
     Iterator end();
 
 private:
-    /// Slots for all entities, where the flags indicate which components each entity contains.
-    std::array<ComponentFlag, g_max_entities> m_component_flags;
-
     using SegmentType = unsigned long long;
     static unsigned int constexpr s_segment_size { sizeof(SegmentType) * 8 };
     static unsigned int constexpr s_array_size { g_max_entities / s_segment_size };

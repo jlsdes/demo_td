@@ -10,7 +10,7 @@
 /** A system operates on all components of (a) certain type(s). */
 class System {
 public:
-    System( ComponentFlag flags, ComponentManager * component_manager );
+    System( ComponentFlags flags, ComponentManager * component_manager ); // TODO remove the component_manager here
     virtual ~System() = default;
 
     System( System const & ) = delete;
@@ -20,20 +20,20 @@ public:
     System & operator= ( System && ) = delete;
 
     /** Returns the flags of the components the system operates on. */
-    [[nodiscard]] ComponentFlag get_required_components() const;
+    [[nodiscard]] ComponentFlags get_required_components() const;
 
     /** Abstract function where derived types should implement their functionality. */
     virtual void run() = 0;
 
 protected:
     /** Returns the component store/array associated with the component flag/type. */
-    [[nodiscard]] ComponentStore * get_components( ComponentFlag flag ) const;
+    [[nodiscard]] ComponentStore * get_components( ComponentFlags flag ) const;
     template <SubComponent ComponentType>
     [[nodiscard]] ComponentArray<ComponentType> & get_components() const;
 
 private:
     /// The component types the system needs to function.
-    ComponentFlag const m_required_components;
+    ComponentFlags const m_required_components;
     /// The associated ComponentManager holding the components the system needs to operate on.
     ComponentManager * m_component_manager;
 };
