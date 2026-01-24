@@ -3,9 +3,11 @@
 
 #include <bit>
 
+#include "entity/entity_manager.hpp"
+
 
 template <SubComponent ComponentType>
-ComponentArray<ComponentType>::ComponentArray() : ComponentStore {}, m_components {}, m_entities {},
+ComponentArray<ComponentType>::ComponentArray() : ComponentStore {}, m_components {}, m_component_to_entity {},
                                                   m_entity_to_component {}, m_nr_components { 0 } {}
 
 template <SubComponent ComponentType>
@@ -23,7 +25,7 @@ void ComponentArray<ComponentType>::insert( Entity const entity, ComponentType c
         return;
     }
     m_components.at( m_nr_components ) = component;
-    m_entities.at( m_nr_components ) = entity;
+    m_component_to_entity.at( m_nr_components ) = entity;
     m_entity_to_component.emplace( entity, m_nr_components );
     ++m_nr_components;
 }
@@ -41,9 +43,9 @@ void ComponentArray<ComponentType>::remove( Entity const entity ) {
     unsigned int const index { iterator->second };
     unsigned int const last_index { m_nr_components - 1 };
     if ( index != last_index ) {
-        Entity const last_entity { m_entities.at( last_index ) };
+        Entity const last_entity { m_component_to_entity.at( last_index ) };
         m_components.at( index ) = m_components.at( last_index );
-        m_entities.at( index ) = last_entity;
+        m_component_to_entity.at( index ) = last_entity;
         m_entity_to_component.at( last_entity ) = index;
     }
     m_entity_to_component.erase( iterator );
@@ -76,8 +78,37 @@ bool ComponentArray<ComponentType>::empty() const {
 }
 
 template <SubComponent ComponentType>
-bool ComponentArray<ComponentType>::contains( Entity entity ) const {
+bool ComponentArray<ComponentType>::contains( Entity const entity ) const {
     return m_entity_to_component.contains( entity );
+}
+
+template <SubComponent ComponentType>
+ComponentTypeID ComponentManager::create_store() {
+    std::type_index const type { typeid( ComponentType ) };
+    if ( m_types.contains( type ) ) {
+        Log::warning( "Attempted to create a component store with the same type ", typeid( ComponentType ).name(),
+                      " twice, ignoring duplicate." );
+        return m_types.at( type );
+    }
+    ComponentTypeID const type_id { static_cast<unsigned char>(std::countr_one( m_used_flags )) };
+    assert( type_id < g_max_component_types );
+
+    m_stores.at( type_id ) = std::make_unique<ComponentArray<ComponentType>>();
+    m_types.emplace( type, type_id );
+    return type_id;
+}
+
+template <SubComponent ComponentType>
+void ComponentManager::insert_component( Entity const entity, ComponentType && component ) {
+    std::type_index const type { typeid( ComponentType ) };
+    if ( not m_types.contains( type ) ) {
+        Log::error( "Attempted to insert a component of an unregistered type ", typeid( ComponentType ).name(),
+                    ", ignoring." );
+        return;
+    }
+    ComponentTypeID const type_id { m_types.at( type ) };
+    m_stores.at( type_id )->insert( entity );
+    m_entities->set_flag( entity, type_id );
 }
 
 

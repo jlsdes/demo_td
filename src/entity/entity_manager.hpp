@@ -33,7 +33,7 @@ public:
 
     /** Returns which components the entity consists of. */
     [[nodiscard]] ComponentFlags get_flags( Entity entity ) const;
-    /** Returns whether the entity has a certain component. */
+    /** Returns whether the entity has (a) certain component(s). */
     [[nodiscard]] bool has_flags( Entity entity, ComponentFlags flags ) const;
 
     /** Iterates over all existing entities, with an optional filter. The filter indicates which set of components are
@@ -89,6 +89,8 @@ private:
     // Allow these to call the (un)set_... functions
     friend class ComponentManager;
     // friend class SystemManager;
+
+    // TODO link these classes together somehow
 };
 
 

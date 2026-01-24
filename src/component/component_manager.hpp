@@ -11,7 +11,11 @@
 #include <cassert>
 #include <memory>
 #include <typeindex>
-#include <unordered_map>
+#include <map>
+
+
+class EntityManager;
+class SystemManager;
 
 
 /** Basic interface of all ComponentStore instances. */
@@ -24,7 +28,7 @@ public:
     /** Removes the component associated with the given entity. */
     virtual void remove( Entity entity ) = 0;
 
-    virtual Component & get( Entity entity ) = 0 ;
+    virtual Component & get( Entity entity ) = 0;
 
     virtual Component * begin();
     virtual Component * end();
@@ -62,12 +66,12 @@ public:
     [[nodiscard]] bool contains( Entity entity ) const override;
 
 private:
-    /// All components of this specific type. There exists at most one per entity, so this can't exceed that.
+    /// All components of this specific type. Every entity can have at most one of a specific type of component.
     std::array<ComponentType, g_max_entities> m_components;
     /// A mapping of component indices to their respective entities.
-    std::array<Entity, g_max_entities> m_entities;
+    std::array<Entity, g_max_entities> m_component_to_entity;
     /// A mapping of entities to their respective component indices.
-    std::unordered_map<Entity, unsigned int> m_entity_to_component;
+    std::map<Entity, unsigned int> m_entity_to_component;
 
     unsigned int m_nr_components { 0 };
 };
@@ -85,14 +89,28 @@ public:
     ComponentManager( ComponentManager && ) = default;
     ComponentManager & operator=( ComponentManager && ) = default;
 
+    template <SubComponent ComponentType>
+    [[nodiscard]] ComponentTypeID create_store();
+    void remove_store( ComponentTypeID type_id );
+
+    [[nodiscard]] bool has_store( ComponentTypeID type_id ) const;
+    [[nodiscard]] ComponentStore const & get_store( ComponentTypeID type_id ) const;
+
+    template <SubComponent ComponentType>
+    void insert_component( Entity entity, ComponentType && component );
+    void remove_component( Entity entity, ComponentTypeID type_id );
+
+    [[nodiscard]] bool entity_has_component( Entity entity, ComponentTypeID type_id ) const;
+    [[nodiscard]] Component & get_component( Entity entity, ComponentTypeID type_id ) const;
+
 private:
-    struct StoredStore {
-        std::unique_ptr<ComponentStore> store { nullptr };
-        std::unique_ptr<std::type_index> type_id { nullptr };
-    };
+    EntityManager * m_entities { nullptr };
+    SystemManager * m_systems { nullptr };
 
     /// All registered component stores and their respective type identifiers.
-    std::array<StoredStore, g_max_component_types> m_stores;
+    std::array<std::unique_ptr<ComponentStore>, g_max_component_types> m_stores;
+
+    std::map<std::type_index, ComponentTypeID> m_types;
 
     /// A bitfield indicating which flags are currently in use (i.e. 1 = used, 0 = unused).
     ComponentFlags m_used_flags;
