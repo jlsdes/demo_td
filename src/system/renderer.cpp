@@ -1,8 +1,6 @@
 #include "renderer.hpp"
 
-#include "engine/coordinator.hpp"
 
-
-Renderer::Renderer( Coordinator const & coordinator ): System { coordinator.get_component_flag<Drawable>(), nullptr } {}
+Renderer::Renderer( Coordinator const & coordinator ): System { 1, nullptr } {}
 
 void Renderer::run() {}

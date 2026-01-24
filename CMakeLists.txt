@@ -72,9 +72,6 @@ add_executable(demo_td
         src/system/system_manager.cpp
         src/system/system_manager.hpp
         src/system/system_manager.ipp
-        src/engine/coordinator.cpp
-        src/engine/coordinator.hpp
-        src/engine/coordinator.ipp
         src/component/drawable.hpp
         src/system/renderer.cpp
         src/system/renderer.hpp

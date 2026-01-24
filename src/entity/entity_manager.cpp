@@ -60,12 +60,23 @@ bool EntityManager::entity_exists( Entity const entity ) const {
     return get_bit( m_existing.at( segment_index ), bit_index );
 }
 
-EntityManager::Iterator::Iterator( EntityManager & manager, Entity const initial_entity )
-    : m_manager { manager }, m_current { initial_entity } {}
+ComponentFlags EntityManager::get_flags( Entity const entity ) const {
+    assert( entity_exists( entity ) );
+    return m_component_flags.at( entity );
+}
+
+bool EntityManager::has_flags( Entity const entity, ComponentFlags const flags ) const {
+    assert( entity_exists( entity ) );
+    ComponentFlags const relevant { m_component_flags.at( entity ) & flags };
+    return relevant == flags;
+}
+
+EntityManager::Iterator::Iterator( EntityManager & manager, Entity const initial_entity, ComponentFlags const filter )
+    : m_manager { manager }, m_current { initial_entity }, m_filter { filter } {}
 
 EntityManager::Iterator & EntityManager::Iterator::operator++() {
     while ( ++m_current < g_max_entities ) {
-        if ( m_manager.entity_exists( m_current ) ) // Could be slow
+        if ( m_manager.entity_exists( m_current ) and m_filter and m_manager.has_flags( m_current, m_filter ) )
             return *this;
     }
     return *this;
@@ -80,10 +91,28 @@ bool EntityManager::Iterator::operator==( Iterator const & other ) const {
     return m_current == other.m_current;
 }
 
-EntityManager::Iterator EntityManager::begin() {
-    return { *this, 0 };
+EntityManager::Iterator EntityManager::begin( ComponentFlags const filter ) {
+    return { *this, 0, filter };
 }
 
 EntityManager::Iterator EntityManager::end() {
     return { *this, g_max_entities };
+}
+
+void EntityManager::set_flag( Entity const entity, ComponentTypeID const component_type ) {
+    assert( entity_exists( entity ) );
+    assert( not has_flags( entity, id_to_flag( component_type ) ) );
+    m_component_flags.at( entity ) |= id_to_flag( component_type );
+}
+
+void EntityManager::unset_flag( Entity const entity, ComponentTypeID const component_type ) {
+    assert( entity_exists( entity ) );
+    assert( has_flags( entity, id_to_flag( component_type ) ) );
+    m_component_flags.at( entity ) ^= id_to_flag( component_type );
+}
+
+void EntityManager::unset_all( ComponentTypeID const component_type ) {
+    ComponentFlags const flag { id_to_flag( component_type ) };
+    for ( auto iterator { begin( flag ) }; iterator != end(); ++iterator )
+        m_component_flags.at( *iterator ) ^= flag;
 }

@@ -4,7 +4,9 @@
 #include "utils/config.hpp"
 #include "utils/log.hpp"
 
-#include "engine/coordinator.hpp"
+#include "component/component_manager.hpp"
+#include "entity/entity_manager.hpp"
+#include "system/system_manager.hpp"
 
 
 struct Position : Component {
@@ -33,14 +35,6 @@ int main() {
     // Config::load_config( main_dir / "config.ini" );
     // Log::info( "Loaded config ", (main_dir / "config.ini").string() );
     // glfwTerminate();
-
-    Coordinator coordinator {};
-
-    ComponentFlags const flag { coordinator.insert_component_type<Position>() };
-    coordinator.insert_system<MovingSystem>( flag );
-
-    Entity entity { coordinator.insert_entity() };
-    Log::debug(entity);
 
     return 0;
 }
