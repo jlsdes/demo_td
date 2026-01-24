@@ -21,10 +21,9 @@ public:
     /** Adds a new component type, and returns the new representative component flag. */
     template <SubComponent ComponentType>
     ComponentFlags insert_component_type();
-    /** Removes the component type, after removing all existing components of that type. This removal does not happen if
-     *  'purge' is set to false; this should probably only happen if all such components have been removed already. */
+    /** Removes the component type, after removing all existing components of that type. */
     template <SubComponent ComponentType>
-    void remove_component_type( bool purge = true );
+    void remove_component_type();
 
     template <SubComponent ComponentType>
     [[nodiscard]] ComponentFlags get_component_flag() const;

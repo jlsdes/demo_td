@@ -4,8 +4,9 @@
 #include <cassert>
 
 
-ComponentManager::ComponentManager() : m_stores {}, m_entity_flags { 0 }, m_used_flags { 0 } {}
+ComponentStore::~ComponentStore() = default;
 
+ComponentManager::ComponentManager() : m_stores {}, m_entity_flags { 0 }, m_used_flags { 0 } {}
 
 void ComponentManager::remove_store( ComponentTypeID const id ) {
     assert( id < g_max_component_types );
@@ -14,10 +15,16 @@ void ComponentManager::remove_store( ComponentTypeID const id ) {
         Log::warning( "Attempted to remove a ComponentArray object that can't be found, removing nothing." );
         return;
     }
-    // TODO set entity flags accordingly
+    // Remove any components still contained within the store
+    // TODO refactor this maybe, iterating over the entities like this doesn't seem entirely correct
+    ComponentFlags const flag { id_to_flag( id ) };
+    for ( Entity entity { 0 }; entity < g_max_entities; ++entity ) {
+        if ( m_entity_flags.at( entity ) & flag )
+            remove_component( entity, id );
+    }
 
     m_stores.at( id ) = { nullptr, nullptr };
-    m_used_flags &= ~id_to_flag( id );
+    m_used_flags &= ~flag;
 }
 
 ComponentStore * ComponentManager::get_component_store( ComponentFlags const flag ) const {
@@ -46,4 +53,12 @@ void ComponentManager::remove_component( Entity const entity, ComponentTypeID co
     get_component_store( id )->remove( entity );
 }
 
-void ComponentManager::remove_entity( Entity const entity ) {}
+void ComponentManager::remove_entity( Entity const entity ) {
+    ComponentFlags const flags { m_entity_flags.at( entity ) };
+    ComponentFlags current { 1 };
+    for ( ComponentTypeID id { 0 }; id < g_max_component_types; ++id ) {
+        if ( flags & current )
+            remove_component( entity, id );
+        current <<= 1;
+    }
+}

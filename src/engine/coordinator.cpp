@@ -12,14 +12,6 @@ Entity Coordinator::insert_entity() {
 }
 
 void Coordinator::remove_entity( Entity const entity ) {
-    // ComponentFlag flags { m_entities.get_flags( entity ) };
-    // ComponentFlag shifting_flag { 1 };
-    // while ( flags ) {
-    //     if ( flags & shifting_flag ) {
-    //         m_components.remove_component( entity, shifting_flag );
-    //         flags &= ~shifting_flag;
-    //     }
-    //     shifting_flag <<= 1;
-    // }
-    // m_entities.remove( entity );
+    m_components.remove_entity( entity );
+    m_entities.remove( entity );
 }

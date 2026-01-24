@@ -17,7 +17,7 @@
 /** Basic interface of all ComponentStore instances. */
 class ComponentStore {
 public:
-    virtual ~ComponentStore() = default;
+    virtual ~ComponentStore();
 
     /** Creates a new component using its default (empty) constructor. */
     virtual void insert( Entity entity ) = 0;
@@ -25,6 +25,9 @@ public:
     virtual void remove( Entity entity ) = 0;
 
     virtual Component & get( Entity entity ) = 0 ;
+
+    virtual Component * begin() = 0;
+    virtual Component * end() = 0;
 
     [[nodiscard]] virtual unsigned int size() const = 0;
     [[nodiscard]] virtual bool empty() const = 0;
@@ -49,10 +52,10 @@ public:
     void insert( Entity entity, ComponentType const & component );
     void remove( Entity entity ) override;
 
-    ComponentType & get( Entity entity ) override; // Can I override like this with different return types???
+    ComponentType & get( Entity entity ) override;
 
-    ComponentType * begin();
-    ComponentType * end();
+    ComponentType * begin() override;
+    ComponentType * end() override;
 
     [[nodiscard]] unsigned int size() const override;
     [[nodiscard]] bool empty() const override;
@@ -104,7 +107,7 @@ public:
     template <SubComponent ComponentType>
     [[nodiscard]] ComponentTypeID get_type_id() const;
     template <SubComponent ComponentType>
-    [[nodiscard]] ComponentFlags get_component_flag() const;
+    [[nodiscard]] ComponentFlags get_type_flag() const;
 
     /** Returns the entity's component of the specified type, if possible. */
     [[nodiscard]] Component & get_component( Entity entity, ComponentTypeID id ) const;

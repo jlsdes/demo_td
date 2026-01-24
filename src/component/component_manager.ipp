@@ -5,8 +5,8 @@
 
 
 template <SubComponent ComponentType>
-ComponentArray<ComponentType>::ComponentArray() : m_components {}, m_entities {}, m_entity_to_component {},
-                                                  m_nr_components { 0 } {}
+ComponentArray<ComponentType>::ComponentArray() : ComponentStore {}, m_components {}, m_entities {},
+                                                  m_entity_to_component {}, m_nr_components { 0 } {}
 
 template <SubComponent ComponentType>
 void ComponentArray<ComponentType>::insert( Entity const entity ) {
@@ -96,7 +96,10 @@ ComponentTypeID ComponentManager::create_store() {
     ComponentFlags const flag { 1ull << id };
     assert( id < g_max_component_types );
 
-    m_stores.at( id ) = std::make_unique<ComponentArray<ComponentType>>();
+    m_stores.at( id ) = {
+        .store = std::make_unique<ComponentArray<ComponentType>>(),
+        .type_id = std::make_unique<std::type_index>( typeid( ComponentType ) )
+    };
     m_used_flags |= flag;
     return flag;
 }
@@ -120,16 +123,16 @@ bool ComponentManager::type_exists() const {
 
 template <SubComponent ComponentType>
 ComponentTypeID ComponentManager::get_type_id() const {
-    std::type_index const target { typeid(ComponentType) };
+    std::type_index const target { typeid( ComponentType ) };
     for ( ComponentTypeID id { 0 }; id < g_max_component_types; ++id ) {
-        if ( target == *m_stores.at(id).type_id )
+        if ( target == *m_stores.at( id ).type_id )
             return id;
     }
     return g_max_component_types;
 }
 
 template <SubComponent ComponentType>
-ComponentFlags ComponentManager::get_component_flag() const {
+ComponentFlags ComponentManager::get_type_flag() const {
     return id_to_flag( get_type_id<ComponentType>() );
 }
 
