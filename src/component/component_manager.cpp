@@ -2,17 +2,17 @@
 
 #include <cassert>
 
-#include "entity/entity_manager.hpp"
+#include "engine/entity_component_system.hpp"
 
 
-ComponentManager::ComponentManager() : m_stores { nullptr }, m_types {}, m_used_flags { 0 } {}
+ComponentManager::ComponentManager( ECS * const ecs ) : m_entities { ecs->entities }, m_systems { ecs->systems },
+                                                        m_stores { nullptr }, m_types {}, m_used_flags { 0 } {}
 
 void ComponentManager::remove_store( ComponentTypeID const type_id ) {
     assert( has_store( type_id ) );
 
     ComponentFlags const flag { id_to_flag( type_id ) };
-    if ( m_entities )
-        m_entities->unset_all( flag );
+    m_entities.unset_all( flag );
 
     for ( auto i { m_types.cbegin() }; i != m_types.cend(); ++i ) {
         if ( i->second == type_id ) {
@@ -38,7 +38,7 @@ void ComponentManager::remove_component( Entity const entity, ComponentTypeID co
     assert( entity_has_component( entity, type_id ) );
 
     m_stores.at( type_id )->remove( type_id );
-    m_entities->unset_flag( entity, type_id );
+    m_entities.unset_flag( entity, type_id );
 }
 
 bool ComponentManager::entity_has_component( Entity const entity, ComponentTypeID const type_id ) const {

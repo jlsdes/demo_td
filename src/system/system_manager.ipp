@@ -12,7 +12,7 @@ void SystemManager::insert_system( ComponentFlags const flags, unsigned int grou
         return;
     }
     m_groups.emplace( type, group_type );
-    m_systems.emplace( type, std::make_unique<SystemType>( flags, m_component_manager ) );
+    m_systems.emplace( type, std::make_unique<SystemType>( flags ) );
 }
 
 template <SubSystem SystemType>

@@ -1,11 +1,16 @@
 #ifndef DEMO_TD_SYSTEM_MANAGER_HPP
 #define DEMO_TD_SYSTEM_MANAGER_HPP
 
-#include "component/component_manager.hpp"
 #include "system.hpp"
 
 #include <memory>
 #include <map>
+#include <typeindex>
+
+
+struct ECS;
+class EntityManager;
+class ComponentManager;
 
 
 /** The two main groups of systems; other values can be used as well. */
@@ -18,14 +23,14 @@ enum SystemGroup : unsigned int {
 /** Manages all systems. */
 class SystemManager {
 public:
-    explicit SystemManager( ComponentManager * component_manager );
+    explicit SystemManager( ECS * ecs );
     ~SystemManager() = default;
 
     SystemManager( SystemManager const & ) = delete;
     SystemManager & operator=( SystemManager const & ) = delete;
 
     SystemManager( SystemManager && ) = default;
-    SystemManager & operator=( SystemManager && ) = default;
+    SystemManager & operator=( SystemManager && ) = delete;
 
     template <SubSystem SystemType>
     void insert_system( ComponentFlags flags, unsigned int group_type = General );
@@ -40,10 +45,12 @@ public:
     void run_group( unsigned int group_type ) const;
 
 private:
+    /// The ECS object contains this object, and the partnered EntityManager and ComponentManager objects.
+    EntityManager & m_entities;
+    ComponentManager & m_components;
+
     std::map<std::type_index, std::unique_ptr<System>> m_systems;
     std::map<std::type_index, unsigned int> m_groups;
-
-    ComponentManager * m_component_manager;
 };
 
 

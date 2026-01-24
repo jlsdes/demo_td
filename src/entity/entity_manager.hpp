@@ -7,6 +7,7 @@
 #include <array>
 
 
+struct ECS;
 class ComponentManager;
 class SystemManager;
 
@@ -14,17 +15,17 @@ class SystemManager;
 /** Manages all entities; mainly handles the assignment of entity IDs. */
 class EntityManager {
 public:
-    EntityManager();
+    explicit EntityManager( ECS * ecs );
     ~EntityManager() = default;
 
     EntityManager( EntityManager const & other ) = delete;
     EntityManager & operator=( EntityManager const & other ) = delete;
 
     EntityManager( EntityManager && other ) = default;
-    EntityManager & operator=( EntityManager && other ) = default;
+    EntityManager & operator=( EntityManager && other ) = delete;
 
     /** Assigns an ID to the new entity. */
-    Entity create();
+    [[nodiscard]] Entity create();
     /** Removes the entity. This function does not check for left-over components. */
     void remove( Entity entity );
 
@@ -63,7 +64,6 @@ public:
     Iterator begin( ComponentFlags filter = 0 );
     Iterator end();
 
-private:
     /** Called by the ComponentManager when a new component is created. */
     void set_flag( Entity entity, ComponentTypeID component_type );
     /** Called by the ComponentManager when a component is removed. */
@@ -71,6 +71,10 @@ private:
     /** Called by the ComponentManager when a component type is removed entirely. */
     void unset_all( ComponentTypeID component_type );
 
+private:
+    /// The ECS object contains this object, and the partnered ComponentManager and SystemManager objects.
+    ComponentManager & m_components;
+    SystemManager & m_systems;
 
     /// The components that each entity consists of.
     std::array<ComponentFlags, g_max_entities> m_component_flags;
@@ -85,12 +89,6 @@ private:
     unsigned int m_nr_entities;
     /// The next entity ID that will be generated, if possible.
     Entity m_next_entity;
-
-    // Allow these to call the (un)set_... functions
-    friend class ComponentManager;
-    // friend class SystemManager;
-
-    // TODO link these classes together somehow
 };
 
 

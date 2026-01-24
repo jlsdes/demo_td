@@ -4,9 +4,7 @@
 #include "utils/config.hpp"
 #include "utils/log.hpp"
 
-#include "component/component_manager.hpp"
-#include "entity/entity_manager.hpp"
-#include "system/system_manager.hpp"
+#include "engine/entity_component_system.hpp"
 
 
 struct Position : Component {
@@ -21,10 +19,9 @@ struct Position : Component {
 
 class MovingSystem : public System {
 public:
-    MovingSystem( ComponentFlags const flags, ComponentManager * const component_manager )
-        : System { flags, component_manager } {}
+    explicit MovingSystem( ComponentFlags const flags ) : System { flags } {}
 
-    void run() override {
+    void run( EntityManager const & entities, ComponentManager & components ) override {
         Log::debug( "RUNNING" );
     }
 };
@@ -35,6 +32,20 @@ int main() {
     // Config::load_config( main_dir / "config.ini" );
     // Log::info( "Loaded config ", (main_dir / "config.ini").string() );
     // glfwTerminate();
+
+    ECS ecs {};
+    EntityManager & entities { ecs.entities };
+    ComponentManager & components { ecs.components };
+    SystemManager & systems { ecs.systems };
+
+    ComponentTypeID const position_id { components.create_store<Position>() };
+    systems.insert_system<MovingSystem>( id_to_flag( position_id ) );
+
+    Entity const entity { entities.create() };
+    Log::debug( entity );
+    components.insert_component( entity, Position {} );
+
+    systems.run_group( General );
 
     return 0;
 }

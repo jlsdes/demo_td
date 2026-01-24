@@ -75,6 +75,8 @@ add_executable(demo_td
         src/component/drawable.hpp
         src/system/renderer.cpp
         src/system/renderer.hpp
+        src/engine/entity_component_system.cpp
+        src/engine/entity_component_system.hpp
 )
 
 # Link the necessary libraries

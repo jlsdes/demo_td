@@ -13,7 +13,7 @@ public:
     explicit Renderer( Coordinator const & coordinator );
     ~Renderer() override = default;
 
-    void run() override;
+    void run(EntityManager const & entities, ComponentManager & components) override;
 
 private:
 };

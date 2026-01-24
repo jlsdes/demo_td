@@ -3,7 +3,7 @@
 
 #include <bit>
 
-#include "entity/entity_manager.hpp"
+#include "engine/entity_component_system.hpp"
 
 
 template <SubComponent ComponentType>
@@ -99,6 +99,16 @@ ComponentTypeID ComponentManager::create_store() {
 }
 
 template <SubComponent ComponentType>
+ComponentArray<ComponentType> & ComponentManager::get_array() const {
+    ComponentTypeID const type_id { m_types.at( std::type_index { typeid( ComponentType ) } ) };
+    assert( has_store( type_id ) );
+
+    ComponentStore * store { m_stores.at( type_id ).get() };
+    auto array { dynamic_cast<ComponentArray<ComponentType> *>(store) };
+    return *array;
+}
+
+template <SubComponent ComponentType>
 void ComponentManager::insert_component( Entity const entity, ComponentType && component ) {
     std::type_index const type { typeid( ComponentType ) };
     if ( not m_types.contains( type ) ) {
@@ -108,7 +118,7 @@ void ComponentManager::insert_component( Entity const entity, ComponentType && c
     }
     ComponentTypeID const type_id { m_types.at( type ) };
     m_stores.at( type_id )->insert( entity );
-    m_entities->set_flag( entity, type_id );
+    m_entities.set_flag( entity, type_id );
 }
 
 

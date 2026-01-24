@@ -1,4 +1,6 @@
 #include "entity_manager.hpp"
+
+#include "engine/entity_component_system.hpp"
 #include "utils/log.hpp"
 
 #include <bit>
@@ -6,7 +8,9 @@
 #include <iomanip>
 
 
-EntityManager::EntityManager() : m_existing { 0 }, m_nr_entities { 0 }, m_next_entity { 0 } {}
+EntityManager::EntityManager( ECS * ecs ) : m_components { ecs->components }, m_systems { ecs->systems },
+                                            m_component_flags { 0 }, m_existing { 0 }, m_nr_entities { 0 },
+                                            m_next_entity { 0 } {}
 
 inline std::pair<unsigned int, unsigned int> get_bit_location( Entity const entity, unsigned int const segment_size ) {
     return { entity / segment_size, entity % segment_size };
@@ -41,8 +45,9 @@ Entity EntityManager::create() {
     *segment |= 1ull << bit_index;
     ++m_nr_entities;
 
+    Entity const entity { m_next_entity };
     m_next_entity = (m_next_entity + 1) % g_max_entities;
-    return m_next_entity;
+    return entity;
 }
 
 void EntityManager::remove( Entity const entity ) {

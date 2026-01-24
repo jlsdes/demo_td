@@ -14,6 +14,7 @@
 #include <map>
 
 
+struct ECS;
 class EntityManager;
 class SystemManager;
 
@@ -21,7 +22,7 @@ class SystemManager;
 /** Basic interface of all ComponentStore instances. */
 class ComponentStore {
 public:
-    virtual ~ComponentStore();
+    virtual ~ComponentStore() = default;
 
     /** Creates a new component using its default (empty) constructor. */
     virtual void insert( Entity entity ) = 0;
@@ -30,8 +31,8 @@ public:
 
     virtual Component & get( Entity entity ) = 0;
 
-    virtual Component * begin();
-    virtual Component * end();
+    virtual Component * begin() = 0;
+    virtual Component * end() = 0;
 
     [[nodiscard]] virtual unsigned int size() const = 0;
     [[nodiscard]] virtual bool empty() const = 0;
@@ -80,14 +81,14 @@ private:
 /** Manages ComponentStore objects for all Component subtypes. */
 class ComponentManager {
 public:
-    ComponentManager();
+    explicit ComponentManager( ECS * ecs );
     ~ComponentManager() = default;
 
     ComponentManager( ComponentManager const & ) = delete;
     ComponentManager & operator=( ComponentManager const & ) = delete;
 
     ComponentManager( ComponentManager && ) = default;
-    ComponentManager & operator=( ComponentManager && ) = default;
+    ComponentManager & operator=( ComponentManager && ) = delete;
 
     template <SubComponent ComponentType>
     [[nodiscard]] ComponentTypeID create_store();
@@ -97,6 +98,9 @@ public:
     [[nodiscard]] ComponentStore const & get_store( ComponentTypeID type_id ) const;
 
     template <SubComponent ComponentType>
+    [[nodiscard]] ComponentArray<ComponentType> & get_array() const;
+
+    template <SubComponent ComponentType>
     void insert_component( Entity entity, ComponentType && component );
     void remove_component( Entity entity, ComponentTypeID type_id );
 
@@ -104,12 +108,13 @@ public:
     [[nodiscard]] Component & get_component( Entity entity, ComponentTypeID type_id ) const;
 
 private:
-    EntityManager * m_entities { nullptr };
-    SystemManager * m_systems { nullptr };
+    /// The ECS object contains this object, and the partnered EntityManager and SystemManager objects.
+    EntityManager & m_entities;
+    SystemManager & m_systems;
 
     /// All registered component stores and their respective type identifiers.
     std::array<std::unique_ptr<ComponentStore>, g_max_component_types> m_stores;
-
+    /// A mapping of types to their respective type IDs.
     std::map<std::type_index, ComponentTypeID> m_types;
 
     /// A bitfield indicating which flags are currently in use (i.e. 1 = used, 0 = unused).
