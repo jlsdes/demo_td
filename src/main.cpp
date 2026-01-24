@@ -4,27 +4,9 @@
 #include "utils/config.hpp"
 #include "utils/log.hpp"
 
+#include "component/drawable.hpp"
+#include "system/renderer.hpp"
 #include "engine/entity_component_system.hpp"
-
-
-struct Position : Component {
-    Position() = default;
-    Position( float const x, float const y, float const z ) : x { x }, y { y }, z { z } {}
-
-    float x;
-    float y;
-    float z;
-};
-
-
-class MovingSystem : public System {
-public:
-    explicit MovingSystem( ComponentFlags const flags ) : System { flags } {}
-
-    void run( EntityManager const & entities, ComponentManager & components ) override {
-        Log::debug( "RUNNING" );
-    }
-};
 
 
 int main() {
@@ -38,12 +20,12 @@ int main() {
     ComponentManager & components { ecs.components };
     SystemManager & systems { ecs.systems };
 
-    ComponentTypeID const position_id { components.create_store<Position>() };
-    systems.insert_system<MovingSystem>( id_to_flag( position_id ) );
+    ComponentTypeID const drawable_id { components.create_store<Drawable>() };
+
+    systems.insert_system<Renderer>( id_to_flag( drawable_id ), SystemGroup::Render );
 
     Entity const entity { entities.create() };
     Log::debug( entity );
-    components.insert_component( entity, Position {} );
 
     systems.run_group( General );
 

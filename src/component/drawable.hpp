@@ -2,17 +2,17 @@
 #define DEMO_TD_DRAWABLE_HPP
 
 #include "component.hpp"
+#include "engine/mesh.hpp"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
 
-class Mesh;
 class Shader;
 
 
-struct Drawable : public Component {
-    Mesh * mesh {nullptr };
+struct Drawable : Component {
+    Mesh<ColourVertex> * mesh {nullptr };
     Shader * shader { nullptr };
 
     // Other stuff will need the position, so this might need to move to a different component

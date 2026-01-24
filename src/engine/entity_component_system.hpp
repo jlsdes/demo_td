@@ -6,6 +6,10 @@
 #include "system/system_manager.hpp"
 
 
+// Entity-Component-System implementation based on https://austinmorlan.com/posts/entity_component_system/
+// but with differences
+
+
 struct ECS {
     EntityManager entities;
     ComponentManager components;

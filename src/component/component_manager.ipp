@@ -99,17 +99,12 @@ ComponentTypeID ComponentManager::create_store() {
 }
 
 template <SubComponent ComponentType>
-ComponentArray<ComponentType> & ComponentManager::get_array() const {
-    ComponentTypeID const type_id { m_types.at( std::type_index { typeid( ComponentType ) } ) };
-    assert( has_store( type_id ) );
-
-    ComponentStore * store { m_stores.at( type_id ).get() };
-    auto array { dynamic_cast<ComponentArray<ComponentType> *>(store) };
-    return *array;
+ComponentTypeID ComponentManager::get_type_id() const {
+    return m_types.at( std::type_index { typeid( ComponentType ) } );
 }
 
 template <SubComponent ComponentType>
-void ComponentManager::insert_component( Entity const entity, ComponentType && component ) {
+void ComponentManager::insert_component( Entity const entity, ComponentType const & component ) {
     std::type_index const type { typeid( ComponentType ) };
     if ( not m_types.contains( type ) ) {
         Log::error( "Attempted to insert a component of an unregistered type ", typeid( ComponentType ).name(),
@@ -117,8 +112,24 @@ void ComponentManager::insert_component( Entity const entity, ComponentType && c
         return;
     }
     ComponentTypeID const type_id { m_types.at( type ) };
-    m_stores.at( type_id )->insert( entity );
+    auto const store { m_stores.at( type_id ).get() };
+    auto const array { dynamic_cast<ComponentArray<ComponentType> *>(store) };
+    array->insert( entity, component );
     m_entities.set_flag( entity, type_id );
+}
+
+template <SubComponent ComponentType>
+ComponentType * ComponentManager::begin() const {
+    ComponentTypeID const type_id { m_types.at( typeid( ComponentType ) ) };
+    auto const array { dynamic_cast<ComponentArray<ComponentType> *>(m_stores.at( type_id ).get()) };
+    return array->begin();
+}
+
+template <SubComponent ComponentType>
+ComponentType * ComponentManager::end() const {
+    ComponentTypeID const type_id { m_types.at( typeid( ComponentType ) ) };
+    auto const array { dynamic_cast<ComponentArray<ComponentType> *>(m_stores.at( type_id ).get()) };
+    return array->begin();
 }
 
 

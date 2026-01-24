@@ -28,11 +28,6 @@ bool ComponentManager::has_store( ComponentTypeID const type_id ) const {
     return m_stores.at( type_id ) != nullptr;
 }
 
-ComponentStore const & ComponentManager::get_store( ComponentTypeID const type_id ) const {
-    assert( has_store( type_id ) );
-    return *m_stores.at( type_id );
-}
-
 void ComponentManager::remove_component( Entity const entity, ComponentTypeID const type_id ) {
     assert( has_store( type_id ) );
     assert( entity_has_component( entity, type_id ) );
@@ -49,4 +44,14 @@ Component & ComponentManager::get_component( Entity const entity, ComponentTypeI
     assert( has_store(type_id) );
     assert( entity_has_component( entity, type_id ) );
     return m_stores.at( type_id )->get( entity );
+}
+
+Component * ComponentManager::begin( ComponentTypeID const type_id ) const {
+    assert( has_store(type_id) );
+    return m_stores.at( type_id )->begin();
+}
+
+Component * ComponentManager::end( ComponentTypeID const type_id ) const {
+    assert( has_store(type_id) );
+    return m_stores.at( type_id )->end();
 }

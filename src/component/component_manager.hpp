@@ -1,8 +1,6 @@
 #ifndef DEMO_TD_COMPONENT_MANAGER_HPP
 #define DEMO_TD_COMPONENT_MANAGER_HPP
 
-// Based on https://austinmorlan.com/posts/entity_component_system/
-
 #include "component.hpp"
 #include "entity/entity.hpp"
 #include "utils/log.hpp"
@@ -29,10 +27,10 @@ public:
     /** Removes the component associated with the given entity. */
     virtual void remove( Entity entity ) = 0;
 
-    virtual Component & get( Entity entity ) = 0;
+    [[nodiscard]] virtual Component & get( Entity entity ) = 0;
 
-    virtual Component * begin() = 0;
-    virtual Component * end() = 0;
+    [[nodiscard]] virtual Component * begin() = 0;
+    [[nodiscard]] virtual Component * end() = 0;
 
     [[nodiscard]] virtual unsigned int size() const = 0;
     [[nodiscard]] virtual bool empty() const = 0;
@@ -57,10 +55,10 @@ public:
     void insert( Entity entity, ComponentType const & component );
     void remove( Entity entity ) override;
 
-    ComponentType & get( Entity entity ) override;
+    [[nodiscard]] ComponentType & get( Entity entity ) override;
 
-    ComponentType * begin() override;
-    ComponentType * end() override;
+    [[nodiscard]] ComponentType * begin() override;
+    [[nodiscard]] ComponentType * end() override;
 
     [[nodiscard]] unsigned int size() const override;
     [[nodiscard]] bool empty() const override;
@@ -90,22 +88,33 @@ public:
     ComponentManager( ComponentManager && ) = default;
     ComponentManager & operator=( ComponentManager && ) = delete;
 
+    /** Creates a new component store for the given type of components. Only one store can exist per component type. A
+     *  store of the appropriate type must be created before components of that type can be inserted. */
     template <SubComponent ComponentType>
     [[nodiscard]] ComponentTypeID create_store();
+    /** Removes a component store, after purging any leftover components of the related type. */
     void remove_store( ComponentTypeID type_id );
 
+    /** Returns whether the type ID is valid. */
     [[nodiscard]] bool has_store( ComponentTypeID type_id ) const;
-    [[nodiscard]] ComponentStore const & get_store( ComponentTypeID type_id ) const;
 
     template <SubComponent ComponentType>
-    [[nodiscard]] ComponentArray<ComponentType> & get_array() const;
+    [[nodiscard]] ComponentTypeID get_type_id() const;
 
     template <SubComponent ComponentType>
-    void insert_component( Entity entity, ComponentType && component );
+    void insert_component( Entity entity, ComponentType const & component );
     void remove_component( Entity entity, ComponentTypeID type_id );
 
     [[nodiscard]] bool entity_has_component( Entity entity, ComponentTypeID type_id ) const;
     [[nodiscard]] Component & get_component( Entity entity, ComponentTypeID type_id ) const;
+
+    [[nodiscard]] Component * begin( ComponentTypeID type_id ) const;
+    template <SubComponent ComponentType>
+    [[nodiscard]] ComponentType * begin() const;
+
+    [[nodiscard]] Component * end( ComponentTypeID type_id ) const;
+    template <SubComponent ComponentType>
+    [[nodiscard]] ComponentType * end() const;
 
 private:
     /// The ECS object contains this object, and the partnered EntityManager and SystemManager objects.

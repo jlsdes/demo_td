@@ -5,12 +5,9 @@
 #include "system/system.hpp"
 
 
-class Coordinator;
-
-
 class Renderer : public System {
 public:
-    explicit Renderer( Coordinator const & coordinator );
+    explicit Renderer( ComponentFlags flags );
     ~Renderer() override = default;
 
     void run(EntityManager const & entities, ComponentManager & components) override;
