@@ -129,7 +129,7 @@ template <SubComponent ComponentType>
 ComponentType * ComponentManager::end() const {
     ComponentTypeID const type_id { m_types.at( typeid( ComponentType ) ) };
     auto const array { dynamic_cast<ComponentArray<ComponentType> *>(m_stores.at( type_id ).get()) };
-    return array->begin();
+    return array->end();
 }
 
 
