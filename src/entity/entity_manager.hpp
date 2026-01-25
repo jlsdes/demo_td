@@ -42,7 +42,7 @@ public:
      *  (the default parameter) doesn't skip any entity, if the entity exists of course. */
     class Iterator {
     public:
-        Iterator( EntityManager & manager, Entity initial_entity, ComponentFlags filter = 0 );
+        Iterator( EntityManager const & manager, Entity initial_entity, ComponentFlags filter = 0 );
 
         /** Advances the iterator to the next entity. */
         Iterator & operator++();
@@ -53,7 +53,7 @@ public:
 
     private:
         /// The manager managing the entities that are being iterated over.
-        EntityManager & m_manager;
+        EntityManager const & m_manager;
         /// The entity that is currently being pointed at.
         Entity m_current;
         /// The filter indicating which component flags must be set (i.e. be equal to 1) for the entities being iterated
@@ -61,8 +61,8 @@ public:
         ComponentFlags m_filter;
     };
 
-    Iterator begin( ComponentFlags filter = 0 );
-    Iterator end();
+    [[nodiscard]] Iterator begin( ComponentFlags filter = 0 ) const;
+    [[nodiscard]] Iterator end() const;
 
     /** Called by the ComponentManager when a new component is created. */
     void set_flag( Entity entity, ComponentTypeID component_type );

@@ -76,7 +76,9 @@ bool EntityManager::has_flags( Entity const entity, ComponentFlags const flags )
     return relevant == flags;
 }
 
-EntityManager::Iterator::Iterator( EntityManager & manager, Entity const initial_entity, ComponentFlags const filter )
+EntityManager::Iterator::Iterator( EntityManager const & manager,
+                                   Entity const initial_entity,
+                                   ComponentFlags const filter )
     : m_manager { manager }, m_current { initial_entity }, m_filter { filter } {}
 
 EntityManager::Iterator & EntityManager::Iterator::operator++() {
@@ -96,11 +98,11 @@ bool EntityManager::Iterator::operator==( Iterator const & other ) const {
     return m_current == other.m_current;
 }
 
-EntityManager::Iterator EntityManager::begin( ComponentFlags const filter ) {
+EntityManager::Iterator EntityManager::begin( ComponentFlags const filter ) const {
     return { *this, 0, filter };
 }
 
-EntityManager::Iterator EntityManager::end() {
+EntityManager::Iterator EntityManager::end() const {
     return { *this, g_max_entities };
 }
 

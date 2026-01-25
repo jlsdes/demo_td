@@ -6,8 +6,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 
-Renderer::Renderer( ComponentFlags const flags ) : System { flags } {}
-
 void Renderer::run( EntityManager const & entities, ComponentManager & components ) {
     for ( auto drawable { components.begin<Drawable>() }; drawable != components.end<Drawable>(); ++drawable ) {
         drawable->shader->use();
@@ -21,4 +19,3 @@ void Renderer::run( EntityManager const & entities, ComponentManager & component
         drawable->mesh->draw();
     }
 }
-

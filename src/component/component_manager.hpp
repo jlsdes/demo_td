@@ -3,7 +3,6 @@
 
 #include "component.hpp"
 #include "entity/entity.hpp"
-#include "utils/log.hpp"
 
 #include <array>
 #include <cassert>
@@ -109,12 +108,12 @@ public:
     [[nodiscard]] Component & get_component( Entity entity, ComponentTypeID type_id ) const;
 
     [[nodiscard]] Component * begin( ComponentTypeID type_id ) const;
-    template <SubComponent ComponentType>
-    [[nodiscard]] ComponentType * begin() const;
-
     [[nodiscard]] Component * end( ComponentTypeID type_id ) const;
+
     template <SubComponent ComponentType>
     [[nodiscard]] ComponentType * end() const;
+    template <SubComponent ComponentType>
+    [[nodiscard]] ComponentType * begin() const;
 
 private:
     /// The ECS object contains this object, and the partnered EntityManager and SystemManager objects.

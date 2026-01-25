@@ -75,7 +75,7 @@ int main() {
     Config::load_config( main_dir / "config.ini" );
     Log::info( "Loaded config ", (main_dir / "config.ini").string() );
 
-    Params params { initialise() };
+    auto [window, shader, camera] { initialise() };
 
     ECS ecs {};
     EntityManager & entities { ecs.entities };
@@ -94,22 +94,22 @@ int main() {
 
     Drawable sphere {};
     sphere.mesh = &mesh;
-    sphere.shader = params.shader.get();
+    sphere.shader = shader.get();
     sphere.position = glm::vec3 { 0.f, 0.5f, 0.f };
     // sphere.rotation = glm::quatLookAt( glm::normalize( glm::vec3 { 0.5f, 0.5f, 0.f } ),
     //                                        glm::vec3 { 0.f, 1.f, 0.f } );
     sphere.scale = glm::vec3 { 0.5f };
     components.insert_component( entity, sphere );
 
-    while ( not params.window->is_closing() ) {
+    while ( not window->is_closing() ) {
         Time::loop_start();
-        params.window->clear();
+        window->clear();
 
         glfwPollEvents();
-        params.camera->update();
+        camera->update();
         systems.run_group( Render );
 
-        params.window->render();
+        window->render();
     }
 
     return 0;

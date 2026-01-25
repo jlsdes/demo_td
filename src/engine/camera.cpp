@@ -98,14 +98,6 @@ void Camera::rotate( glm::vec2 const & mouse_position ) {
     previous_position = mouse_position;
 }
 
-void Camera::toggle_movement( int const key, int const action ) {
-    assert( m_controls.contains( key ) );
-    // GLFW_REPEAT is also a valid action, but we don't need it here
-    if ( action != GLFW_PRESS && action != GLFW_RELEASE )
-        return;
-    m_directions.at( m_controls.at( key ) ) = action == GLFW_PRESS;
-}
-
 void Camera::update() {
     // Moving forward and backward at the same time simply cancel each other out
     // 'bool != bool' is equivalent to ^ (xor), but ^ does not return a bool
@@ -138,4 +130,12 @@ void Camera::set_free_view( InputManager & input_manager ) {
     } );
     // Capture the mouse, hiding it
     glfwSetInputMode( glfwGetCurrentContext(), GLFW_CURSOR, GLFW_CURSOR_DISABLED );
+}
+
+void Camera::toggle_movement( int const key, int const action ) {
+    assert( m_controls.contains( key ) );
+    // GLFW_REPEAT is also a valid action, but we don't need it here
+    if ( action != GLFW_PRESS && action != GLFW_RELEASE )
+        return;
+    m_directions.at( m_controls.at( key ) ) = action == GLFW_PRESS;
 }

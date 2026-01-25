@@ -65,7 +65,6 @@ add_executable(demo_td
         src/entity/entity_manager.hpp
         src/component/component_manager.cpp
         src/component/component_manager.hpp
-        src/system/system.cpp
         src/system/system.hpp
         src/component/component.hpp
         src/entity/entity.hpp

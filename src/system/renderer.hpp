@@ -7,10 +7,10 @@
 
 class Renderer : public System {
 public:
-    explicit Renderer( ComponentFlags flags );
+    Renderer() = default;
     ~Renderer() override = default;
 
-    void run(EntityManager const & entities, ComponentManager & components) override;
+    void run( EntityManager const & entities, ComponentManager & components ) override;
 
 private:
 };
