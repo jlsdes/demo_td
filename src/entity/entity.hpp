@@ -3,10 +3,10 @@
 
 
 /** Every entity is composed of a number of components, and is represented by a unique ID. */
-using Entity = unsigned int;
+using EntityID = unsigned int;
 
 
-constexpr unsigned int g_max_entities = 4096;
+constexpr unsigned int g_max_entities = 1 << 15;
 
 
 #endif //DEMO_TD_ENTITY_HPP

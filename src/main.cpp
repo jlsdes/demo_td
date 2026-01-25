@@ -84,7 +84,7 @@ int main() {
 
     ComponentTypeID const drawable_id { components.create_store<Drawable>() };
     systems.insert_system<Renderer>( id_to_flag( drawable_id ), SystemGroup::Render );
-    Entity const entity { entities.create() };
+    EntityID const entity { entities.create() };
 
     // Create a sphere
     glm::vec3 constexpr red { 1.f, 0.f, 0.f };

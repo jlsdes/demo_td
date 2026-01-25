@@ -22,18 +22,18 @@ public:
     virtual ~ComponentStore() = default;
 
     /** Creates a new component using its default (empty) constructor. */
-    virtual void insert( Entity entity ) = 0;
+    virtual void insert( EntityID entity ) = 0;
     /** Removes the component associated with the given entity. */
-    virtual void remove( Entity entity ) = 0;
+    virtual void remove( EntityID entity ) = 0;
 
-    [[nodiscard]] virtual Component & get( Entity entity ) = 0;
+    [[nodiscard]] virtual Component & get( EntityID entity ) = 0;
 
     [[nodiscard]] virtual Component * begin() = 0;
     [[nodiscard]] virtual Component * end() = 0;
 
     [[nodiscard]] virtual unsigned int size() const = 0;
     [[nodiscard]] virtual bool empty() const = 0;
-    [[nodiscard]] virtual bool contains( Entity entity ) const = 0;
+    [[nodiscard]] virtual bool contains( EntityID entity ) const = 0;
 };
 
 
@@ -50,26 +50,26 @@ public:
     ComponentArray( ComponentArray && store ) = default;
     ComponentArray & operator=( ComponentArray && store ) = default;
 
-    void insert( Entity entity ) override;
-    void insert( Entity entity, ComponentType const & component );
-    void remove( Entity entity ) override;
+    void insert( EntityID entity ) override;
+    void insert( EntityID entity, ComponentType const & component );
+    void remove( EntityID entity ) override;
 
-    [[nodiscard]] ComponentType & get( Entity entity ) override;
+    [[nodiscard]] ComponentType & get( EntityID entity ) override;
 
     [[nodiscard]] ComponentType * begin() override;
     [[nodiscard]] ComponentType * end() override;
 
     [[nodiscard]] unsigned int size() const override;
     [[nodiscard]] bool empty() const override;
-    [[nodiscard]] bool contains( Entity entity ) const override;
+    [[nodiscard]] bool contains( EntityID entity ) const override;
 
 private:
     /// All components of this specific type. Every entity can have at most one of a specific type of component.
     std::array<ComponentType, g_max_entities> m_components;
     /// A mapping of component indices to their respective entities.
-    std::array<Entity, g_max_entities> m_component_to_entity;
+    std::array<EntityID, g_max_entities> m_component_to_entity;
     /// A mapping of entities to their respective component indices.
-    std::map<Entity, unsigned int> m_entity_to_component;
+    std::map<EntityID, unsigned int> m_entity_to_component;
 
     unsigned int m_nr_components { 0 };
 };
@@ -101,11 +101,11 @@ public:
     [[nodiscard]] ComponentTypeID get_type_id() const;
 
     template <SubComponent ComponentType>
-    void insert_component( Entity entity, ComponentType const & component );
-    void remove_component( Entity entity, ComponentTypeID type_id );
+    void insert_component( EntityID entity, ComponentType const & component );
+    void remove_component( EntityID entity, ComponentTypeID type_id );
 
-    [[nodiscard]] bool entity_has_component( Entity entity, ComponentTypeID type_id ) const;
-    [[nodiscard]] Component & get_component( Entity entity, ComponentTypeID type_id ) const;
+    [[nodiscard]] bool entity_has_component( EntityID entity, ComponentTypeID type_id ) const;
+    [[nodiscard]] Component & get_component( EntityID entity, ComponentTypeID type_id ) const;
 
     [[nodiscard]] Component * begin( ComponentTypeID type_id ) const;
     [[nodiscard]] Component * end( ComponentTypeID type_id ) const;

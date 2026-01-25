@@ -1,9 +1,10 @@
 #ifndef DEMO_TD_COMPONENT_IPP
 #define DEMO_TD_COMPONENT_IPP
 
-#include <bit>
-
 #include "engine/entity_component_system.hpp"
+#include "utils/log.hpp"
+
+#include <bit>
 
 
 template <SubComponent ComponentType>
@@ -11,12 +12,12 @@ ComponentArray<ComponentType>::ComponentArray() : ComponentStore {}, m_component
                                                   m_entity_to_component {}, m_nr_components { 0 } {}
 
 template <SubComponent ComponentType>
-void ComponentArray<ComponentType>::insert( Entity const entity ) {
+void ComponentArray<ComponentType>::insert( EntityID const entity ) {
     insert( entity, ComponentType {} );
 }
 
 template <SubComponent ComponentType>
-void ComponentArray<ComponentType>::insert( Entity const entity, ComponentType const & component ) {
+void ComponentArray<ComponentType>::insert( EntityID const entity, ComponentType const & component ) {
     assert( m_nr_components < g_max_entities );
 
     if ( m_entity_to_component.contains( entity ) ) {
@@ -31,7 +32,7 @@ void ComponentArray<ComponentType>::insert( Entity const entity, ComponentType c
 }
 
 template <SubComponent ComponentType>
-void ComponentArray<ComponentType>::remove( Entity const entity ) {
+void ComponentArray<ComponentType>::remove( EntityID const entity ) {
     auto const iterator { m_entity_to_component.find( entity ) };
     if ( iterator == m_entity_to_component.end() ) {
         auto const name { typeid( ComponentType ).name() };
@@ -43,7 +44,7 @@ void ComponentArray<ComponentType>::remove( Entity const entity ) {
     unsigned int const index { iterator->second };
     unsigned int const last_index { m_nr_components - 1 };
     if ( index != last_index ) {
-        Entity const last_entity { m_component_to_entity.at( last_index ) };
+        EntityID const last_entity { m_component_to_entity.at( last_index ) };
         m_components.at( index ) = m_components.at( last_index );
         m_component_to_entity.at( index ) = last_entity;
         m_entity_to_component.at( last_entity ) = index;
@@ -53,7 +54,7 @@ void ComponentArray<ComponentType>::remove( Entity const entity ) {
 }
 
 template <SubComponent ComponentType>
-ComponentType & ComponentArray<ComponentType>::get( Entity const entity ) {
+ComponentType & ComponentArray<ComponentType>::get( EntityID const entity ) {
     return m_components.at( m_entity_to_component.at( entity ) );
 }
 
@@ -78,7 +79,7 @@ bool ComponentArray<ComponentType>::empty() const {
 }
 
 template <SubComponent ComponentType>
-bool ComponentArray<ComponentType>::contains( Entity const entity ) const {
+bool ComponentArray<ComponentType>::contains( EntityID const entity ) const {
     return m_entity_to_component.contains( entity );
 }
 
@@ -104,7 +105,7 @@ ComponentTypeID ComponentManager::get_type_id() const {
 }
 
 template <SubComponent ComponentType>
-void ComponentManager::insert_component( Entity const entity, ComponentType const & component ) {
+void ComponentManager::insert_component( EntityID const entity, ComponentType const & component ) {
     std::type_index const type { typeid( ComponentType ) };
     if ( not m_types.contains( type ) ) {
         Log::error( "Attempted to insert a component of an unregistered type ", typeid( ComponentType ).name(),

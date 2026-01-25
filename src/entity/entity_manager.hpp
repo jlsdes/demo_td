@@ -25,29 +25,29 @@ public:
     EntityManager & operator=( EntityManager && other ) = delete;
 
     /** Assigns an ID to the new entity. */
-    [[nodiscard]] Entity create();
+    [[nodiscard]] EntityID create();
     /** Removes the entity. This function does not check for left-over components. */
-    void remove( Entity entity );
+    void remove( EntityID entity );
 
     /** Returns whether an entity currently exists with the given ID. */
-    [[nodiscard]] bool entity_exists( Entity entity ) const;
+    [[nodiscard]] bool entity_exists( EntityID entity ) const;
 
     /** Returns which components the entity consists of. */
-    [[nodiscard]] ComponentFlags get_flags( Entity entity ) const;
+    [[nodiscard]] ComponentFlags get_flags( EntityID entity ) const;
     /** Returns whether the entity has (a) certain component(s). */
-    [[nodiscard]] bool has_flags( Entity entity, ComponentFlags flags ) const;
+    [[nodiscard]] bool has_flags( EntityID entity, ComponentFlags flags ) const;
 
     /** Iterates over all existing entities, with an optional filter. The filter indicates which set of components are
      *  being queried. Any entity that does not have all of these components will be skipped. A filter with only 0 bits
      *  (the default parameter) doesn't skip any entity, if the entity exists of course. */
     class Iterator {
     public:
-        Iterator( EntityManager const & manager, Entity initial_entity, ComponentFlags filter = 0 );
+        Iterator( EntityManager const & manager, EntityID initial_entity, ComponentFlags filter = 0 );
 
         /** Advances the iterator to the next entity. */
         Iterator & operator++();
         /** Returns the current entity's ID. */
-        Entity operator*() const;
+        EntityID operator*() const;
         /** Compares two iterators, which must share the same EntityManager. The filter attribute is ignored. */
         bool operator==( Iterator const & other ) const;
 
@@ -55,7 +55,7 @@ public:
         /// The manager managing the entities that are being iterated over.
         EntityManager const & m_manager;
         /// The entity that is currently being pointed at.
-        Entity m_current;
+        EntityID m_current;
         /// The filter indicating which component flags must be set (i.e. be equal to 1) for the entities being iterated
         /// over.
         ComponentFlags m_filter;
@@ -65,9 +65,9 @@ public:
     [[nodiscard]] Iterator end() const;
 
     /** Called by the ComponentManager when a new component is created. */
-    void set_flag( Entity entity, ComponentTypeID component_type );
+    void set_flag( EntityID entity, ComponentTypeID component_type );
     /** Called by the ComponentManager when a component is removed. */
-    void unset_flag( Entity entity, ComponentTypeID component_type );
+    void unset_flag( EntityID entity, ComponentTypeID component_type );
     /** Called by the ComponentManager when a component type is removed entirely. */
     void unset_all( ComponentTypeID component_type );
 
@@ -88,7 +88,7 @@ private:
     /// The number of entities that currently exist.
     unsigned int m_nr_entities;
     /// The next entity ID that will be generated, if possible.
-    Entity m_next_entity;
+    EntityID m_next_entity;
 };
 
 
