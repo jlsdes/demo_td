@@ -1,6 +1,7 @@
 #include "camera.hpp"
 #include "shader.hpp"
 #include "utils/time.hpp"
+#include "utils/log.hpp"
 
 #include <GLFW/glfw3.h>
 #include <glm/gtc/matrix_transform.hpp>
@@ -59,7 +60,7 @@ void Camera::set_rotation( glm::vec3 const & look_in_direction ) {
     // They can be used to compute either the sine or the cosine (resp.), which together do determine the correct yaw
     float const yaw_sin = m_forward.z / std::cos( m_pitch );
     float const yaw_cos = m_forward.x / std::cos( m_pitch );
-    m_yaw = (yaw_sin > 0 ? 0.f : glm::pi<float>()) + std::acos( yaw_cos );
+    m_yaw = (yaw_sin >= 0 ? 0.f : glm::pi<float>()) + std::acos( yaw_cos );
 }
 
 void Camera::set_rotation( float const yaw, float const pitch ) {

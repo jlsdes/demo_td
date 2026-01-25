@@ -260,7 +260,7 @@ void Mesh<V>::draw( int mode ) const {
 
     glBindVertexArray( m_vertex_array );
     if ( has_index() )
-        glDrawElements( mode, static_cast<int>(m_indices.size() * 3), GL_UNSIGNED_INT, nullptr );
+        glDrawElements( mode, static_cast<int>(m_indices.size()), GL_UNSIGNED_INT, nullptr );
     else
         glDrawArrays( mode, 0, static_cast<int>(m_vertices.size()) );
 }

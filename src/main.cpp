@@ -3,9 +3,9 @@
 
 #include "utils/config.hpp"
 #include "utils/log.hpp"
+#include "utils/time.hpp"
 #include "engine/camera.hpp"
 #include "engine/mesh_builder.hpp"
-#include "engine/input_manager.hpp"
 #include "engine/shader.hpp"
 #include "engine/window.hpp"
 
@@ -18,7 +18,6 @@ struct Params {
     std::unique_ptr<Window> window { nullptr };
     std::unique_ptr<GraphicsShader> shader { nullptr };
     std::unique_ptr<Camera> camera { nullptr };
-    std::unique_ptr<InputManager> input_manager { nullptr };
 };
 
 Params initialise() {
@@ -65,8 +64,7 @@ Params initialise() {
     glm::vec3 constexpr target { 0.f, 0.f, 0.f };
     params.camera = std::make_unique<Camera>( position, target, params.shader.get() );
 
-    params.input_manager = std::make_unique<InputManager>();
-    params.camera->set_free_view( *params.input_manager );
+    params.camera->set_free_view( params.window->get_input_manager() );
 
     return params;
 }
@@ -88,19 +86,23 @@ int main() {
     systems.insert_system<Renderer>( id_to_flag( drawable_id ), SystemGroup::Render );
     Entity const entity { entities.create() };
 
+    // Create a sphere
     glm::vec3 constexpr red { 1.f, 0.f, 0.f };
-    auto const sphere_builder { MeshBuilder::sphere( 10 ).colour( red ) };
-    auto sphere_mesh { sphere_builder.get_mesh() };
-    sphere_mesh.initialise_gl_objects();
+    auto builder { MeshBuilder::sphere( 10 ).colour( red ) };
+    auto mesh { builder.get_mesh() };
+    mesh.initialise_gl_objects();
 
     Drawable sphere {};
+    sphere.mesh = &mesh;
     sphere.shader = params.shader.get();
-    sphere.mesh = &sphere_mesh;
-    sphere.scale = glm::vec3 { 0.5f };
     sphere.position = glm::vec3 { 0.f, 0.5f, 0.f };
+    // sphere.rotation = glm::quatLookAt( glm::normalize( glm::vec3 { 0.5f, 0.5f, 0.f } ),
+    //                                        glm::vec3 { 0.f, 1.f, 0.f } );
+    sphere.scale = glm::vec3 { 0.5f };
     components.insert_component( entity, sphere );
 
     while ( not params.window->is_closing() ) {
+        Time::loop_start();
         params.window->clear();
 
         glfwPollEvents();
