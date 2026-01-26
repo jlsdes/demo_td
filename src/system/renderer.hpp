@@ -1,10 +1,10 @@
 #ifndef DEMO_TD_RENDERER_HPP
 #define DEMO_TD_RENDERER_HPP
 
-#include "component/drawable.hpp"
 #include "system/system.hpp"
 
 
+/** Renders all drawable components. */
 class Renderer : public System {
 public:
     Renderer() = default;

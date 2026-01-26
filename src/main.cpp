@@ -10,6 +10,7 @@
 #include "engine/window.hpp"
 
 #include "component/drawable.hpp"
+#include "component/position.hpp"
 #include "system/renderer.hpp"
 #include "engine/entity_component_system.hpp"
 
@@ -83,7 +84,10 @@ int main() {
     SystemManager & systems { ecs.systems };
 
     ComponentTypeID const drawable_id { components.create_store<Drawable>() };
-    systems.insert_system<Renderer>( id_to_flag( drawable_id ), SystemGroup::Render );
+    ComponentTypeID const position_id { components.create_store<Position>() };
+
+    systems.insert_system<Renderer>( SystemGroup::Render );
+
     EntityID const entity { entities.create() };
 
     // Create a sphere
@@ -95,11 +99,14 @@ int main() {
     Drawable sphere {};
     sphere.mesh = &mesh;
     sphere.shader = shader.get();
-    sphere.position = glm::vec3 { 0.f, 0.5f, 0.f };
+    // sphere.position = glm::vec3 { 0.f, 0.5f, 0.f };
     // sphere.rotation = glm::quatLookAt( glm::normalize( glm::vec3 { 0.5f, 0.5f, 0.f } ),
     //                                        glm::vec3 { 0.f, 1.f, 0.f } );
     sphere.scale = glm::vec3 { 0.5f };
     components.insert_component( entity, sphere );
+
+    Position position { .position = { 0.f, 0.f, 0.f } };
+    components.insert_component( entity, position );
 
     while ( not window->is_closing() ) {
         Time::loop_start();
@@ -114,3 +121,11 @@ int main() {
 
     return 0;
 }
+
+/* TODO
+ *  Create some input components
+ *  Link them to GLFW input callback functions
+ *  Create a player movement system
+ *  Link it to the Camera class
+ *  < Create an bird's eye view camera system with unlocked mouse >
+*/

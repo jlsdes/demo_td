@@ -2,9 +2,6 @@
 #define DEMO_TD_COMPONENT_IPP
 
 #include "engine/entity_component_system.hpp"
-#include "utils/log.hpp"
-
-#include <bit>
 
 
 template <SubComponent ComponentType>
@@ -59,16 +56,6 @@ ComponentType & ComponentArray<ComponentType>::get( EntityID const entity ) {
 }
 
 template <SubComponent ComponentType>
-ComponentType * ComponentArray<ComponentType>::begin() {
-    return m_components.begin();
-}
-
-template <SubComponent ComponentType>
-ComponentType * ComponentArray<ComponentType>::end() {
-    return m_components.begin() + m_nr_components;
-}
-
-template <SubComponent ComponentType>
 unsigned int ComponentArray<ComponentType>::size() const {
     return m_nr_components;
 }
@@ -84,6 +71,52 @@ bool ComponentArray<ComponentType>::contains( EntityID const entity ) const {
 }
 
 template <SubComponent ComponentType>
+ComponentArray<ComponentType>::Iterator::Iterator( ComponentArray & array, unsigned int start_index )
+    : m_array { array }, m_index { start_index } {}
+
+template <SubComponent ComponentType>
+ComponentArray<ComponentType>::Iterator & ComponentArray<ComponentType>::Iterator::operator++() {
+    ++m_index;
+    return *this;
+}
+
+template <SubComponent ComponentType>
+ComponentType & ComponentArray<ComponentType>::Iterator::operator*() {
+    return m_array.m_components.at( m_index );
+}
+
+template <SubComponent ComponentType>
+ComponentType * ComponentArray<ComponentType>::Iterator::operator->() {
+    return &m_array.m_components.at( m_index );
+}
+
+template <SubComponent ComponentType>
+bool ComponentArray<ComponentType>::Iterator::operator==( Iterator const & other ) const {
+    assert( &m_array == &other.m_array );
+    return m_index == other.m_index;
+}
+
+template <SubComponent ComponentType>
+EntityID ComponentArray<ComponentType>::Iterator::get_entity() const {
+    return m_array.m_component_to_entity.at( m_index );
+}
+
+template <SubComponent ComponentType>
+ComponentType & ComponentArray<ComponentType>::Iterator::get_component() {
+    return m_array.m_components.at( m_index );
+}
+
+template <SubComponent ComponentType>
+ComponentArray<ComponentType>::Iterator ComponentArray<ComponentType>::begin() {
+    return { *this, 0 };
+}
+
+template <SubComponent ComponentType>
+ComponentArray<ComponentType>::Iterator ComponentArray<ComponentType>::end() {
+    return { *this, m_nr_components };
+}
+
+template <SubComponent ComponentType>
 ComponentTypeID ComponentManager::create_store() {
     std::type_index const type { typeid( ComponentType ) };
     if ( m_types.contains( type ) ) {
@@ -96,6 +129,7 @@ ComponentTypeID ComponentManager::create_store() {
 
     m_stores.at( type_id ) = std::make_unique<ComponentArray<ComponentType>>();
     m_types.emplace( type, type_id );
+    m_used_flags |= id_to_flag( type_id );
     return type_id;
 }
 
@@ -120,16 +154,23 @@ void ComponentManager::insert_component( EntityID const entity, ComponentType co
 }
 
 template <SubComponent ComponentType>
-ComponentType * ComponentManager::begin() const {
+ComponentType & ComponentManager::get_component( EntityID const entity ) const {
     ComponentTypeID const type_id { m_types.at( typeid( ComponentType ) ) };
     auto const array { dynamic_cast<ComponentArray<ComponentType> *>(m_stores.at( type_id ).get()) };
+    return array->get( entity );
+}
+
+template <SubComponent ComponentType>
+ComponentArray<ComponentType>::Iterator ComponentManager::begin() {
+    ComponentTypeID const type_id { m_types.at( typeid( ComponentType ) ) };
+    auto array { dynamic_cast<ComponentArray<ComponentType> *>(m_stores.at( type_id ).get()) };
     return array->begin();
 }
 
 template <SubComponent ComponentType>
-ComponentType * ComponentManager::end() const {
+ComponentArray<ComponentType>::Iterator ComponentManager::end() {
     ComponentTypeID const type_id { m_types.at( typeid( ComponentType ) ) };
-    auto const array { dynamic_cast<ComponentArray<ComponentType> *>(m_stores.at( type_id ).get()) };
+    auto array { dynamic_cast<ComponentArray<ComponentType> *>(m_stores.at( type_id ).get()) };
     return array->end();
 }
 

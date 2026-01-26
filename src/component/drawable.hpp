@@ -12,12 +12,10 @@ class Shader;
 
 
 struct Drawable : Component {
-    Mesh<ColourVertex> * mesh {nullptr };
+    Mesh<ColourVertex> * mesh { nullptr };
     Shader * shader { nullptr };
 
-    // Other stuff will need the position, so this might need to move to a different component
-    glm::vec3 position { 0.f };
-    glm::quat rotation { } ;
+    glm::quat rotation {};
     glm::vec3 scale { 1.f };
 };
 

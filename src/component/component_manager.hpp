@@ -3,8 +3,10 @@
 
 #include "component.hpp"
 #include "entity/entity.hpp"
+#include "utils/log.hpp"
 
 #include <array>
+#include <bit>
 #include <cassert>
 #include <memory>
 #include <typeindex>
@@ -28,8 +30,8 @@ public:
 
     [[nodiscard]] virtual Component & get( EntityID entity ) = 0;
 
-    [[nodiscard]] virtual Component * begin() = 0;
-    [[nodiscard]] virtual Component * end() = 0;
+    // [[nodiscard]] virtual Component * begin() = 0;
+    // [[nodiscard]] virtual Component * end() = 0;
 
     [[nodiscard]] virtual unsigned int size() const = 0;
     [[nodiscard]] virtual bool empty() const = 0;
@@ -56,12 +58,39 @@ public:
 
     [[nodiscard]] ComponentType & get( EntityID entity ) override;
 
-    [[nodiscard]] ComponentType * begin() override;
-    [[nodiscard]] ComponentType * end() override;
-
     [[nodiscard]] unsigned int size() const override;
     [[nodiscard]] bool empty() const override;
     [[nodiscard]] bool contains( EntityID entity ) const override;
+
+    /** Provides iteration over the components in the array. */
+    class Iterator {
+    public:
+        Iterator( ComponentArray & array, unsigned int start_index );
+
+        /** Advances the iterator to the next component. */
+        Iterator & operator++();
+        /** Returns the component that is currently being pointed at. */
+        ComponentType & operator*();
+        ComponentType * operator->();
+        /** Compares two iterators, which must belong to the exact same component array. */
+        bool operator==( Iterator const & other ) const;
+
+        /** Returns the entity the current component belongs to. */
+        [[nodiscard]] EntityID get_entity() const;
+        /** Returns the currently pointed at component. */
+        [[nodiscard]] ComponentType & get_component();
+
+    private:
+        /// The array that is being iterated over.
+        ComponentArray & m_array;
+        /// The currently pointed at component's index.
+        unsigned int m_index;
+    };
+
+    /** Returns an iterator pointing at the first component in the array. */
+    [[nodiscard]] Iterator begin();
+    /** Returns an iterator pointing at the first component past the array. */
+    [[nodiscard]] Iterator end();
 
 private:
     /// All components of this specific type. Every entity can have at most one of a specific type of component.
@@ -107,13 +136,13 @@ public:
     [[nodiscard]] bool entity_has_component( EntityID entity, ComponentTypeID type_id ) const;
     [[nodiscard]] Component & get_component( EntityID entity, ComponentTypeID type_id ) const;
 
-    [[nodiscard]] Component * begin( ComponentTypeID type_id ) const;
-    [[nodiscard]] Component * end( ComponentTypeID type_id ) const;
+    template <SubComponent ComponentType>
+    [[nodiscard]] ComponentType & get_component( EntityID entity ) const;
 
     template <SubComponent ComponentType>
-    [[nodiscard]] ComponentType * end() const;
+    [[nodiscard]] ComponentArray<ComponentType>::Iterator begin();
     template <SubComponent ComponentType>
-    [[nodiscard]] ComponentType * begin() const;
+    [[nodiscard]] ComponentArray<ComponentType>::Iterator end();
 
 private:
     /// The ECS object contains this object, and the partnered EntityManager and SystemManager objects.

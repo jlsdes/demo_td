@@ -45,13 +45,3 @@ Component & ComponentManager::get_component( EntityID const entity, ComponentTyp
     assert( entity_has_component( entity, type_id ) );
     return m_stores.at( type_id )->get( entity );
 }
-
-Component * ComponentManager::begin( ComponentTypeID const type_id ) const {
-    assert( has_store(type_id) );
-    return m_stores.at( type_id )->begin();
-}
-
-Component * ComponentManager::end( ComponentTypeID const type_id ) const {
-    assert( has_store(type_id) );
-    return m_stores.at( type_id )->end();
-}

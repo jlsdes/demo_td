@@ -5,7 +5,7 @@
 
 
 template <SubSystem SystemType>
-void SystemManager::insert_system( ComponentFlags const flags, unsigned int group_type ) {
+void SystemManager::insert_system( unsigned int const group_type ) {
     std::type_index const type { typeid( SystemType ) };
     if ( m_systems.contains( type ) ) {
         Log::warning( "Attempted to insert system ", typeid( SystemType ).name(), " twice, ignoring duplicate." );

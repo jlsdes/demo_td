@@ -76,6 +76,7 @@ add_executable(demo_td
         src/system/renderer.hpp
         src/engine/entity_component_system.cpp
         src/engine/entity_component_system.hpp
+        src/component/position.hpp
 )
 
 # Link the necessary libraries
