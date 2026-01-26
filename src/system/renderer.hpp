@@ -11,8 +11,6 @@ public:
     ~Renderer() override = default;
 
     void run( EntityManager const & entities, ComponentManager & components ) override;
-
-private:
 };
 
 

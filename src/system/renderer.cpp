@@ -26,6 +26,8 @@ void Renderer::run( EntityManager const & entities, ComponentManager & component
         transformation *= glm::mat4_cast( drawable.rotation );
         drawable.shader->set_uniform( "model", transformation );
 
+        if ( not drawable.mesh->is_initialised() )
+            drawable.mesh->initialise_gl_objects();
         drawable.mesh->draw();
     }
 }

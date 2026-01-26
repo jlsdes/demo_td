@@ -94,7 +94,6 @@ int main() {
     glm::vec3 constexpr red { 1.f, 0.f, 0.f };
     auto builder { MeshBuilder::sphere( 10 ).colour( red ) };
     auto mesh { builder.get_mesh() };
-    mesh.initialise_gl_objects();
 
     Drawable sphere {};
     sphere.mesh = &mesh;
