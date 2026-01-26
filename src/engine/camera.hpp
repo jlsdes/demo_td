@@ -6,7 +6,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-#include <array>
+#include <bitset>
 #include <map>
 
 
@@ -14,13 +14,14 @@ class GraphicsShader;
 
 
 /** The directions the camera can move in. */
-enum Direction {
+enum MovementBit {
     Forward = 0,
     Backward = 1,
     Right = 2,
     Left = 3,
     Up = 4,
-    Down = 5
+    Down = 5,
+    Sprint = 6,
 };
 
 
@@ -74,7 +75,7 @@ private:
 
     /// For the camera in 'free-view' mode
     /// Toggles for keeping track of whether the user is currently holding down a movement key.
-    std::array<bool, 6> m_directions;
+    std::bitset<7> m_movement;
     /// A mapping of keys to directions
     std::map<int, unsigned int> m_controls;
 };

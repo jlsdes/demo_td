@@ -1,5 +1,6 @@
 #include "camera.hpp"
 #include "shader.hpp"
+#include "utils/config.hpp"
 #include "utils/time.hpp"
 #include "utils/log.hpp"
 
@@ -33,17 +34,19 @@ Camera::Camera( glm::vec3 const & position,
                 GraphicsShader * const shader )
     : m_position { position }, m_yaw {}, m_pitch {}, m_forward { glm::normalize( target - position ) },
       m_right { compute_right( m_forward ) }, m_up { compute_up( m_forward, m_right ) }, m_shader { shader },
-      m_directions {} {
+      m_movement {} {
     set_rotation( target - position );
     update();
 
     // Default keybinds for free-view camera
-    m_controls[GLFW_KEY_W] = Forward;
-    m_controls[GLFW_KEY_A] = Left;
-    m_controls[GLFW_KEY_S] = Backward;
-    m_controls[GLFW_KEY_D] = Right;
-    m_controls[GLFW_KEY_LEFT_SHIFT] = Up;
-    m_controls[GLFW_KEY_LEFT_CONTROL] = Down;
+    Config::set_current_section( "Controls" );
+    m_controls[Config::get<int>( "forward" )] = Forward;
+    m_controls[Config::get<int>( "left" )] = Left;
+    m_controls[Config::get<int>( "backward" )] = Backward;
+    m_controls[Config::get<int>( "right" )] = Right;
+    m_controls[Config::get<int>( "up" )] = Up;
+    m_controls[Config::get<int>( "down" )] = Down;
+    m_controls[Config::get<int>( "sprint" )] = 6;
 }
 
 void Camera::set_position( glm::vec3 const & position ) {
@@ -79,7 +82,8 @@ void Camera::set_rotation( float const yaw, float const pitch ) {
 
 void Camera::translate( glm::vec3 const & direction ) {
     auto const elapsed_time { static_cast<float>(Time::get_elapsed_time()) };
-    m_position += camera_speed * elapsed_time * glm::normalize( direction );
+    auto const sprint { m_movement[Sprint] ? 2.f : 1.f };
+    m_position += camera_speed * elapsed_time * sprint * glm::normalize( direction );
 }
 
 void Camera::rotate( glm::vec2 const & mouse_position ) {
@@ -101,15 +105,15 @@ void Camera::rotate( glm::vec2 const & mouse_position ) {
 void Camera::update() {
     // Moving forward and backward at the same time simply cancel each other out
     // 'bool != bool' is equivalent to ^ (xor), but ^ does not return a bool
-    bool const moving_bf { m_directions.at( Forward ) != m_directions.at( Backward ) };
-    bool const moving_rl { m_directions.at( Right ) != m_directions.at( Left ) };
-    bool const moving_ud { m_directions.at( Up ) != m_directions.at( Down ) };
+    bool const moving_bf { m_movement[Forward] != m_movement[Backward] };
+    bool const moving_rl { m_movement[Right] != m_movement[Left] };
+    bool const moving_ud { m_movement[Up] != m_movement[Down] };
 
     if ( moving_bf || moving_rl || moving_ud ) {
         glm::vec3 direction { 0.f };
-        if ( moving_bf ) direction += m_directions.at( Forward ) ? m_forward : -m_forward;
-        if ( moving_rl ) direction += m_directions.at( Right ) ? -m_right : m_right;
-        if ( moving_ud ) direction += m_directions.at( Up ) ? m_up : -m_up;
+        if ( moving_bf ) direction += m_movement[Forward] ? m_forward : -m_forward;
+        if ( moving_rl ) direction += m_movement[Right] ? -m_right : m_right;
+        if ( moving_ud ) direction += m_movement[Up] ? m_up : -m_up;
         translate( direction );
     }
     m_shader->set_uniform( "camera_position", m_position );
@@ -135,7 +139,8 @@ void Camera::set_free_view( InputManager & input_manager ) {
 void Camera::toggle_movement( int const key, int const action ) {
     assert( m_controls.contains( key ) );
     // GLFW_REPEAT is also a valid action, but we don't need it here
-    if ( action != GLFW_PRESS && action != GLFW_RELEASE )
-        return;
-    m_directions.at( m_controls.at( key ) ) = action == GLFW_PRESS;
+    if ( action == GLFW_PRESS )
+        m_movement |= 1 << m_controls.at( key );
+    else if ( action == GLFW_RELEASE )
+        m_movement &= ~(1 << m_controls.at( key ));
 }

@@ -18,11 +18,10 @@ std::filesystem::path get_main_dir();
  *  This class is a singleton class; it can be used through the public static functions.
  */
 class Config {
-    /** Basic constructor and destructor. */
     Config() = default;
     ~Config() = default;
 
-    /** Returns  */
+    /** Returns the main instance of this class. */
     static Config & get_instance();
 
 public:

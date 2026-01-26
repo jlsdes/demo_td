@@ -17,6 +17,7 @@ void Renderer::run( EntityManager const & entities, ComponentManager & component
 
         drawable.shader->use();
 
+        // Compute the object's current transformation matrix
         auto transformation { glm::identity<glm::mat4>() };
         if ( entities.has_flags( iterator.get_entity(), position_flag ) ) {
             Position const & position { components.get_component<Position>( entity ) };
