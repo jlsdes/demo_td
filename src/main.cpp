@@ -8,6 +8,7 @@
 #include "engine/mesh_builder.hpp"
 #include "engine/shader.hpp"
 #include "engine/window.hpp"
+#include "engine/context.hpp"
 
 #include "component/drawable.hpp"
 #include "component/position.hpp"
@@ -83,9 +84,6 @@ int main() {
     ComponentManager & components { ecs.components };
     SystemManager & systems { ecs.systems };
 
-    ComponentTypeID const drawable_id { components.create_store<Drawable>() };
-    ComponentTypeID const position_id { components.create_store<Position>() };
-
     systems.insert_system<Renderer>( SystemGroup::Render );
 
     EntityID const entity { entities.create() };
@@ -120,11 +118,3 @@ int main() {
 
     return 0;
 }
-
-/* TODO
- *  Create some input components
- *  Link them to GLFW input callback functions
- *  Create a player movement system
- *  Link it to the Camera class
- *  < Create an bird's eye view camera system with unlocked mouse >
-*/

@@ -78,6 +78,8 @@ add_executable(demo_td
         src/engine/entity_component_system.hpp
         src/component/position.hpp
         src/engine/mesh.ipp
+        src/engine/context.cpp
+        src/engine/context.hpp
 )
 
 # Link the necessary libraries

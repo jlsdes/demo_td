@@ -15,8 +15,9 @@ class ComponentManager;
 
 /** The two main groups of systems; other values can be used as well. */
 enum SystemGroup : unsigned int {
-    General = 0,
-    Render = 1,
+    Disabled = 0,
+    General = 1,
+    Render = 2,
 };
 
 
