@@ -56,8 +56,11 @@ private:
 
 class LevelContext : public Context {
 public:
-    explicit LevelContext( Context const * current );
+    explicit LevelContext( Context const * parent );
     ~LevelContext() override;
+
+    void disable_systems() override;
+    void enable_systems() override;
 
 private:
 };
@@ -65,8 +68,11 @@ private:
 
 class MenuContext : public Context {
 public:
-    explicit MenuContext( Context const * current );
+    explicit MenuContext( Context const * parent );
     ~MenuContext() override;
+
+    void disable_systems() override;
+    void enable_systems() override;
 
 private:
 };

@@ -80,6 +80,9 @@ add_executable(demo_td
         src/engine/mesh.ipp
         src/engine/context.cpp
         src/engine/context.hpp
+        src/entity/tower_factory.cpp
+        src/entity/tower_factory.hpp
+        src/component/tower_data.hpp
 )
 
 # Link the necessary libraries

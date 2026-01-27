@@ -4,6 +4,7 @@
 
 #include "component/drawable.hpp"
 #include "component/position.hpp"
+#include "component/tower_data.hpp"
 
 #include "system/renderer.hpp"
 
@@ -56,13 +57,29 @@ TopContext::TopContext() : Context { nullptr }, m_ecs { std::make_unique<ECS>() 
 
 TopContext::~TopContext() = default;
 
-LevelContext::LevelContext( Context const * const current ) : Context { current } {}
+LevelContext::LevelContext( Context const * const parent ) : Context { parent } {
+    assert( parent );
+    parent->get_ecs()->components.create_store<TowerData>();
+}
 
-LevelContext::~LevelContext() = default;
+LevelContext::~LevelContext() {
+    ECS * ecs { Context::get_ecs() };
+    ecs->components.remove_store( ecs->components.get_type_id<TowerData>() );
+}
 
-MenuContext::MenuContext( Context const * const current ) : Context { current } {}
+void LevelContext::disable_systems() {}
+
+void LevelContext::enable_systems() {}
+
+MenuContext::MenuContext( Context const * const parent ) : Context { parent } {
+    assert( parent );
+}
 
 MenuContext::~MenuContext() = default;
+
+void MenuContext::disable_systems() {}
+
+void MenuContext::enable_systems() {}
 
 
 /*
