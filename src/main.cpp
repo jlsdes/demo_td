@@ -4,7 +4,6 @@
 #include "utils/config.hpp"
 #include "utils/log.hpp"
 #include "utils/time.hpp"
-#include "engine/camera.hpp"
 #include "engine/mesh_builder.hpp"
 #include "engine/shader.hpp"
 #include "engine/window.hpp"
@@ -18,8 +17,6 @@
 
 struct Params {
     std::unique_ptr<Window> window { nullptr };
-    std::unique_ptr<GraphicsShader> shader { nullptr };
-    std::unique_ptr<Camera> camera { nullptr };
 };
 
 Params initialise() {
@@ -47,27 +44,6 @@ Params initialise() {
     glFrontFace( GL_CCW );
     glEnable( GL_CULL_FACE );
 
-    // Find and build the main graphics shader
-    auto const vertex_shader { Config::get<std::filesystem::path>( "Shader", "vertex_shader" ) };
-    auto const fragment_shader { Config::get<std::filesystem::path>( "Shader", "fragment_shader" ) };
-    params.shader = std::make_unique<GraphicsShader>( vertex_shader.c_str(), fragment_shader.c_str() );
-    params.shader->use();
-
-    glm::vec3 constexpr ambient_light { 0.01f };
-    params.shader->set_uniform( "ambient_light", ambient_light );
-    params.shader->set_uniform( "sun_light", glm::vec3 { 1.f, 1.f, 1.f } );
-    glm::vec3 constexpr sun_direction { -0.2f, 1.f, -0.5f };
-    params.shader->set_uniform( "sun_direction", sun_direction );
-
-    float constexpr fov { std::numbers::pi_v<float> / 4.f }; // 45 degrees
-    params.shader->set_uniform( "projection", glm::perspective( fov, 1200.f / 800.f, 0.1f, 100.f ) );
-
-    glm::vec3 constexpr position { -3.f, 0.f, 0.f };
-    glm::vec3 constexpr target { 0.f, 0.f, 0.f };
-    params.camera = std::make_unique<Camera>( position, target, params.shader.get() );
-
-    params.camera->set_free_view( params.window->get_input_manager() );
-
     return params;
 }
 
@@ -77,7 +53,7 @@ int main() {
     Config::load_config( main_dir / "config.ini" );
     Log::info( "Loaded config ", (main_dir / "config.ini").string() );
 
-    auto [window, shader, camera] { initialise() };
+    auto [window] { initialise() };
 
     ECS ecs {};
     EntityManager & entities { ecs.entities };
@@ -87,7 +63,7 @@ int main() {
     components.create_store<Drawable>();
     components.create_store<Position>();
 
-    systems.insert_system<Renderer>( SystemGroup::Render );
+    auto renderer { std::make_unique<Renderer>( *window ) };
 
     EntityID const entity { entities.create() };
 
@@ -98,7 +74,7 @@ int main() {
 
     Drawable sphere {};
     sphere.mesh = &mesh;
-    sphere.shader = shader.get();
+    sphere.shader = &renderer->get_shader();
     // sphere.position = glm::vec3 { 0.f, 0.5f, 0.f };
     // sphere.rotation = glm::quatLookAt( glm::normalize( glm::vec3 { 0.5f, 0.5f, 0.f } ),
     //                                        glm::vec3 { 0.f, 1.f, 0.f } );
@@ -108,12 +84,14 @@ int main() {
     Position position { .position = { 0.f, 0.f, 0.f } };
     components.insert_component( entity, position );
 
+    systems.insert_system<Renderer>( std::move( renderer ), Render );
+
     while ( not window->is_closing() ) {
         Time::loop_start();
         window->clear();
 
         glfwPollEvents();
-        camera->update();
+        // camera->update();
         systems.run_group( Render );
 
         window->render();

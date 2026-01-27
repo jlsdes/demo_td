@@ -5,6 +5,17 @@
 
 
 template <SubSystem SystemType>
+void SystemManager::insert_system( std::unique_ptr<SystemType> && system, unsigned int const group_type ) {
+    std::type_index const type { typeid( SystemType ) };
+    if ( m_systems.contains( type ) ) {
+        Log::warning( "Attempted to insert system ", typeid( SystemType ).name(), " twice, ignoring duplicate." );
+        return;
+    }
+    m_groups.emplace( type, group_type );
+    m_systems.emplace( type, std::move( system ) );
+}
+
+template <SubSystem SystemType>
 void SystemManager::insert_system( unsigned int const group_type ) {
     std::type_index const type { typeid( SystemType ) };
     if ( m_systems.contains( type ) ) {

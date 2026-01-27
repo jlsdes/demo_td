@@ -4,11 +4,41 @@
 #include "component/position.hpp"
 #include "engine/mesh.hpp"
 #include "engine/shader.hpp"
+#include "utils/config.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 
 
+glm::vec3 constexpr g_initial_position { -3.f, 0.f, 0.f };
+glm::vec3 constexpr g_initial_target { 0.f, 0.f, 0.f };
+
+
+Renderer::Renderer( Window & window ) : m_window { window },
+                                        m_camera { std::make_unique<Camera>( g_initial_position, g_initial_target ) },
+                                        m_shaders {} {
+    m_camera->set_free_view( m_window.get_input_manager() );
+
+    // Find and build the main graphics shader
+    auto const vertex_shader { Config::get<std::filesystem::path>( "Shader", "vertex_shader" ) };
+    auto const fragment_shader { Config::get<std::filesystem::path>( "Shader", "fragment_shader" ) };
+
+    auto [shader_id, shader] { m_shaders.emplace_shader( vertex_shader, fragment_shader ) };
+    shader.use();
+
+    glm::vec3 constexpr ambient_light { 0.01f };
+    shader.set_uniform( "ambient_light", ambient_light );
+    shader.set_uniform( "sun_light", glm::vec3 { 1.f, 1.f, 1.f } );
+    glm::vec3 constexpr sun_direction { -0.2f, 1.f, -0.5f };
+    shader.set_uniform( "sun_direction", sun_direction );
+    float constexpr fov { std::numbers::pi_v<float> / 4.f }; // 45 degrees
+    shader.set_uniform( "projection", glm::perspective( fov, 1200.f / 800.f, 0.1f, 100.f ) );
+}
+
 void Renderer::run( EntityManager const & entities, ComponentManager & components ) {
+    m_camera->update();
+    for ( auto const & shader : m_shaders )
+        m_camera->update_shader( shader );
+
     ComponentFlags const position_flag { id_to_flag( components.get_type_id<Position>() ) };
 
     for ( auto iterator { components.begin<Drawable>() }; iterator != components.end<Drawable>(); ++iterator ) {
@@ -19,7 +49,7 @@ void Renderer::run( EntityManager const & entities, ComponentManager & component
 
         // Compute the object's current transformation matrix
         auto transformation { glm::identity<glm::mat4>() };
-        if ( entities.has_flags( iterator.get_entity(), position_flag ) ) {
+        if ( entities.has_flags( entity, position_flag ) ) {
             Position const & position { components.get_component<Position>( entity ) };
             transformation = glm::translate( transformation, position.position );
         }
@@ -31,4 +61,8 @@ void Renderer::run( EntityManager const & entities, ComponentManager & component
             drawable.mesh->initialise_gl_objects();
         drawable.mesh->draw();
     }
+}
+
+Shader & Renderer::get_shader( unsigned int const shader_id ) {
+    return m_shaders.get_shader( shader_id );
 }

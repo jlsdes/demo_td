@@ -53,7 +53,7 @@ private:
     std::unique_ptr<Window> m_window;
     std::unique_ptr<Camera> m_camera;
 
-    std::vector<GraphicsShader> m_shaders;
+    std::vector<Shader> m_shaders;
 };
 
 

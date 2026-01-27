@@ -10,7 +10,7 @@
 #include <map>
 
 
-class GraphicsShader;
+class Shader;
 
 
 /** The directions the camera can move in. */
@@ -31,9 +31,7 @@ class Camera {
 public:
     /** Creates a new camera at the given position, looking at the given target position. This function assumes that the
      *  upward vector is always (0, 1, 0). */
-    Camera( glm::vec3 const & position,
-            glm::vec3 const & target,
-            GraphicsShader * shader );
+    Camera( glm::vec3 const & position, glm::vec3 const & target );
 
     /** Destructor. */
     ~Camera() = default;
@@ -48,8 +46,10 @@ public:
     void set_rotation( float yaw, float pitch );
     void rotate( glm::vec2 const & mouse_position );
 
-    /** Updates the view matrix in the attached shader. */
+    /** Updates the camera's internal data. */
     void update();
+    /** Updates the given shader using the camera's (updated) data. */
+    void update_shader( Shader const & shader ) const;
 
     /** Sets the camera to free view mode, which lets the user move around freely.
      * @param input_manager The current window's InputManager object that the camera wants its callback functions to. */
@@ -70,8 +70,6 @@ private:
     glm::vec3 m_forward;
     glm::vec3 m_right;
     glm::vec3 m_up;
-    /// The (vertex) shader this camera is attached to.
-    GraphicsShader * m_shader;
 
     /// For the camera in 'free-view' mode
     /// Toggles for keeping track of whether the user is currently holding down a movement key.

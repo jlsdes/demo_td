@@ -34,6 +34,8 @@ public:
     SystemManager & operator=( SystemManager && ) = delete;
 
     template <SubSystem SystemType>
+    void insert_system( std::unique_ptr<SystemType> && system, unsigned int group_type = General );
+    template <SubSystem SystemType>
     void insert_system( unsigned int group_type = General );
     template <SubSystem SystemType>
     void remove_system();

@@ -29,12 +29,9 @@ inline glm::vec3 compute_up( glm::vec3 const & forward, glm::vec3 const & right 
 }
 
 
-Camera::Camera( glm::vec3 const & position,
-                glm::vec3 const & target,
-                GraphicsShader * const shader )
+Camera::Camera( glm::vec3 const & position, glm::vec3 const & target )
     : m_position { position }, m_yaw {}, m_pitch {}, m_forward { glm::normalize( target - position ) },
-      m_right { compute_right( m_forward ) }, m_up { compute_up( m_forward, m_right ) }, m_shader { shader },
-      m_movement {} {
+      m_right { compute_right( m_forward ) }, m_up { compute_up( m_forward, m_right ) },  m_movement {} {
     set_rotation( target - position );
     update();
 
@@ -116,8 +113,11 @@ void Camera::update() {
         if ( moving_ud ) direction += m_movement[Up] ? m_up : -m_up;
         translate( direction );
     }
-    m_shader->set_uniform( "camera_position", m_position );
-    m_shader->set_uniform( "view", glm::lookAt( m_position, m_position + m_forward, m_up ) );
+}
+
+void Camera::update_shader( Shader const & shader ) const {
+    shader.set_uniform( "camera_position", m_position );
+    shader.set_uniform( "view", glm::lookAt( m_position, m_position + m_forward, m_up ) );
 }
 
 void Camera::set_free_view( InputManager & input_manager ) {
