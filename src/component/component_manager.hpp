@@ -119,7 +119,7 @@ public:
     /** Creates a new component store for the given type of components. Only one store can exist per component type. A
      *  store of the appropriate type must be created before components of that type can be inserted. */
     template <SubComponent ComponentType>
-    [[nodiscard]] ComponentTypeID create_store();
+    ComponentTypeID create_store();
     /** Removes a component store, after purging any leftover components of the related type. */
     void remove_store( ComponentTypeID type_id );
 

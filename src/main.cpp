@@ -48,8 +48,8 @@ Params initialise() {
     glEnable( GL_CULL_FACE );
 
     // Find and build the main graphics shader
-    auto const vertex_shader { get_main_dir() / Config::get<std::string>( "Shader", "vertex_shader" ) };
-    auto const fragment_shader { get_main_dir() / Config::get<std::string>( "Shader", "fragment_shader" ) };
+    auto const vertex_shader { Config::get<std::filesystem::path>( "Shader", "vertex_shader" ) };
+    auto const fragment_shader { Config::get<std::filesystem::path>( "Shader", "fragment_shader" ) };
     params.shader = std::make_unique<GraphicsShader>( vertex_shader.c_str(), fragment_shader.c_str() );
     params.shader->use();
 
@@ -83,6 +83,9 @@ int main() {
     EntityManager & entities { ecs.entities };
     ComponentManager & components { ecs.components };
     SystemManager & systems { ecs.systems };
+
+    components.create_store<Drawable>();
+    components.create_store<Position>();
 
     systems.insert_system<Renderer>( SystemGroup::Render );
 

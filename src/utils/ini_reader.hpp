@@ -1,16 +1,17 @@
 #ifndef DEMO_TD_INI_READER_HPP
 #define DEMO_TD_INI_READER_HPP
 
-
+#include <filesystem>
 #include <istream>
 #include <map>
 #include <string>
 
 
-/** Contains the data of a single section. */
+/** Contains the data of a single section, where each pair consists of the extracted data and the source file (if the
+ *  data was read from a file). */
 struct IniSection {
     std::string name;
-    std::map<std::string, std::string> data;
+    std::map<std::string, std::pair<std::string, std::string>> data;
 
     /** Returns the value of a key-value pair as a specific type. Throws an exception if the value cannot be converted,
      *  or if the key isn't present. */
@@ -35,6 +36,8 @@ template <>
 [[nodiscard]] std::string IniSection::get<std::string>( std::string const & key ) const;
 template <>
 [[nodiscard]] char const * IniSection::get<char const *>( std::string const & key ) const;
+template <>
+[[nodiscard]] std::filesystem::path IniSection::get<std::filesystem::path>( std::string const & key ) const;
 
 
 /// The data structure used for storing (a) .ini file(s).
@@ -46,7 +49,7 @@ using IniData = std::map<std::string, IniSection>;
  *
  * Some restrictions are placed on the files for this reader to accept them:
  * - the only delimiter allowed is '=', optionally surrounded by spaces on either side.
- * - keys must only contain letters, numbers, and underscores.
+ * - keys must only contain letters, numbers, and underscores, and keys must contain at least one character.
  * - key-value pairs before any sections have been started are allowed, and will be stored under the "" section.
  */
 class IniReader {
@@ -56,7 +59,8 @@ public:
     ~IniReader() = default;
 
     /** Reads the contents of the stream and parses it as a .ini file. */
-    IniData const & read( std::istream & stream );
+    IniData const & read( std::istream & stream, std::string const & source = "" );
+    IniData const & read( std::filesystem::path const & path );
 
     /** Returns the data of the entire section as a string-to-string map. No type conversion will be performed by this
      *  function. */
@@ -73,6 +77,8 @@ public:
 private:
     /// The contents of the files that have been read, grouped per section.
     IniData m_data;
+    /// The current data source, usually a filename.
+    std::string m_source;
 };
 
 
