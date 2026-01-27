@@ -13,7 +13,7 @@ class Shader;
 
 struct Drawable : Component {
     Mesh<ColourVertex> * mesh { nullptr };
-    Shader * shader { nullptr };
+    // Shader * shader { nullptr };
 
     glm::quat rotation {};
     glm::vec3 scale { 1.f };

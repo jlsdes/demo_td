@@ -9,13 +9,12 @@ Window::Window()
         Config::get<unsigned int>( "Window", "width" ),
         Config::get<unsigned int>( "Window", "height" ),
         Config::get<char const *>( "Window", "title" )
-    ) {
-}
+    ) {}
 
-Window::Window( unsigned int const width, unsigned int const height, char const * const title ) : m_window { nullptr } {
+Window::Window( unsigned int const width, unsigned int const height, char const * const title )
+    : m_window { glfwCreateWindow( static_cast<int>(width), static_cast<int>(height), title, nullptr, nullptr ) } {
     // Create the new window using GLFW
-    m_window = glfwCreateWindow( static_cast<int>(width), static_cast<int>(height), title, nullptr, nullptr );
-    if ( m_window == nullptr ) {
+    if ( not m_window ) {
         glfwTerminate();
         throw std::runtime_error( "Failed to create window." );
     }
@@ -32,10 +31,8 @@ Window::Window( unsigned int const width, unsigned int const height, char const 
 }
 
 Window::~Window() {
-    if ( m_window != nullptr ) {
+    if ( m_window )
         glfwDestroyWindow( m_window );
-        m_window = nullptr;
-    }
 }
 
 void Window::focus() const {

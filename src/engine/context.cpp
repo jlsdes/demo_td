@@ -1,4 +1,16 @@
 #include "context.hpp"
+#include "entity_component_system.hpp"
+#include "window.hpp"
+
+#include "component/drawable.hpp"
+#include "component/position.hpp"
+
+#include "system/renderer.hpp"
+
+#include <glad/gl.h>
+#include <GLFW/glfw3.h>
+
+#include <stdexcept>
 
 
 Context::Context( Context const * const parent ) : m_parent { parent } {}
@@ -7,17 +19,50 @@ Context const * Context::get_parent() const {
     return m_parent;
 }
 
-TopContext::TopContext() : Context { nullptr }, m_window { nullptr }, m_camera { nullptr }, m_shaders {} {}
+void initialise_glfw() {
+    if ( not glfwInit() ) {
+        glfwTerminate();
+        throw std::runtime_error( "Failed to initialise GLFW" );
+    }
+    glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, 4 );
+    glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 6 );
+    glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
+    glfwWindowHint( GLFW_SAMPLES, 8 ); // Enable MSAA (anti-aliasing)
+}
 
-TopContext::~TopContext() {}
+void initialise_glad() {
+    if ( not gladLoadGL( glfwGetProcAddress ) ) {
+        glfwTerminate();
+        throw std::runtime_error( "Failed to initialise GLAD." );
+    }
+    glClearColor( 0.1f, 0.1f, 0.1f, 1.0f );
+    glDepthFunc( GL_LESS );
+    glEnable( GL_DEPTH_TEST );
+    glCullFace( GL_BACK );
+    glFrontFace( GL_CCW );
+    glEnable( GL_CULL_FACE );
+}
+
+TopContext::TopContext() : Context { nullptr }, m_ecs { std::make_unique<ECS>() }, m_window { nullptr } {
+    initialise_glfw();
+    m_window = std::make_unique<Window>();
+    initialise_glad();
+
+    m_ecs->components.create_store<Drawable>();
+    m_ecs->components.create_store<Position>();
+
+    m_ecs->systems.insert_system( std::make_unique<Renderer>( *m_window ), Render );
+}
+
+TopContext::~TopContext() = default;
 
 LevelContext::LevelContext( Context const * const current ) : Context { current } {}
 
-LevelContext::~LevelContext() {}
+LevelContext::~LevelContext() = default;
 
-MenuContext::MenuContext(Context const * const current) : Context { current } {}
+MenuContext::MenuContext( Context const * const current ) : Context { current } {}
 
-MenuContext::~MenuContext() {}
+MenuContext::~MenuContext() = default;
 
 
 /*

@@ -15,7 +15,6 @@ public:
     Window();
     Window( unsigned int width, unsigned int height, char const * title );
 
-    /** Destructor. */
     ~Window();
 
     /** Makes the window the active one. */

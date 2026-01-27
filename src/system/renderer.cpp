@@ -34,10 +34,23 @@ Renderer::Renderer( Window & window ) : m_window { window },
     shader.set_uniform( "projection", glm::perspective( fov, 1200.f / 800.f, 0.1f, 100.f ) );
 }
 
+glm::mat4 compute_transformation( Drawable const & drawable, Position const * const position ) {
+    auto transformation { glm::identity<glm::mat4>() };
+    if ( position )
+        transformation = glm::translate( transformation, position->position );
+    transformation = glm::scale( transformation, drawable.scale );
+    transformation *= glm::mat4_cast( drawable.rotation );
+    return transformation;
+}
+
 void Renderer::run( EntityManager const & entities, ComponentManager & components ) {
     m_camera->update();
     for ( auto const & shader : m_shaders )
         m_camera->update_shader( shader );
+
+    // For now, everything uses the same shader
+    Shader const & shader { m_shaders.get_shader( 0 ) };
+    shader.use();
 
     ComponentFlags const position_flag { id_to_flag( components.get_type_id<Position>() ) };
 
@@ -45,17 +58,11 @@ void Renderer::run( EntityManager const & entities, ComponentManager & component
         EntityID const entity { iterator.get_entity() };
         Drawable & drawable { iterator.get_component() };
 
-        drawable.shader->use();
+        Position const * position { nullptr };
+        if ( entities.has_flags( entity, position_flag ) )
+            position = &components.get_component<Position>( entity );
 
-        // Compute the object's current transformation matrix
-        auto transformation { glm::identity<glm::mat4>() };
-        if ( entities.has_flags( entity, position_flag ) ) {
-            Position const & position { components.get_component<Position>( entity ) };
-            transformation = glm::translate( transformation, position.position );
-        }
-        transformation = glm::scale( transformation, drawable.scale );
-        transformation *= glm::mat4_cast( drawable.rotation );
-        drawable.shader->set_uniform( "model", transformation );
+        shader.set_uniform( "model",  compute_transformation( drawable, position )  );
 
         if ( not drawable.mesh->is_initialised() )
             drawable.mesh->initialise_gl_objects();

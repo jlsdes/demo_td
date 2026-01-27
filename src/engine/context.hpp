@@ -1,12 +1,11 @@
 #ifndef DEMO_TD_CONTEXT_HPP
 #define DEMO_TD_CONTEXT_HPP
 
-#include "entity_component_system.hpp"
-#include "camera.hpp"
-#include "shader.hpp"
-#include "window.hpp"
-
 #include <memory>
+
+
+struct ECS;
+class Window;
 
 
 /** Contexts initialise any entities and systems that are required to run the associated code. When the context object
@@ -25,8 +24,6 @@ public:
     [[nodiscard]] Context const * get_parent() const;
 
     [[nodiscard]] virtual ECS * get_ecs() const { return m_parent ? m_parent->get_ecs() : nullptr; }
-    [[nodiscard]] virtual Window * get_window() const { return m_parent ? m_parent->get_window() : nullptr; }
-    [[nodiscard]] virtual Camera * get_camera() const { return m_parent ? m_parent->get_camera() : nullptr; }
 
     /** Disables all systems in this specific context, meaning that they won't be run anymore. */
     virtual void disable_systems() = 0;
@@ -45,15 +42,15 @@ public:
     ~TopContext() override;
 
     [[nodiscard]] ECS * get_ecs() const override { return m_ecs.get(); }
-    [[nodiscard]] Window * get_window() const override { return m_window.get(); }
-    [[nodiscard]] Camera * get_camera() const override { return m_camera.get(); }
+    [[nodiscard]] Window * get_window() const { return m_window.get(); }
+
+    /** Does nothing, these systems probably shouldn't be disabled. */
+    void disable_systems() override {}
+    void enable_systems() override {}
 
 private:
     std::unique_ptr<ECS> m_ecs;
     std::unique_ptr<Window> m_window;
-    std::unique_ptr<Camera> m_camera;
-
-    std::vector<Shader> m_shaders;
 };
 
 
