@@ -32,6 +32,8 @@ Renderer::Renderer( Window & window ) : m_window { window },
     shader.set_uniform( "sun_direction", sun_direction );
     float constexpr fov { std::numbers::pi_v<float> / 4.f }; // 45 degrees
     shader.set_uniform( "projection", glm::perspective( fov, 1200.f / 800.f, 0.1f, 100.f ) );
+
+    shader.set_uniform( "is_light_source", false );
 }
 
 glm::mat4 compute_transformation( Drawable const & drawable, Position const * const position ) {
@@ -66,9 +68,16 @@ void Renderer::run( EntityManager const & entities, ComponentManager & component
         shader.set_uniform( "model", transformation );
         shader.set_uniform( "normal_transform", glm::mat3 { glm::transpose( glm::inverse( transformation ) ) } );
 
-        if ( not drawable.mesh->is_initialised() )
+        bool const light_source { drawable.mesh->get_flag( IsLightSource ) };
+        if ( light_source )
+            shader.set_uniform( "is_light_source", true );
+
+        if ( not drawable.mesh->get_flag( IsInitialised ) )
             drawable.mesh->initialise_gl_objects();
         drawable.mesh->draw();
+
+        if ( light_source )
+            shader.set_uniform( "is_light_source", false );
     }
 }
 

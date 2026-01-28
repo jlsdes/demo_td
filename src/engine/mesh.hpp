@@ -4,6 +4,7 @@
 #include <glad/gl.h>
 #include <glm/glm.hpp>
 
+#include <bitset>
 #include <thread>
 #include <vector>
 
@@ -57,6 +58,13 @@ template <VertexType V>
 std::ostream & operator<<( std::ostream & stream, V const & vertex );
 
 
+enum MeshFlag : unsigned char {
+    IsInitialised,
+    IsLightSource,
+    NumberFlags // Must be the last enum value; indicates the number of flags but is not a valid flag index itself
+};
+
+
 /** A mesh consisting of vertices and faces, optionally defined by vertex indices. This class holds some OpenGL objects,
  *  and must therefore always be created in the (main) render thread. */
 template <VertexType V>
@@ -84,9 +92,6 @@ public:
     void initialise_gl_objects();
     void destroy_gl_objects();
 
-    /** Returns whether the mesh's OpenGL data is initialised. */
-    [[nodiscard]] bool is_initialised() const;
-
     /** Returns whether the mesh has an index array configured. */
     [[nodiscard]] bool has_index() const;
 
@@ -96,6 +101,10 @@ public:
     /** Draws the mesh using the given draw mode, or its default draw mode if none is given. The default draw mode for
      * this mesh can be changed using set_draw_mode(). */
     void draw( int mode = -1 ) const;
+
+    [[nodiscard]] bool get_flag( MeshFlag flag ) const;
+    void set_flag( MeshFlag flag );
+    void unset_flag( MeshFlag flag );
 
 private:
     /// The mesh data; could be used to modify the buffer data.
@@ -111,7 +120,9 @@ private:
     int m_default_mode;
 
     std::thread::id m_creation_thread;
-    bool m_initialised;
+
+    std::bitset<NumberFlags> m_flags;
+    static constexpr std::bitset<NumberFlags> s_default_flags { 0b00 };
 };
 
 

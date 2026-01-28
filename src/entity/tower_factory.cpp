@@ -5,30 +5,39 @@
 #include "component/position.hpp"
 
 
-std::array<std::unique_ptr<Mesh<ColourVertex>>, TowerData::NumberTypes> TowerFactory::s_meshes;
-
-TowerFactory::TowerFactory( ECS * const ecs ) : m_ecs { ecs } {
-    static bool initialised { false };
-    if ( initialised )
-        return;
-
-    MeshBuilder builder { MeshBuilder::cube() };
-    for ( unsigned char type { 0 }; type < TowerData::NumberTypes; ++type ) {
-        builder.colour( s_colours.at( type ) );
-        s_meshes.at( type ) = std::make_unique<Mesh<ColourVertex>>( builder.get_mesh() );
-    }
-    initialised = true;
-}
+TowerFactory::TowerFactory( ECS * const ecs ) : m_ecs { ecs } {}
 
 EntityID TowerFactory::build( TowerData::Type const type, glm::vec3 const & position ) const {
-    EntityID const entity { m_ecs->entities.create() };
+    glm::vec3 const & colour { s_colours.at( type ) };
 
-    m_ecs->components.insert_component<TowerData>( entity, { .type = type } );
-    m_ecs->components.insert_component<Drawable>( entity, {
-                                                      .mesh = s_meshes.at( type ).get(),
-                                                      .scale = glm::vec3 { 0.2f }
-                                                  } );
-    m_ecs->components.insert_component<Position>( entity, { .position = position } );
+    EntityID const tower { m_ecs->entities.create() };
+    EntityID const crystal { m_ecs->entities.create() };
 
-    return entity;
+    static MeshBuilder tower_builder { MeshBuilder::cube() };
+    static std::array<std::unique_ptr<Mesh<ColourVertex>>, TowerData::NumberTypes> tower_meshes { nullptr };
+
+    std::unique_ptr<Mesh<ColourVertex>> & tower_mesh { tower_meshes.at( type ) };
+    if ( not tower_mesh )
+        tower_mesh = std::make_unique<Mesh<ColourVertex>>( tower_builder.colour( colour ).get_mesh() );
+
+    glm::vec3 constexpr tower_scale { 0.3f, 0.1f, 0.3f };
+    m_ecs->components.insert_component<TowerData>( tower, { .type = type } );
+    m_ecs->components.insert_component<Drawable>( tower, { .mesh = tower_mesh.get(), .scale = tower_scale } );
+    m_ecs->components.insert_component<Position>( tower, { .position = position } );
+
+    static MeshBuilder crystal_builder { MeshBuilder::octahedron() };
+    static std::array<std::unique_ptr<Mesh<ColourVertex>>, TowerData::NumberTypes> crystal_meshes { nullptr };
+
+    std::unique_ptr<Mesh<ColourVertex>> & crystal_mesh { crystal_meshes.at( type ) };
+    if ( not crystal_mesh ) {
+        crystal_mesh = std::make_unique<Mesh<ColourVertex>>( crystal_builder.colour( colour ).get_mesh() );
+        crystal_mesh->set_flag( IsLightSource );
+    }
+
+    glm::vec3 constexpr crystal_scale { 0.1f, 0.3f, 0.1f };
+    glm::vec3 constexpr crystal_offset { 0.f, 0.5f, 0.f };
+    m_ecs->components.insert_component<Drawable>( crystal, { .mesh = crystal_mesh.get(), .scale = crystal_scale } );
+    m_ecs->components.insert_component<Position>( crystal, { .position = position + crystal_offset } );
+
+    return tower;
 }

@@ -2,11 +2,9 @@
 #define DEMO_TD_TOWER_HPP
 
 #include "entity.hpp"
-#include "engine/mesh.hpp"
 #include "component/tower_data.hpp"
 
 #include <array>
-#include <memory>
 
 #include <glm/glm.hpp>
 
@@ -32,8 +30,6 @@ public:
 
 private:
     ECS * const m_ecs;
-
-    static std::array<std::unique_ptr<Mesh<ColourVertex>>, TowerData::NumberTypes> s_meshes;
 };
 
 

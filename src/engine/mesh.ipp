@@ -67,17 +67,17 @@ void set_vertex_attributes() {
 template <VertexType V>
 Mesh<V>::Mesh( std::vector<V> const & vertices, std::vector<unsigned int> const & indices, int const draw_mode )
     : m_vertices { vertices }, m_indices { indices }, m_vertex_buffer { 0 }, m_vertex_array { 0 },
-      m_element_buffer { 0 }, m_default_mode { draw_mode }, m_creation_thread { 0 }, m_initialised { false } {}
+      m_element_buffer { 0 }, m_default_mode { draw_mode }, m_creation_thread { 0 }, m_flags { s_default_flags } {}
 
 template <VertexType V>
 Mesh<V>::Mesh( Mesh && mesh ) noexcept : m_vertices { std::move( mesh.m_vertices ) },
-                                      m_indices { std::move( mesh.m_indices ) },
-                                      m_vertex_buffer { std::exchange( mesh.m_vertex_buffer, 0 ) },
-                                      m_vertex_array { std::exchange( mesh.m_vertex_array, 0 ) },
-                                      m_element_buffer { std::exchange( mesh.m_element_buffer, 0 ) },
-                                      m_default_mode { std::exchange( mesh.m_default_mode, GL_TRIANGLES ) },
-                                      m_initialised { std::exchange( mesh.m_initialised, false ) },
-                                      m_creation_thread { mesh.m_creation_thread } {}
+                                         m_indices { std::move( mesh.m_indices ) },
+                                         m_vertex_buffer { std::exchange( mesh.m_vertex_buffer, 0 ) },
+                                         m_vertex_array { std::exchange( mesh.m_vertex_array, 0 ) },
+                                         m_element_buffer { std::exchange( mesh.m_element_buffer, 0 ) },
+                                         m_default_mode { std::exchange( mesh.m_default_mode, GL_TRIANGLES ) },
+                                         m_creation_thread { mesh.m_creation_thread },
+                                         m_flags { std::exchange( mesh.m_flags, s_default_flags ) } {}
 
 template <VertexType V>
 Mesh<V> & Mesh<V>::operator=( Mesh && mesh ) noexcept {
@@ -89,8 +89,8 @@ Mesh<V> & Mesh<V>::operator=( Mesh && mesh ) noexcept {
     m_vertex_array = std::exchange( mesh.m_vertex_array, 0 );
     m_element_buffer = std::exchange( mesh.m_element_buffer, 0 );
     m_default_mode = std::exchange( mesh.m_default_mode, GL_TRIANGLES );
-    m_initialised = std::exchange( mesh.m_initialised, false );
     m_creation_thread = mesh.m_creation_thread;
+    m_flags = std::exchange( mesh.m_flags, s_default_flags );
     return *this;
 }
 
@@ -101,7 +101,7 @@ Mesh<V>::~Mesh() {
 
 template <VertexType V>
 void Mesh<V>::initialise_gl_objects() {
-    if ( m_initialised ) {
+    if ( get_flag( IsInitialised ) ) {
         Log::warning( "Attempted to initialise a Mesh twice, skipping second attempt." );
         return;
     }
@@ -115,23 +115,18 @@ void Mesh<V>::initialise_gl_objects() {
     // GL functions should only be called from the render thread, so creation and deletion of the buffers should happen
     // in the same thread.
     m_creation_thread = std::this_thread::get_id(); // Presumably the render thread
-    m_initialised = true;
+    set_flag( IsInitialised );
 }
 
 template <VertexType V>
 void Mesh<V>::destroy_gl_objects() {
-    if ( m_initialised and std::this_thread::get_id() != m_creation_thread )
+    if ( get_flag( IsInitialised ) and std::this_thread::get_id() != m_creation_thread )
         // Issue an error, but attempt to destroy it anyway
         Log::warning( "Deleted GL data in a different thread to the one it was created in; may be leaking." );
     glDeleteVertexArrays( 1, &m_vertex_array ); // Silently ignores zeroes, so no existence check is required
     glDeleteBuffers( 1, &m_vertex_buffer );
     glDeleteBuffers( 1, &m_element_buffer );
-    m_initialised = false;
-}
-
-template <VertexType V>
-bool Mesh<V>::is_initialised() const {
-    return m_initialised;
+    unset_flag( IsInitialised );
 }
 
 template <VertexType V>
@@ -156,6 +151,24 @@ void Mesh<V>::draw( int mode ) const {
         glDrawElements( mode, static_cast<int>(m_indices.size()), GL_UNSIGNED_INT, nullptr );
     else
         glDrawArrays( mode, 0, static_cast<int>(m_vertices.size()) );
+}
+
+template <VertexType V>
+bool Mesh<V>::get_flag( MeshFlag const flag ) const {
+    assert( flag < NumberFlags );
+    return m_flags[flag];
+}
+
+template <VertexType V>
+void Mesh<V>::set_flag( MeshFlag const flag ) {
+    assert( flag < NumberFlags );
+    m_flags[flag] = true;
+}
+
+template <VertexType V>
+void Mesh<V>::unset_flag( MeshFlag const flag ) {
+    assert( flag < NumberFlags );
+    m_flags[flag] = false;
 }
 
 

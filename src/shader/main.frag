@@ -11,6 +11,8 @@ uniform vec3 sun_light;
 uniform vec3 sun_direction;
 uniform vec3 camera_position;
 
+uniform bool is_light_source;
+
 // The end result: the fragment's colour
 out vec4 fragment_colour;
 
@@ -44,6 +46,9 @@ void main() {
     vec3 sun_diffuse = diffuse_colour( sun_direction, sun_light );
     vec3 sun_specular = specular_colour( sun_direction, sun_light );
     vec3 result = ( ambient_light + sun_diffuse + sun_specular ) * colour;
+
+    if ( is_light_source )
+        result = colour;
 
     // Gamma correction
     result = pow( result, vec3( 1.f / 2.2f ) );
