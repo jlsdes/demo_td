@@ -62,7 +62,9 @@ void Renderer::run( EntityManager const & entities, ComponentManager & component
         if ( entities.has_flags( entity, position_flag ) )
             position = &components.get_component<Position>( entity );
 
-        shader.set_uniform( "model",  compute_transformation( drawable, position )  );
+        glm::mat4 const transformation { compute_transformation( drawable, position ) };
+        shader.set_uniform( "model", transformation );
+        shader.set_uniform( "normal_transform", glm::mat3 { glm::transpose( glm::inverse( transformation ) ) } );
 
         if ( not drawable.mesh->is_initialised() )
             drawable.mesh->initialise_gl_objects();

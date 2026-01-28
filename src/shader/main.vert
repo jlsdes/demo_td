@@ -14,12 +14,13 @@ out vec3 colour;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
+uniform mat3 normal_transform;
 
 
 void main()
 {
     position = vec3( model * vec4( vertex_position, 1.0 ) );
-    normal = vertex_normal;
+    normal = normal_transform * vertex_normal;
     colour = vertex_colour;
 
     mat4 transformation = projection * view * model;
