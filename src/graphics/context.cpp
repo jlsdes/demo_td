@@ -4,6 +4,7 @@
 
 #include "component/drawable.hpp"
 #include "component/position.hpp"
+#include "component/terrain_tile.hpp"
 #include "component/tower_data.hpp"
 
 #include "system/renderer.hpp"
@@ -60,11 +61,13 @@ TopContext::~TopContext() = default;
 LevelContext::LevelContext( Context const * const parent ) : Context { parent } {
     assert( parent );
     parent->get_ecs()->components.create_store<TowerData>();
+    parent->get_ecs()->components.create_store<TerrainTile>();
 }
 
 LevelContext::~LevelContext() {
     ECS * ecs { Context::get_ecs() };
     ecs->components.remove_store( ecs->components.get_type_id<TowerData>() );
+    ecs->components.remove_store( ecs->components.get_type_id<TerrainTile>() );
 }
 
 void LevelContext::disable_systems() {}

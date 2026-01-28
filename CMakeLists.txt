@@ -83,6 +83,9 @@ add_executable(demo_td
         src/entity/tower_factory.cpp
         src/entity/tower_factory.hpp
         src/component/tower_data.hpp
+        src/component/terrain_tile.hpp
+        src/entity/tile_factory.cpp
+        src/entity/tile_factory.hpp
 )
 
 # Link the necessary libraries

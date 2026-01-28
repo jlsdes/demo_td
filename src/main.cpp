@@ -8,6 +8,7 @@
 #include "graphics/context.hpp"
 #include "graphics/entity_component_system.hpp"
 
+#include "entity/tile_factory.hpp"
 #include "entity/tower_factory.hpp"
 
 
@@ -26,6 +27,9 @@ int main() {
         glm::vec3 const position { 0.f, 0.f, -3.f + static_cast<float>(type) };
         towers.at( type ) = tower_factory.build( static_cast<TowerData::Type>(type), position );
     }
+
+    TileFactory const tile_factory { &ecs };
+    std::array<EntityID, g_chunk_size> tiles { tile_factory.build_chunk( { 0, 0, 0 } ) };
 
     auto window { context.get_window() };
     while ( not window->is_closing() ) {

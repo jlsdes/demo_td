@@ -1,0 +1,46 @@
+#ifndef DEMO_TD_TILE_FACTORY_HPP
+#define DEMO_TD_TILE_FACTORY_HPP
+
+#include "entity.hpp"
+#include "component/terrain_tile.hpp"
+
+#include <array>
+
+
+struct ECS;
+
+
+constexpr unsigned int g_chunk_size { 256 };
+
+
+class TileFactory {
+public:
+    explicit TileFactory( ECS * ecs );
+
+    /** Creates a single tile of the triangular grid.
+     *
+     * The tile ID is the coordinate of the "bottom left" corner of the tile after a skewing operation. This skewing
+     * operation transforms the triangular grid into a square-like grid, with each square consisting of two skewed
+     * triangles. The skew moves points along the vector (1, 1) with a magnitude relative to the distance of the point
+     * to the diagonal y=-x (in 2D space).
+     *
+     * Also note that the SkewedCoordinate is a 2D coordinate (x, y), which is mapped to the horizontal in 3D space like
+     * this (x, 0, y).
+     *
+     * +--+  After skewing the triangles, we get squares that look like this.
+     * | /|  The tile ID's 'half' attribute indicates which of the two triangles it's identifying.
+     * |/ |  0 indicates the top left triangle.
+     * +--+  1 indicates the bottom right triangle.
+     * ^ The tile ID's (x, y) coordinate points at this corner.
+     */
+    [[nodiscard]] EntityID build( SkewedCoordinate tile_id ) const;
+
+    /** Builds a triangular chunk of triangles, with the chunks laid out in the same pattern as the individual tiles. */
+    [[nodiscard]] std::array<EntityID, g_chunk_size> build_chunk( SkewedCoordinate chunk_id ) const;
+
+private:
+    ECS * const m_ecs;
+};
+
+
+#endif //DEMO_TD_TILE_FACTORY_HPP
