@@ -1,6 +1,6 @@
 #include "tower_factory.hpp"
-#include "engine/entity_component_system.hpp"
-#include "engine/mesh_builder.hpp"
+#include "graphics/entity_component_system.hpp"
+#include "graphics/mesh_builder.hpp"
 #include "component/drawable.hpp"
 #include "component/position.hpp"
 

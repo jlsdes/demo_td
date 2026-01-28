@@ -2,8 +2,8 @@
 #include "component/component_manager.hpp"
 #include "component/drawable.hpp"
 #include "component/position.hpp"
-#include "engine/mesh.hpp"
-#include "engine/shader.hpp"
+#include "graphics/mesh.hpp"
+#include "graphics/shader.hpp"
 #include "utils/config.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>

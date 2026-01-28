@@ -2,7 +2,7 @@
 #define DEMO_TD_DRAWABLE_HPP
 
 #include "component.hpp"
-#include "engine/mesh.hpp"
+#include "graphics/mesh.hpp"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>

@@ -40,17 +40,17 @@ include_directories(src)
 add_executable(demo_td
         src/main.cpp
 
-        src/engine/camera.cpp
-        src/engine/camera.hpp
-        src/engine/input_manager.cpp
-        src/engine/input_manager.hpp
-        src/engine/mesh.hpp
-        src/engine/mesh_builder.cpp
-        src/engine/mesh_builder.hpp
-        src/engine/shader.cpp
-        src/engine/shader.hpp
-        src/engine/window.cpp
-        src/engine/window.hpp
+        src/graphics/camera.cpp
+        src/graphics/camera.hpp
+        src/graphics/input_manager.cpp
+        src/graphics/input_manager.hpp
+        src/graphics/mesh.hpp
+        src/graphics/mesh_builder.cpp
+        src/graphics/mesh_builder.hpp
+        src/graphics/shader.cpp
+        src/graphics/shader.hpp
+        src/graphics/window.cpp
+        src/graphics/window.hpp
 
         src/utils/config.cpp
         src/utils/config.hpp
@@ -74,12 +74,12 @@ add_executable(demo_td
         src/component/drawable.hpp
         src/system/renderer.cpp
         src/system/renderer.hpp
-        src/engine/entity_component_system.cpp
-        src/engine/entity_component_system.hpp
+        src/graphics/entity_component_system.cpp
+        src/graphics/entity_component_system.hpp
         src/component/position.hpp
-        src/engine/mesh.ipp
-        src/engine/context.cpp
-        src/engine/context.hpp
+        src/graphics/mesh.ipp
+        src/graphics/context.cpp
+        src/graphics/context.hpp
         src/entity/tower_factory.cpp
         src/entity/tower_factory.hpp
         src/component/tower_data.hpp

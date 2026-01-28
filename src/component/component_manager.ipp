@@ -1,7 +1,7 @@
 #ifndef DEMO_TD_COMPONENT_IPP
 #define DEMO_TD_COMPONENT_IPP
 
-#include "engine/entity_component_system.hpp"
+#include "graphics/entity_component_system.hpp"
 
 
 template <SubComponent ComponentType>

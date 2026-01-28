@@ -2,9 +2,9 @@
 #define DEMO_TD_RENDERER_HPP
 
 #include "system/system.hpp"
-#include "engine/camera.hpp"
-#include "engine/shader.hpp"
-#include "engine/window.hpp"
+#include "graphics/camera.hpp"
+#include "graphics/shader.hpp"
+#include "graphics/window.hpp"
 
 #include <memory>
 

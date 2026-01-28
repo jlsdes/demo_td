@@ -1,6 +1,6 @@
 #include "entity_manager.hpp"
 
-#include "engine/entity_component_system.hpp"
+#include "graphics/entity_component_system.hpp"
 #include "utils/log.hpp"
 
 #include <bit>

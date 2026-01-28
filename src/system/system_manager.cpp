@@ -1,5 +1,5 @@
 #include "system_manager.hpp"
-#include "engine/entity_component_system.hpp"
+#include "graphics/entity_component_system.hpp"
 
 
 SystemManager::SystemManager( ECS * const ecs ) : m_entities { ecs->entities }, m_components { ecs->components },

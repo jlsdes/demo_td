@@ -4,9 +4,9 @@
 #include "utils/config.hpp"
 #include "utils/log.hpp"
 #include "utils/time.hpp"
-#include "engine/window.hpp"
-#include "engine/context.hpp"
-#include "engine/entity_component_system.hpp"
+#include "graphics/window.hpp"
+#include "graphics/context.hpp"
+#include "graphics/entity_component_system.hpp"
 
 #include "entity/tower_factory.hpp"
 
