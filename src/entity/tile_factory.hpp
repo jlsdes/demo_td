@@ -10,7 +10,10 @@
 struct ECS;
 
 
-constexpr unsigned int g_chunk_size { 256 };
+/// The length of the chunk as in the number of individual tile borders that make up one chunk border.
+unsigned int constexpr g_chunk_length { 16 };
+/// The number of tiles in a single chunk, which is just length^2.
+unsigned int constexpr g_chunk_size { g_chunk_length * g_chunk_length };
 
 
 class TileFactory {

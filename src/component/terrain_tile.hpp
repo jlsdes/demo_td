@@ -13,7 +13,7 @@ static_assert( sizeof( unsigned int ) == 4 ); // Shouldn't fail on common (64 bi
 struct SkewedCoordinate {
     int x : 31;
     int y : 31;
-    int half : 1; // Which triangular half of the square this tile maps to
+    unsigned int half : 1; // Which triangular half of the square this tile maps to
 };
 
 

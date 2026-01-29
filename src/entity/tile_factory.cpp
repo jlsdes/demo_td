@@ -34,11 +34,20 @@ glm::vec3 constexpr top_right { unskew( 1.f, 1.f ) };
 glm::vec3 constexpr main_colour { 0.5f, 0.5f, 0.5f };
 glm::vec3 constexpr border_colour { 0.2f, 0.2f, 0.2f };
 
+/** Helper function that creates the MeshBuilder for a single tile. Each tile is (at the time of writing) composed of
+ *  two triangles, with one being slightly larger than the other to create a tile border effect. */
 MeshBuilder create_tile_builder( std::vector<glm::vec3> vertices ) {
     glm::vec3 constexpr y_offset { 0.f, 0.001f, 0.f };
-    vertices.emplace_back( 0.9f * vertices.at( 0 ) + 0.05f * vertices.at( 1 ) + 0.05f * vertices.at( 2 ) + y_offset );
-    vertices.emplace_back( 0.9f * vertices.at( 1 ) + 0.05f * vertices.at( 2 ) + 0.05f * vertices.at( 0 ) + y_offset );
-    vertices.emplace_back( 0.9f * vertices.at( 2 ) + 0.05f * vertices.at( 0 ) + 0.05f * vertices.at( 1 ) + y_offset );
+    float constexpr main_weight { 0.95f };
+    float constexpr side_weight { (1.f - main_weight) / 2.f };
+
+    glm::vec3 const vertex_0 { vertices.at( 0 ) };
+    glm::vec3 const vertex_1 { vertices.at( 1 ) };
+    glm::vec3 const vertex_2 { vertices.at( 2 ) };
+    vertices.emplace_back( main_weight * vertex_0 + side_weight * vertex_1 + side_weight * vertex_2 + y_offset );
+    vertices.emplace_back( main_weight * vertex_1 + side_weight * vertex_2 + side_weight * vertex_0 + y_offset );
+    vertices.emplace_back( main_weight * vertex_2 + side_weight * vertex_0 + side_weight * vertex_1 + y_offset );
+
     std::vector<std::vector<unsigned int>> const faces { { 0, 1, 2 }, { 3, 4, 5 } };
     std::vector const colours { border_colour, border_colour, border_colour, main_colour, main_colour, main_colour };
     return MeshBuilder( vertices, faces, {}, colours ).generate_face_normals();
@@ -52,10 +61,9 @@ EntityID TileFactory::build( SkewedCoordinate const tile_id ) const {
 
     float const x { static_cast<float>(tile_id.x) };
     float const y { static_cast<float>(tile_id.y) };
-    unsigned int const half { static_cast<unsigned int>(tile_id.half ? 1 : 0) };
 
     EntityID const entity { m_ecs->entities.create() };
-    m_ecs->components.insert_component<Drawable>( entity, { .mesh = &meshes.at( half ) } );
+    m_ecs->components.insert_component<Drawable>( entity, { .mesh = &meshes.at( tile_id.half ) } );
     m_ecs->components.insert_component<Position>( entity, { .position = unskew( x, y ) } );
     return entity;
 }
@@ -64,22 +72,20 @@ std::array<EntityID, g_chunk_size> TileFactory::build_chunk( SkewedCoordinate co
     std::array<EntityID, g_chunk_size> entities {};
     unsigned int index { 0 };
 
-    SkewedCoordinate const base_id { chunk_id.x * 16, chunk_id.y * 16, chunk_id.half };
+    int const base_x { chunk_id.x * static_cast<int>(g_chunk_length) };
+    int const base_y { chunk_id.y * static_cast<int>(g_chunk_length) };
+    int const half { static_cast<int>(chunk_id.half) };
 
-    // If chunk_id.half == 0, then grow towards (16, 0) and (16, 16)
-    // If chunk_id.half == -1, then grow towards (0, 16) and (16, 16)
+    // Iterating over all triangles by the barycentric coordinates (u, v) of their "bottom-left" corner
+    // w is not used here and is thus omitted; the full barycentric coordinates are (u, v, 16-u-v)
+    for ( int u { 0 }; u < g_chunk_length; ++u ) {
+        entities.at( index++ ) = build( { base_x + u, base_y + u, chunk_id.half } );
 
-    for ( int offset_1 { 0 }; offset_1 < 16; ++offset_1 ) {
-        entities.at( index++ ) = build( { base_id.x + offset_1, base_id.y + offset_1, base_id.half } );
-
-        for ( int offset_2 { offset_1 + 1 }; offset_2 < 16; ++offset_2 ) {
-            if ( base_id.half ) {
-                entities.at( index++ ) = build( { base_id.x + offset_2, base_id.y + offset_1, 0 } );
-                entities.at( index++ ) = build( { base_id.x + offset_2, base_id.y + offset_1, -1 } );
-            } else {
-                entities.at( index++ ) = build( { base_id.x + offset_1, base_id.y + offset_2, 0 } );
-                entities.at( index++ ) = build( { base_id.x + offset_1, base_id.y + offset_2, -1 } );
-            }
+        for ( int v { u + 1 }; v < g_chunk_length; ++v ) {
+            int const x { base_x + (1 - half) * u + half * v };
+            int const y { base_y + (1 - half) * v + half * u };
+            entities.at( index++ ) = build( { x, y, 0 } );
+            entities.at( index++ ) = build( { x, y, 1 } );
         }
     }
 
