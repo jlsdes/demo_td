@@ -28,7 +28,7 @@ struct Drawable : Component {
     Mesh<ColourVertex> * mesh { nullptr };
     Shader * shader { nullptr };
 
-    glm::quat rotation {};
+    glm::quat orientation {};
     glm::vec3 scale { 1.f };
 
     PriorityHint priority { Opaque };

@@ -1,6 +1,8 @@
 #ifndef DEMO_TD_MESH_HPP
 #define DEMO_TD_MESH_HPP
 
+#include "entity/entity.hpp"
+
 #include <glad/gl.h>
 #include <glm/glm.hpp>
 
@@ -128,7 +130,7 @@ protected: // Using protected to allow InstancedMesh<> to draw everything itself
 };
 
 
-unsigned int constexpr g_max_instances { 1024 };
+unsigned int constexpr g_max_instances { g_max_entities };
 
 
 /** A mesh class that can draw multiple instances of itself with just a single draw call. Every call to update() will
