@@ -51,7 +51,7 @@ void set_attribute( unsigned int & index, unsigned int & offset, int const size 
 
 /** Helper function for the constructor; sets up the attribute pointers in OpenGL for each of the vertex attributes. */
 template <VertexType V>
-void set_vertex_attributes() {
+unsigned int set_vertex_attributes() {
     unsigned int index { 0 };
     unsigned int offset { 0 };
 
@@ -60,8 +60,10 @@ void set_vertex_attributes() {
         set_attribute<V>( index, offset, 3 );
     if constexpr ( V::has_colour )
         set_attribute<V>( index, offset, 3 );
-    if constexpr ( V::has_normal )
+    if constexpr ( V::has_texture )
         set_attribute<V>( index, offset, 2 );
+
+    return index;
 }
 
 template <VertexType V>
@@ -100,10 +102,10 @@ Mesh<V> & Mesh<V>::operator=( Mesh && mesh ) noexcept {
 }
 
 template <VertexType V>
-void Mesh<V>::initialise_gl_objects() {
+unsigned int Mesh<V>::initialise_gl_objects() {
     if ( get_flag( IsInitialised ) ) {
         Log::warning( "Attempted to initialise a Mesh twice, skipping second attempt." );
-        return;
+        return 0;
     }
     glGenVertexArrays( 1, &m_vertex_array );
     glBindVertexArray( m_vertex_array );
@@ -112,12 +114,14 @@ void Mesh<V>::initialise_gl_objects() {
         m_element_buffer = create_buffer<unsigned int>( GL_ELEMENT_ARRAY_BUFFER, m_indices );
         set_flag( HasIndex );
     }
-    set_vertex_attributes<V>();
+    auto const index { set_vertex_attributes<V>() };
 
     // GL functions should only be called from the render thread, so creation and deletion of the buffers should happen
     // in the same thread.
     m_creation_thread = std::this_thread::get_id(); // Presumably the render thread
     set_flag( IsInitialised );
+
+    return index;
 }
 
 template <VertexType V>
@@ -168,12 +172,21 @@ template <VertexType V>
 InstancedMesh<V>::InstancedMesh( std::vector<V> const & vertices,
                                  std::vector<unsigned int> const & indices,
                                  int const draw_mode )
-    : Mesh<V> { vertices, indices, draw_mode }, m_instance_array {}, m_nr_instances { 0 }, m_instance_buffer { 0 } {}
+    : Mesh<V> { vertices, indices, draw_mode }, m_instance_array {}, m_nr_instances { 0 }, m_instance_buffer { 0 } {
+    Mesh<V>::set_flag( IsInstanced );
+    Mesh<V>::set_flag( HasUpdated );
+}
+
+template <VertexType V>
+InstancedMesh<V>::InstancedMesh( Mesh<V> && mesh ) noexcept
+    : Mesh<V> { std::move( mesh ) }, m_instance_array {}, m_nr_instances { 0 }, m_instance_buffer { 0 } {
+    Mesh<V>::set_flag( IsInstanced );
+    Mesh<V>::set_flag( HasUpdated );
+}
 
 template <VertexType V>
 InstancedMesh<V>::~InstancedMesh() {
-    glDeleteBuffers( 1, &m_instance_buffer );
-    ~Mesh<V>();
+    InstancedMesh::destroy_gl_objects();
 }
 
 template <VertexType V>
@@ -192,12 +205,30 @@ InstancedMesh<V> & InstancedMesh<V>::operator=( InstancedMesh && mesh ) noexcept
 }
 
 template <VertexType V>
-void InstancedMesh<V>::initialise_gl_objects() {
-    Mesh<V>::initialise_gl_objects();
+unsigned int InstancedMesh<V>::initialise_gl_objects() {
+    unsigned int index { Mesh<V>::initialise_gl_objects() };
+    unsigned int offset { 0 };
 
     glGenBuffers( 1, &m_instance_buffer );
     glBindBuffer( GL_ARRAY_BUFFER, m_instance_buffer );
     glBufferData( GL_ARRAY_BUFFER, g_max_instances * sizeof( InstanceData ), nullptr, GL_DYNAMIC_DRAW );
+
+    for ( unsigned int i { 0 }; i < 4; ++i ) {
+        glEnableVertexAttribArray( index );
+        glVertexAttribPointer( index, 4, GL_FLOAT, GL_FALSE, sizeof( InstanceData ), reinterpret_cast<void *>(offset) );
+        glVertexAttribDivisor( index, 1 );
+        ++index;
+        offset += sizeof( glm::vec4 );
+    }
+
+    for ( unsigned int i { 0 }; i < 3; ++i ) {
+        glEnableVertexAttribArray( index );
+        glVertexAttribPointer( index, 3, GL_FLOAT, GL_FALSE, sizeof( InstanceData ), reinterpret_cast<void *>(offset) );
+        glVertexAttribDivisor( index, 1 );
+        ++index;
+        offset += sizeof( glm::vec3 );
+    }
+    return index;
 }
 
 template <VertexType V>
@@ -229,7 +260,7 @@ template <VertexType V>
 void InstancedMesh<V>::draw() const {
     if ( Mesh<V>::get_flag( HasUpdated ) ) {
         glBindBuffer( GL_ARRAY_BUFFER, m_instance_buffer );
-        glBufferSubData( GL_ARRAY_BUFFER, nullptr, m_nr_instances * sizeof( InstanceData ), m_instance_array.data() );
+        glBufferSubData( GL_ARRAY_BUFFER, 0, m_nr_instances * sizeof( InstanceData ), m_instance_array.data() );
     }
 
     glBindVertexArray( Mesh<V>::m_vertex_array );

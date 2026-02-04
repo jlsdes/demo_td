@@ -94,7 +94,7 @@ public:
     Mesh & operator=( Mesh && mesh ) noexcept;
 
     /** Initialises the mesh's OpenGL data, only to be called by the main render thread. */
-    virtual void initialise_gl_objects();
+    virtual unsigned int initialise_gl_objects();
     virtual void destroy_gl_objects();
 
     /** Sets a new default mode for drawing the mesh. */
@@ -147,6 +147,7 @@ public:
     explicit InstancedMesh( std::vector<V> const & vertices,
                             std::vector<unsigned int> const & indices = {},
                             int draw_mode = GL_TRIANGLES );
+    explicit InstancedMesh( Mesh<V> && mesh ) noexcept;
 
     ~InstancedMesh() override;
 
@@ -157,7 +158,7 @@ public:
     InstancedMesh & operator=( InstancedMesh && mesh ) noexcept;
 
     /** Initialises the mesh's OpenGL data, only to be called by the main render thread. */
-    void initialise_gl_objects() override;
+    unsigned int initialise_gl_objects() override;
     void destroy_gl_objects() override;
 
     [[nodiscard]] unsigned int get_nr_instances() const;

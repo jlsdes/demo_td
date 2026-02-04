@@ -58,13 +58,15 @@ MeshBuilder create_tile_builder( std::vector<glm::vec3> vertices ) {
 }
 
 EntityID TileFactory::build( SkewedCoordinate const tile_id ) const {
-    static std::array<Mesh<ColourVertex>, 2> meshes {
-        create_tile_builder( { bottom_left, top_left, top_right } ).get_mesh(),
-        create_tile_builder( { bottom_left, top_right, bottom_right } ).get_mesh()
-    };
+    static InstancedMesh mesh { create_tile_builder( { bottom_left, top_left, top_right } ).get_mesh() };
+    // static std::array<Mesh<ColourVertex>, 2> meshes {
+    //     create_tile_builder( { bottom_left, top_left, top_right } ).get_mesh(),
+    //     create_tile_builder( { bottom_left, top_right, bottom_right } ).get_mesh()
+    // };
 
     EntityID const entity { m_ecs->entities.create() };
-    m_ecs->components.insert_component<Drawable>( entity, { .mesh = &meshes.at( tile_id.half ) } );
+    // m_ecs->components.insert_component<Drawable>( entity, { .mesh = &meshes.at( tile_id.half ) } );
+    m_ecs->components.insert_component<Drawable>( entity, { .mesh = dynamic_cast<Mesh<ColourVertex> *>(&mesh) } );
     m_ecs->components.insert_component<Position>( entity, { .position = unskew( tile_id.x, tile_id.y ) } );
     return entity;
 }
