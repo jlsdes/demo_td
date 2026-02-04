@@ -107,10 +107,12 @@ void Mesh<V>::initialise_gl_objects() {
     }
     glGenVertexArrays( 1, &m_vertex_array );
     glBindVertexArray( m_vertex_array );
-    m_vertex_buffer = create_buffer<ColourVertex>( GL_ARRAY_BUFFER, m_vertices );
-    if ( not m_indices.empty() )
+    m_vertex_buffer = create_buffer<V>( GL_ARRAY_BUFFER, m_vertices );
+    if ( not m_indices.empty() ) {
         m_element_buffer = create_buffer<unsigned int>( GL_ELEMENT_ARRAY_BUFFER, m_indices );
-    set_vertex_attributes<ColourVertex>();
+        set_flag( HasIndex );
+    }
+    set_vertex_attributes<V>();
 
     // GL functions should only be called from the render thread, so creation and deletion of the buffers should happen
     // in the same thread.
@@ -130,11 +132,6 @@ void Mesh<V>::destroy_gl_objects() {
 }
 
 template <VertexType V>
-bool Mesh<V>::has_index() const {
-    return not m_indices.empty();
-}
-
-template <VertexType V>
 void Mesh<V>::set_draw_mode( int const mode ) {
     assert( mode >= 0 && mode <= 6 );
     m_default_mode = mode;
@@ -147,7 +144,7 @@ void Mesh<V>::draw( int mode ) const {
     assert( mode >= 0 && mode <= 6 );
 
     glBindVertexArray( m_vertex_array );
-    if ( has_index() )
+    if ( get_flag( HasIndex ) )
         glDrawElements( mode, static_cast<int>(m_indices.size()), GL_UNSIGNED_INT, nullptr );
     else
         glDrawArrays( mode, 0, static_cast<int>(m_vertices.size()) );

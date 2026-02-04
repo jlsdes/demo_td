@@ -26,10 +26,14 @@ constexpr glm::vec3 unskew( float const x, float const y ) {
     return { x - unskewing_factor, 0.f, y - unskewing_factor };
 }
 
-glm::vec3 constexpr bottom_left { 0.f, 0.f, 0.f };
-glm::vec3 constexpr bottom_right { unskew( 1.f, 0.f ) };
-glm::vec3 constexpr top_left { unskew( 0.f, 1.f ) };
-glm::vec3 constexpr top_right { unskew( 1.f, 1.f ) };
+constexpr glm::vec3 unskew( int const x, int const y ) {
+    return unskew( static_cast<float>(x), static_cast<float>(y) );
+}
+
+glm::vec3 constexpr bottom_left { unskew( 0, 0 ) };
+glm::vec3 constexpr bottom_right { unskew( 1, 0 ) };
+glm::vec3 constexpr top_left { unskew( 0, 1 ) };
+glm::vec3 constexpr top_right { unskew( 1, 1 ) };
 
 glm::vec3 constexpr main_colour { 0.5f, 0.5f, 0.5f };
 glm::vec3 constexpr border_colour { 0.2f, 0.2f, 0.2f };
@@ -59,12 +63,9 @@ EntityID TileFactory::build( SkewedCoordinate const tile_id ) const {
         create_tile_builder( { bottom_left, top_right, bottom_right } ).get_mesh()
     };
 
-    float const x { static_cast<float>(tile_id.x) };
-    float const y { static_cast<float>(tile_id.y) };
-
     EntityID const entity { m_ecs->entities.create() };
     m_ecs->components.insert_component<Drawable>( entity, { .mesh = &meshes.at( tile_id.half ) } );
-    m_ecs->components.insert_component<Position>( entity, { .position = unskew( x, y ) } );
+    m_ecs->components.insert_component<Position>( entity, { .position = unskew( tile_id.x, tile_id.y ) } );
     return entity;
 }
 

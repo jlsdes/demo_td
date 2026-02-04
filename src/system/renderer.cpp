@@ -8,6 +8,9 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <deque>
+#include <queue>
+
 
 glm::vec3 constexpr g_initial_position { -3.f, 0.f, 0.f };
 glm::vec3 constexpr g_initial_target { 0.f, 0.f, 0.f };
@@ -45,7 +48,22 @@ glm::mat4 compute_transformation( Drawable const & drawable, Position const * co
     return transformation;
 }
 
+struct QueueItem {
+    Drawable * drawable;
+    Position const * position;
+    float priority;
+};
+
+struct CompareItems {
+    bool constexpr operator()( QueueItem const & lhs, QueueItem const & rhs ) const {
+        return lhs.priority < rhs.priority;
+    }
+};
+
+using RenderQueue = std::priority_queue<QueueItem, std::deque<QueueItem>, CompareItems>;
+
 void Renderer::run( EntityManager const & entities, ComponentManager & components ) {
+    // Update the camera attributes, and make sure all shaders are synchronised on this
     m_camera->update();
     for ( auto const & shader : m_shaders )
         m_camera->update_shader( shader );
@@ -56,6 +74,8 @@ void Renderer::run( EntityManager const & entities, ComponentManager & component
 
     ComponentFlags const position_flag { id_to_flag( components.get_type_id<Position>() ) };
 
+    // Push all Drawable components into a priority queue
+    RenderQueue render_queue {};
     for ( auto iterator { components.begin<Drawable>() }; iterator != components.end<Drawable>(); ++iterator ) {
         EntityID const entity { iterator.get_entity() };
         Drawable & drawable { iterator.get_component() };
@@ -64,20 +84,30 @@ void Renderer::run( EntityManager const & entities, ComponentManager & component
         if ( entities.has_flags( entity, position_flag ) )
             position = &components.get_component<Position>( entity );
 
-        glm::mat4 const transformation { compute_transformation( drawable, position ) };
+        // TODO add a special control item for instanced meshes
+
+        render_queue.push( { &drawable, position, static_cast<float>(drawable.priority) } );
+    }
+
+    while ( not render_queue.empty() ) {
+        auto const [drawable, position, _] = render_queue.top();
+
+        glm::mat4 const transformation { compute_transformation( *drawable, position ) };
         shader.set_uniform( "model", transformation );
         shader.set_uniform( "normal_transform", glm::mat3 { glm::transpose( glm::inverse( transformation ) ) } );
 
-        bool const light_source { drawable.mesh->get_flag( IsLightSource ) };
+        bool const light_source { drawable->mesh->get_flag( IsLightSource ) };
         if ( light_source )
             shader.set_uniform( "is_light_source", true );
 
-        if ( not drawable.mesh->get_flag( IsInitialised ) )
-            drawable.mesh->initialise_gl_objects();
-        drawable.mesh->draw();
+        if ( not drawable->mesh->get_flag( IsInitialised ) )
+            drawable->mesh->initialise_gl_objects();
+        drawable->mesh->draw();
 
         if ( light_source )
             shader.set_uniform( "is_light_source", false );
+
+        render_queue.pop();
     }
 }
 

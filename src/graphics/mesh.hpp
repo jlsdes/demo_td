@@ -61,6 +61,8 @@ std::ostream & operator<<( std::ostream & stream, V const & vertex );
 enum MeshFlag : unsigned char {
     IsInitialised,
     IsLightSource,
+    HasIndex,
+    IsInstanced,
     NumberFlags // Must be the last enum value; indicates the number of flags but is not a valid flag index itself
 };
 
@@ -82,18 +84,15 @@ public:
                    std::vector<unsigned int> const & indices = {},
                    int draw_mode = GL_TRIANGLES );
 
-    Mesh( Mesh const & mesh ) = delete;
-    Mesh & operator=( Mesh const & mesh ) = delete;
+    Mesh( Mesh const & ) = delete;
+    Mesh & operator=( Mesh const & ) = delete;
     Mesh( Mesh && mesh ) noexcept;
     Mesh & operator=( Mesh && mesh ) noexcept;
-    ~Mesh();
+    virtual ~Mesh();
 
     /** Initialises the mesh's OpenGL data, only to be called by the main render thread. */
     void initialise_gl_objects();
     void destroy_gl_objects();
-
-    /** Returns whether the mesh has an index array configured. */
-    [[nodiscard]] bool has_index() const;
 
     /** Sets a new default mode for drawing the mesh. */
     void set_draw_mode( int mode );
@@ -122,7 +121,33 @@ private:
     std::thread::id m_creation_thread;
 
     std::bitset<NumberFlags> m_flags;
-    static constexpr std::bitset<NumberFlags> s_default_flags { 0b00 };
+    static constexpr std::bitset<NumberFlags> s_default_flags { 0b0000 };
+};
+
+
+unsigned int constexpr g_max_instances { 1024 };
+
+
+template <VertexType V, typename InstanceData>
+class InstancedMesh : public Mesh<V> {
+public:
+    InstancedMesh( std::vector<V> const & vertices,
+                   std::vector<unsigned int> const & indices = {},
+                   int draw_mode = GL_TRIANGLES );
+
+    ~InstancedMesh() override;
+
+    InstancedMesh( InstancedMesh const & ) = delete;
+    InstancedMesh & operator=( InstancedMesh const & ) = delete;
+
+    InstancedMesh( InstancedMesh && ) noexcept;
+    InstancedMesh & operator=( InstancedMesh && ) noexcept;
+
+private:
+    unsigned int m_nr_instances;
+
+    /// OpenGL object ID.
+    unsigned int m_instance_array;
 };
 
 
