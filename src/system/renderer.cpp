@@ -84,13 +84,16 @@ void Renderer::run( EntityManager const & entities, ComponentManager & component
         if ( entities.has_flags( entity, position_flag ) )
             position = &components.get_component<Position>( entity );
 
-        // TODO add a special control item for instanced meshes
+        // For instanced meshes:
+        // Update each individual instance in this loop
+        // Add only a single Drawable component for the entire cluster of instances
 
         render_queue.push( { &drawable, position, static_cast<float>(drawable.priority) } );
     }
 
     while ( not render_queue.empty() ) {
         auto const [drawable, position, _] = render_queue.top();
+        render_queue.pop();
 
         glm::mat4 const transformation { compute_transformation( *drawable, position ) };
         shader.set_uniform( "model", transformation );
@@ -106,8 +109,6 @@ void Renderer::run( EntityManager const & entities, ComponentManager & component
 
         if ( light_source )
             shader.set_uniform( "is_light_source", false );
-
-        render_queue.pop();
     }
 }
 

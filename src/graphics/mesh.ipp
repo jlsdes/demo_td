@@ -67,7 +67,12 @@ void set_vertex_attributes() {
 template <VertexType V>
 Mesh<V>::Mesh( std::vector<V> const & vertices, std::vector<unsigned int> const & indices, int const draw_mode )
     : m_vertices { vertices }, m_indices { indices }, m_vertex_buffer { 0 }, m_vertex_array { 0 },
-      m_element_buffer { 0 }, m_default_mode { draw_mode }, m_creation_thread { 0 }, m_flags { s_default_flags } {}
+      m_element_buffer { 0 }, m_draw_mode { draw_mode }, m_creation_thread { 0 }, m_flags { s_default_flags } {}
+
+template <VertexType V>
+Mesh<V>::~Mesh() {
+    Mesh::destroy_gl_objects();
+}
 
 template <VertexType V>
 Mesh<V>::Mesh( Mesh && mesh ) noexcept : m_vertices { std::move( mesh.m_vertices ) },
@@ -75,7 +80,7 @@ Mesh<V>::Mesh( Mesh && mesh ) noexcept : m_vertices { std::move( mesh.m_vertices
                                          m_vertex_buffer { std::exchange( mesh.m_vertex_buffer, 0 ) },
                                          m_vertex_array { std::exchange( mesh.m_vertex_array, 0 ) },
                                          m_element_buffer { std::exchange( mesh.m_element_buffer, 0 ) },
-                                         m_default_mode { std::exchange( mesh.m_default_mode, GL_TRIANGLES ) },
+                                         m_draw_mode { std::exchange( mesh.m_draw_mode, GL_TRIANGLES ) },
                                          m_creation_thread { mesh.m_creation_thread },
                                          m_flags { std::exchange( mesh.m_flags, s_default_flags ) } {}
 
@@ -88,15 +93,10 @@ Mesh<V> & Mesh<V>::operator=( Mesh && mesh ) noexcept {
     m_vertex_buffer = std::exchange( mesh.m_vertex_buffer, 0 );
     m_vertex_array = std::exchange( mesh.m_vertex_array, 0 );
     m_element_buffer = std::exchange( mesh.m_element_buffer, 0 );
-    m_default_mode = std::exchange( mesh.m_default_mode, GL_TRIANGLES );
+    m_draw_mode = std::exchange( mesh.m_draw_mode, GL_TRIANGLES );
     m_creation_thread = mesh.m_creation_thread;
     m_flags = std::exchange( mesh.m_flags, s_default_flags );
     return *this;
-}
-
-template <VertexType V>
-Mesh<V>::~Mesh() {
-    destroy_gl_objects();
 }
 
 template <VertexType V>
@@ -134,20 +134,16 @@ void Mesh<V>::destroy_gl_objects() {
 template <VertexType V>
 void Mesh<V>::set_draw_mode( int const mode ) {
     assert( mode >= 0 && mode <= 6 );
-    m_default_mode = mode;
+    m_draw_mode = mode;
 }
 
 template <VertexType V>
-void Mesh<V>::draw( int mode ) const {
-    if ( mode == -1 )
-        mode = m_default_mode;
-    assert( mode >= 0 && mode <= 6 );
-
+void Mesh<V>::draw() const {
     glBindVertexArray( m_vertex_array );
     if ( get_flag( HasIndex ) )
-        glDrawElements( mode, static_cast<int>(m_indices.size()), GL_UNSIGNED_INT, nullptr );
+        glDrawElements( m_draw_mode, static_cast<int>(m_indices.size()), GL_UNSIGNED_INT, nullptr );
     else
-        glDrawArrays( mode, 0, static_cast<int>(m_vertices.size()) );
+        glDrawArrays( m_draw_mode, 0, static_cast<int>(m_vertices.size()) );
 }
 
 template <VertexType V>
@@ -166,6 +162,77 @@ template <VertexType V>
 void Mesh<V>::unset_flag( MeshFlag const flag ) {
     assert( flag < NumberFlags );
     m_flags[flag] = false;
+}
+
+template <VertexType V>
+InstancedMesh<V>::InstancedMesh( std::vector<V> const & vertices,
+                                 std::vector<unsigned int> const & indices,
+                                 int const draw_mode )
+    : Mesh<V> { vertices, indices, draw_mode }, m_instance_array {}, m_nr_instances { 0 }, m_instance_buffer { 0 } {}
+
+template <VertexType V>
+InstancedMesh<V>::~InstancedMesh() {
+    glDeleteBuffers( 1, &m_instance_buffer );
+    ~Mesh<V>();
+}
+
+template <VertexType V>
+InstancedMesh<V>::InstancedMesh( InstancedMesh && mesh ) noexcept
+    : Mesh<V> { mesh }, m_instance_array { std::move( mesh.m_instance_array ) },
+      m_nr_instances { std::exchange( mesh.m_nr_instances, 0 ) },
+      m_instance_buffer { std::exchange( mesh.m_instance_buffer, 0 ) } {}
+
+template <VertexType V>
+InstancedMesh<V> & InstancedMesh<V>::operator=( InstancedMesh && mesh ) noexcept {
+    Mesh<V>::operator=( mesh );
+    m_instance_array = std::move( mesh.m_instance_array );
+    m_nr_instances = std::exchange( mesh.m_nr_instances, 0 );
+    m_instance_buffer = std::exchange( mesh.m_instance_buffer, 0 );
+    return *this;
+}
+
+template <VertexType V>
+void InstancedMesh<V>::initialise_gl_objects() {
+    Mesh<V>::initialise_gl_objects();
+
+    glGenBuffers( 1, &m_instance_buffer );
+    glBindBuffer( GL_ARRAY_BUFFER, m_instance_buffer );
+    glBufferData( GL_ARRAY_BUFFER, g_max_instances * sizeof( InstanceData ), nullptr, GL_DYNAMIC_DRAW );
+}
+
+template <VertexType V>
+void InstancedMesh<V>::destroy_gl_objects() {
+    Mesh<V>::destroy_gl_objects();
+    glDeleteBuffers( 1, &m_instance_buffer );
+}
+
+template <VertexType V>
+void InstancedMesh<V>::reset_data() {
+    if ( m_nr_instances )
+        Mesh<V>::set_flag( HasUpdated );
+    m_nr_instances = 0;
+}
+
+template <VertexType V>
+void InstancedMesh<V>::update( glm::mat4 const & transformation ) {
+    glm::mat3 const normal_transformation { glm::mat3 { glm::transpose( glm::inverse( transformation ) ) } };
+    m_instance_array[m_nr_instances] = { transformation, normal_transformation };
+    ++m_nr_instances;
+}
+
+template <VertexType V>
+void InstancedMesh<V>::draw() const {
+    if ( Mesh<V>::get_flag( HasUpdated ) ) {
+        glBindBuffer( GL_ARRAY_BUFFER, m_instance_buffer );
+        glBufferSubData( GL_ARRAY_BUFFER, nullptr, m_nr_instances * sizeof( InstanceData ), m_instance_array.data() );
+    }
+
+    glBindVertexArray( Mesh<V>::m_vertex_array );
+    if ( Mesh<V>::get_flag( HasIndex ) )
+        glDrawElementsInstanced( Mesh<V>::m_draw_mode, static_cast<int>(Mesh<V>::m_indices.size()), GL_UNSIGNED_INT,
+                                 nullptr, m_nr_instances );
+    else
+        glDrawArraysInstanced( Mesh<V>::m_draw_mode, 0, static_cast<int>(Mesh<V>::m_vertices.size()), m_nr_instances );
 }
 
 

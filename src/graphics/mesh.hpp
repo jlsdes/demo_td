@@ -62,7 +62,7 @@ enum MeshFlag : unsigned char {
     IsInitialised,
     IsLightSource,
     HasIndex,
-    IsInstanced,
+    HasUpdated,
     NumberFlags // Must be the last enum value; indicates the number of flags but is not a valid flag index itself
 };
 
@@ -84,28 +84,30 @@ public:
                    std::vector<unsigned int> const & indices = {},
                    int draw_mode = GL_TRIANGLES );
 
-    Mesh( Mesh const & ) = delete;
-    Mesh & operator=( Mesh const & ) = delete;
-    Mesh( Mesh && mesh ) noexcept;
-    Mesh & operator=( Mesh && mesh ) noexcept;
     virtual ~Mesh();
 
+    Mesh( Mesh const & ) = delete;
+    Mesh & operator=( Mesh const & ) = delete;
+
+    Mesh( Mesh && mesh ) noexcept;
+    Mesh & operator=( Mesh && mesh ) noexcept;
+
     /** Initialises the mesh's OpenGL data, only to be called by the main render thread. */
-    void initialise_gl_objects();
-    void destroy_gl_objects();
+    virtual void initialise_gl_objects();
+    virtual void destroy_gl_objects();
 
     /** Sets a new default mode for drawing the mesh. */
     void set_draw_mode( int mode );
 
     /** Draws the mesh using the given draw mode, or its default draw mode if none is given. The default draw mode for
      * this mesh can be changed using set_draw_mode(). */
-    void draw( int mode = -1 ) const;
+    virtual void draw() const;
 
     [[nodiscard]] bool get_flag( MeshFlag flag ) const;
     void set_flag( MeshFlag flag );
     void unset_flag( MeshFlag flag );
 
-private:
+protected: // Using protected to allow InstancedMesh<> to draw everything itself without a bunch of accessor functions
     /// The mesh data; could be used to modify the buffer data.
     std::vector<V> m_vertices;
     std::vector<unsigned int> m_indices;
@@ -116,7 +118,7 @@ private:
     unsigned int m_element_buffer;
 
     /// The current default mode for drawing this mesh.
-    int m_default_mode;
+    int m_draw_mode;
 
     std::thread::id m_creation_thread;
 
@@ -128,26 +130,52 @@ private:
 unsigned int constexpr g_max_instances { 1024 };
 
 
-template <VertexType V, typename InstanceData>
+/** A mesh class that can draw multiple instances of itself with just a single draw call. Every call to update() will
+ *  add a single instance to be drawn on the next draw() call, after which the list should be cleared again. */
+template <VertexType V>
 class InstancedMesh : public Mesh<V> {
 public:
-    InstancedMesh( std::vector<V> const & vertices,
-                   std::vector<unsigned int> const & indices = {},
-                   int draw_mode = GL_TRIANGLES );
+    /** Constructor; creates some underlying OpenGL buffers.
+     *
+     * @param vertices The vertices of the mesh.
+     * @param indices The indices used to define the faces of the mesh, depending on the draw_mode. If this parameter is
+     *  omitted, then a sequence {0, 1, 2...} is used by default.
+     * @param draw_mode The default draw mode for the mesh as used in OpenGL. The default value 'GL_TRIANGLES' means
+     *  that groups of three vertices will be combined to define some triangles.
+     */
+    explicit InstancedMesh( std::vector<V> const & vertices,
+                            std::vector<unsigned int> const & indices = {},
+                            int draw_mode = GL_TRIANGLES );
 
     ~InstancedMesh() override;
 
     InstancedMesh( InstancedMesh const & ) = delete;
     InstancedMesh & operator=( InstancedMesh const & ) = delete;
 
-    InstancedMesh( InstancedMesh && ) noexcept;
-    InstancedMesh & operator=( InstancedMesh && ) noexcept;
+    InstancedMesh( InstancedMesh && mesh ) noexcept;
+    InstancedMesh & operator=( InstancedMesh && mesh ) noexcept;
+
+    /** Initialises the mesh's OpenGL data, only to be called by the main render thread. */
+    void initialise_gl_objects() override;
+    void destroy_gl_objects() override;
+
+    /** Updates a single instance's transformation matrix. */
+    void reset_data();
+    void update( glm::mat4 const & transformation );
+
+    void draw() const override;
 
 private:
+    struct InstanceData {
+        glm::mat4 transform;
+        glm::mat3 normal_transform;
+    };
+
+    std::array<InstanceData, g_max_instances> m_instance_array;
     unsigned int m_nr_instances;
 
     /// OpenGL object ID.
-    unsigned int m_instance_array;
+    unsigned int m_instance_buffer;
 };
 
 
