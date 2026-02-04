@@ -4,10 +4,8 @@
 #include <glad/gl.h>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <cassert>
 #include <format>
 #include <fstream>
-#include <string>
 #include <stdexcept>
 #include <utility>
 
@@ -131,25 +129,25 @@ Shader Shader::build_graphics_shader( std::filesystem::path const & vertex_path,
     return shader;
 }
 
-std::pair<unsigned int, Shader &> ShaderStore::insert_shader( Shader && shader ) {
-    m_shaders.push_back( std::move( shader ) );
-    return { m_shaders.size() - 1, m_shaders.back() };
+Shader & ShaderStore::insert_shader( std::string const & name, Shader && shader ) {
+    m_shaders.emplace( name, std::move( shader ) );
+    return m_shaders.at( name );
 }
 
-std::pair<unsigned int, Shader &> ShaderStore::emplace_shader( std::filesystem::path const & vertex_path,
-                                                               std::filesystem::path const & fragment_path ) {
-    return insert_shader( Shader::build_graphics_shader( vertex_path, fragment_path ) );
+Shader & ShaderStore::emplace_shader( std::string const & name,
+                                      std::filesystem::path const & vertex_path,
+                                      std::filesystem::path const & fragment_path ) {
+    return insert_shader( name, Shader::build_graphics_shader( vertex_path, fragment_path ) );
 }
 
-Shader & ShaderStore::get_shader( unsigned int const shader_id ) {
-    assert( shader_id < m_shaders.size() );
-    return m_shaders.at( shader_id );
+Shader & ShaderStore::get_shader(std::string const & name) {
+    return m_shaders.at( name );
 }
 
-Shader const * ShaderStore::begin() const {
-    return m_shaders.begin().base();
+std::map<std::string, Shader>::const_iterator ShaderStore::begin() const {
+    return m_shaders.cbegin();
 }
 
-Shader const * ShaderStore::end() const {
-    return m_shaders.end().base();
+std::map<std::string, Shader>::const_iterator ShaderStore::end() const {
+    return m_shaders.cend();
 }

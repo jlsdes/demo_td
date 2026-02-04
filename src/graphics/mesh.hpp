@@ -160,6 +160,8 @@ public:
     void initialise_gl_objects() override;
     void destroy_gl_objects() override;
 
+    [[nodiscard]] unsigned int get_nr_instances() const;
+
     /** Updates a single instance's transformation matrix. */
     void reset_data();
     void update( glm::mat4 const & transformation );

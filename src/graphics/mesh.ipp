@@ -207,6 +207,11 @@ void InstancedMesh<V>::destroy_gl_objects() {
 }
 
 template <VertexType V>
+unsigned int InstancedMesh<V>::get_nr_instances() const {
+    return m_nr_instances;
+}
+
+template <VertexType V>
 void InstancedMesh<V>::reset_data() {
     if ( m_nr_instances )
         Mesh<V>::set_flag( HasUpdated );

@@ -7,6 +7,7 @@
 #include "graphics/window.hpp"
 
 #include <memory>
+#include <string>
 
 
 /** Renders all drawable components. */
@@ -17,7 +18,7 @@ public:
 
     void run( EntityManager const & entities, ComponentManager & components ) override;
 
-    Shader & get_shader( unsigned int shader_id = 0 );
+    Shader & get_shader( std::string const & name = "main" );
 
 private:
     Window & m_window;

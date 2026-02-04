@@ -10,6 +10,7 @@
 
 #include <deque>
 #include <queue>
+#include <ranges>
 #include <set>
 #include <sstream>
 
@@ -35,7 +36,7 @@ Renderer::Renderer( Window & window ) : m_window { window },
     while ( stream >> name ) {
         auto const vertex_shader { Config::get<std::filesystem::path>( "Shader", name + "_vert" ) };
         auto const fragment_shader { Config::get<std::filesystem::path>( "Shader", name + "_frag" ) };
-        auto const [_, shader] { m_shaders.emplace_shader( vertex_shader, fragment_shader ) };
+        auto const & shader { m_shaders.emplace_shader( name, vertex_shader, fragment_shader ) };
 
         shader.use();
         shader.set_uniform( "ambient_light", ambient_light );
@@ -72,12 +73,8 @@ using RenderQueue = std::priority_queue<QueueItem, std::deque<QueueItem>, Compar
 void Renderer::run( EntityManager const & entities, ComponentManager & components ) {
     // Update the camera attributes, and make sure all shaders are synchronised on this
     m_camera->update();
-    for ( auto const & shader : m_shaders )
+    for ( auto const & shader : std::views::values( m_shaders ) )
         m_camera->update_shader( shader );
-
-    // For now, everything uses the same shader
-    Shader const & shader { m_shaders.get_shader( 0 ) };
-    shader.use();
 
     ComponentFlags const position_flag { id_to_flag( components.get_type_id<Position>() ) };
 
@@ -111,29 +108,40 @@ void Renderer::run( EntityManager const & entities, ComponentManager & component
         render_queue.push( { &drawable, position, static_cast<float>(drawable.priority) } );
     }
 
+    Shader const * shader;
+
     while ( not render_queue.empty() ) {
         auto const [drawable, position, _] = render_queue.top();
         render_queue.pop();
 
-        if ( not drawable->mesh->get_flag( IsInstanced ) ) {
+        auto const & mesh { drawable->mesh };
+
+        if ( not mesh->get_flag( IsInstanced ) ) {
+            shader = &m_shaders.get_shader( "main" );
+
             glm::mat4 const transformation { compute_transformation( *drawable, position ) };
-            shader.set_uniform( "model", transformation );
-            shader.set_uniform( "normal_transform", glm::mat3 { glm::transpose( glm::inverse( transformation ) ) } );
+            shader->set_uniform( "model", transformation );
+            shader->set_uniform( "normal_transform", glm::mat3 { glm::transpose( glm::inverse( transformation ) ) } );
+        } else {
+            shader = &m_shaders.get_shader( "instanced" );
+
+            auto const instanced_mesh { dynamic_cast<InstancedMesh<ColourVertex> *>(mesh) };
+            shader->set_uniform( "nr_instances", instanced_mesh->get_nr_instances() );
         }
 
-        bool const light_source { drawable->mesh->get_flag( IsLightSource ) };
+        bool const light_source { mesh->get_flag( IsLightSource ) };
         if ( light_source )
-            shader.set_uniform( "is_light_source", true );
+            shader->set_uniform( "is_light_source", true );
 
-        if ( not drawable->mesh->get_flag( IsInitialised ) )
-            drawable->mesh->initialise_gl_objects();
-        drawable->mesh->draw();
+        if ( not mesh->get_flag( IsInitialised ) )
+            mesh->initialise_gl_objects();
+        mesh->draw();
 
         if ( light_source )
-            shader.set_uniform( "is_light_source", false );
+            shader->set_uniform( "is_light_source", false );
     }
 }
 
-Shader & Renderer::get_shader( unsigned int const shader_id ) {
-    return m_shaders.get_shader( shader_id );
+Shader & Renderer::get_shader( std::string const & name ) {
+    return m_shaders.get_shader( name );
 }

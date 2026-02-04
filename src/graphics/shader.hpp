@@ -4,6 +4,8 @@
 #include <glm/glm.hpp>
 
 #include <filesystem>
+#include <map>
+#include <string>
 
 
 /** A basic shader handler that builds and runs shaders. */
@@ -55,20 +57,21 @@ class ShaderStore {
 public:
     ShaderStore() = default;
 
-    std::pair<unsigned int, Shader &> insert_shader( Shader && shader );
-    std::pair<unsigned int, Shader &> emplace_shader( std::filesystem::path const & vertex_path,
-                                                      std::filesystem::path const & fragment_path );
+    Shader & insert_shader( std::string const & name, Shader && shader );
+    Shader & emplace_shader( std::string const & name,
+                             std::filesystem::path const & vertex_path,
+                             std::filesystem::path const & fragment_path );
 
     /** Returns a reference to the shader. This can also be used to update the shader. */
-    Shader & get_shader( unsigned int shader_id );
+    Shader & get_shader( std::string const & name );
 
-    [[nodiscard]] Shader const * begin() const;
-    [[nodiscard]] Shader const * end() const;
+    [[nodiscard]] std::map<std::string, Shader>::const_iterator begin() const;
+    [[nodiscard]] std::map<std::string, Shader>::const_iterator end() const;
 
 private:
     /// The shaders; the shader IDs correspond to their index in this vector. This is possible because stored shaders
     /// can't be removed.
-    std::vector<Shader> m_shaders;
+    std::map<std::string, Shader> m_shaders;
 };
 
 
