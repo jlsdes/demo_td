@@ -10,6 +10,7 @@
 
 #include <deque>
 #include <queue>
+#include <set>
 #include <sstream>
 
 
@@ -80,6 +81,9 @@ void Renderer::run( EntityManager const & entities, ComponentManager & component
 
     ComponentFlags const position_flag { id_to_flag( components.get_type_id<Position>() ) };
 
+    // Each instanced mesh needs to be drawn only once, so keeping track of the ones seen avoids duplicates in the queue
+    std::set<InstancedMesh<ColourVertex> const *> instanced_meshes {};
+
     // Push all Drawable components into a priority queue
     RenderQueue render_queue {};
     for ( auto iterator { components.begin<Drawable>() }; iterator != components.end<Drawable>(); ++iterator ) {
@@ -90,10 +94,20 @@ void Renderer::run( EntityManager const & entities, ComponentManager & component
         if ( entities.has_flags( entity, position_flag ) )
             position = &components.get_component<Position>( entity );
 
-        // For instanced meshes:
-        // Update each individual instance in this loop
-        // Add only a single Drawable component for the entire cluster of instances
+        if ( drawable.mesh->get_flag( IsInstanced ) ) {
+            auto const mesh { dynamic_cast<InstancedMesh<ColourVertex> *>(drawable.mesh) };
+            bool const first_instance { not instanced_meshes.contains( mesh ) };
 
+            // The list of instances should be cleared between every render loop, and then each instance is added again
+            if ( first_instance )
+                mesh->reset_data();
+            mesh->update( compute_transformation( drawable, position ) );
+
+            // If this is the first instance, add the mesh to the render queue, and add it to the set of seen meshes
+            if ( not first_instance )
+                continue;
+            instanced_meshes.emplace( mesh );
+        }
         render_queue.push( { &drawable, position, static_cast<float>(drawable.priority) } );
     }
 
@@ -101,9 +115,11 @@ void Renderer::run( EntityManager const & entities, ComponentManager & component
         auto const [drawable, position, _] = render_queue.top();
         render_queue.pop();
 
-        glm::mat4 const transformation { compute_transformation( *drawable, position ) };
-        shader.set_uniform( "model", transformation );
-        shader.set_uniform( "normal_transform", glm::mat3 { glm::transpose( glm::inverse( transformation ) ) } );
+        if ( not drawable->mesh->get_flag( IsInstanced ) ) {
+            glm::mat4 const transformation { compute_transformation( *drawable, position ) };
+            shader.set_uniform( "model", transformation );
+            shader.set_uniform( "normal_transform", glm::mat3 { glm::transpose( glm::inverse( transformation ) ) } );
+        }
 
         bool const light_source { drawable->mesh->get_flag( IsLightSource ) };
         if ( light_source )

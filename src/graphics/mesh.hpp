@@ -61,6 +61,7 @@ std::ostream & operator<<( std::ostream & stream, V const & vertex );
 enum MeshFlag : unsigned char {
     IsInitialised,
     IsLightSource,
+    IsInstanced,
     HasIndex,
     HasUpdated,
     NumberFlags // Must be the last enum value; indicates the number of flags but is not a valid flag index itself
