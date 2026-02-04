@@ -10,6 +10,7 @@
 
 #include <deque>
 #include <queue>
+#include <sstream>
 
 
 glm::vec3 constexpr g_initial_position { -3.f, 0.f, 0.f };
@@ -21,22 +22,27 @@ Renderer::Renderer( Window & window ) : m_window { window },
                                         m_shaders {} {
     m_camera->set_free_view( m_window.get_input_manager() );
 
-    // Find and build the main graphics shader
-    auto const vertex_shader { Config::get<std::filesystem::path>( "Shader", "vertex_shader" ) };
-    auto const fragment_shader { Config::get<std::filesystem::path>( "Shader", "fragment_shader" ) };
-
-    auto [shader_id, shader] { m_shaders.emplace_shader( vertex_shader, fragment_shader ) };
-    shader.use();
-
     glm::vec3 constexpr ambient_light { 0.01f };
-    shader.set_uniform( "ambient_light", ambient_light );
-    shader.set_uniform( "sun_light", glm::vec3 { 1.f, 1.f, 1.f } );
+    glm::vec3 constexpr sun_light { 1.f };
     glm::vec3 constexpr sun_direction { -0.2f, 1.f, -0.5f };
-    shader.set_uniform( "sun_direction", sun_direction );
     float constexpr fov { std::numbers::pi_v<float> / 4.f }; // 45 degrees
-    shader.set_uniform( "projection", glm::perspective( fov, 1200.f / 800.f, 0.1f, 100.f ) );
 
-    shader.set_uniform( "is_light_source", false );
+    // The config file should contain a list of shader programs in Shader::shaders, separated by spaces. Each shader
+    // must also have (at least) two additional fields <name>_vert and <name>_frag.
+    std::stringstream stream { Config::get<std::string>( "Shader", "shaders" ) };
+    std::string name;
+    while ( stream >> name ) {
+        auto const vertex_shader { Config::get<std::filesystem::path>( "Shader", name + "_vert" ) };
+        auto const fragment_shader { Config::get<std::filesystem::path>( "Shader", name + "_frag" ) };
+        auto const [_, shader] { m_shaders.emplace_shader( vertex_shader, fragment_shader ) };
+
+        shader.use();
+        shader.set_uniform( "ambient_light", ambient_light );
+        shader.set_uniform( "sun_light", sun_light );
+        shader.set_uniform( "sun_direction", sun_direction );
+        shader.set_uniform( "projection", glm::perspective( fov, 1200.f / 800.f, 0.1f, 100.f ) );
+        shader.set_uniform( "is_light_source", false );
+    }
 }
 
 glm::mat4 compute_transformation( Drawable const & drawable, Position const * const position ) {

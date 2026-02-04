@@ -31,7 +31,7 @@ int main() {
     TileFactory const tile_factory { &ecs };
     std::array<EntityID, g_chunk_size> tiles { tile_factory.build_chunk( { 0, 0, 0 } ) };
 
-    auto window { context.get_window() };
+    auto const window { context.get_window() };
     while ( not window->is_closing() ) {
         Time::loop_start();
         window->clear();
