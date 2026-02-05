@@ -86,8 +86,8 @@ add_executable(demo_td
         src/component/terrain_tile.hpp
         src/entity/tile_factory.cpp
         src/entity/tile_factory.hpp
-        src/graphics/image.cpp
-        src/graphics/image.hpp
+        src/utils/image.cpp
+        src/utils/image.hpp
 )
 
 # Link the necessary libraries
