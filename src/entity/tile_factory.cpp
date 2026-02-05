@@ -64,9 +64,12 @@ EntityID TileFactory::build( SkewedCoordinate const tile_id ) const {
     if ( tile_id.half )
         orientation = glm::quat { glm::vec3 { 0.f, std::numbers::pi_v<float> / 3.f, 0.f } };
 
+    Drawable const drawable { .mesh = &mesh, .orientation = orientation, .priority = Terrain };
+    Position const position { .position = unskew( tile_id.x, tile_id.y ) };
+
     EntityID const entity { m_ecs->entities.create() };
-    m_ecs->components.insert_component<Drawable>( entity, { .mesh = &mesh, .orientation = orientation } );
-    m_ecs->components.insert_component<Position>( entity, { .position = unskew( tile_id.x, tile_id.y ) } );
+    m_ecs->components.insert_component<Drawable>( entity, drawable );
+    m_ecs->components.insert_component<Position>( entity, position );
     return entity;
 }
 
