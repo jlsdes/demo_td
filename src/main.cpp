@@ -15,16 +15,20 @@
 
 
 int main() {
+    auto const main_dir { get_main_dir() };
+    Config::load_config( main_dir / "config.ini" );
+    Log::info( "Loaded config ", (main_dir / "config.ini").string() );
 
-    auto image { Image::load( get_main_dir() / "arbitrary.pam" ) };
+    PBMImageIO pbmer {};
+    Image image { pbmer.load_file( main_dir / "ascii_bit.pbm" ) };
 
-    if ( image )
-        image->save( get_main_dir() / "reproduction.pnm", Image::AsciiPix );
+    unsigned char * pixel { image.pixels.get() };
+    if ( not pixel )
+        return 0;
 
-    // auto const main_dir { get_main_dir() };
-    // Config::load_config( main_dir / "config.ini" );
-    // Log::info( "Loaded config ", (main_dir / "config.ini").string() );
-    //
+    pbmer.set_ascii();
+    pbmer.save_file( image, main_dir / "reproduction.pnm" );
+
     // TopContext context {};
     // ECS & ecs { *context.get_ecs() };
     //

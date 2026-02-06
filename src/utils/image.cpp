@@ -5,24 +5,9 @@
 #include <functional>
 
 
-Image::Image( unsigned int const width, unsigned int const height )
-    : m_pixels { std::make_unique<unsigned char[]>( width * height * 4 ) },
+Image_::Image_( unsigned int const width, unsigned int const height, std::unique_ptr<unsigned char[]> && pixels )
+    : m_pixels { pixels ? std::move( pixels ) : std::make_unique<unsigned char[]>( width * height * 4 ) },
       m_width { width }, m_height { height } {}
-
-std::pair<unsigned int, unsigned int> read_header( std::istream & stream, bool const read_max_value ) {
-    unsigned int width, height;
-    stream >> width >> height;
-
-    if ( read_max_value ) {
-        unsigned int max_value;
-        stream >> max_value;
-        if ( max_value != 255 )
-            Log::warning( "PNM files are only supported with a max value of 255, not ", max_value,
-                          "; using 255 anyway." );
-    }
-    return { width, height };
-}
-
 
 void read_ascii_bit( std::istream & stream,
                      unsigned char * pixels,
@@ -127,7 +112,7 @@ void read_arbitrary( std::istream & stream,
         stream.read( reinterpret_cast<char *>(pixels), 4 );
 }
 
-std::unique_ptr<Image> Image::load( std::filesystem::path const & filename ) {
+std::unique_ptr<Image_> Image_::load( std::filesystem::path const & filename ) {
     std::ifstream file { filename };
     if ( not file.is_open() ) {
         Log::error( "Failed to open file '", filename, "'." );
@@ -187,10 +172,9 @@ std::unique_ptr<Image> Image::load( std::filesystem::path const & filename ) {
                 Log::error( "Unknown header field detected in PAM file '", filename, "'." );
                 return nullptr;
             }
-
         }
     }
-    auto image { std::make_unique<Image>( width, height ) };
+    auto image { std::make_unique<Image_>( width, height ) };
 
     std::function<void ( std::istream &, unsigned char *, unsigned int, unsigned int )> const readers[] {
         read_ascii_bit,
@@ -307,7 +291,7 @@ void write_arbitrary( std::ostream & stream,
     }
 }
 
-bool Image::save( std::filesystem::path const & filename, FileType const type ) const {
+bool Image_::save( std::filesystem::path const & filename, PNMFileType const type ) const {
     std::ofstream file { filename };
     if ( not file.is_open() ) {
         Log::error( "Failed to open file '", filename, "'." );
@@ -338,6 +322,148 @@ bool Image::save( std::filesystem::path const & filename, FileType const type ) 
     return true;
 }
 
-unsigned char * Image::get( unsigned int const row, unsigned int const col ) {
+unsigned char * Image_::get( unsigned int const row, unsigned int const col ) {
     return m_pixels.get() + (row * m_width + col) * 4;
+}
+
+Image::Image( unsigned int const width, unsigned int const height, std::unique_ptr<unsigned char[]> && pixels )
+    : width { width }, height { height },
+      pixels { pixels ? std::move( pixels ) : std::make_unique<unsigned char[]>( width * height * 4 ) } {}
+
+Image ImageIO::load_file( std::filesystem::path const & filename ) const {
+    std::ifstream file { filename };
+    if ( not file.is_open() ) {
+        Log::error( "Failed to open file '", filename, "'." );
+        return { 0, 0, nullptr };
+    }
+    return load( file );
+}
+
+void ImageIO::save_file( Image const & image, std::filesystem::path const & filename ) const {
+    std::ofstream file { filename };
+    if ( not file.is_open() ) {
+        Log::error( "Failed to open file '", filename, "'." );
+        return;
+    }
+    save( image, file );
+}
+
+void ImageIO::set_ascii() {
+    m_ascii_output = true;
+}
+
+void ImageIO::set_binary() {
+    m_ascii_output = false;
+}
+
+struct HeaderInfo {
+    unsigned int width;
+    unsigned int height;
+    unsigned int max_value;
+    char type;
+};
+
+std::pair<bool, HeaderInfo> read_header( std::istream & stream ) {
+    HeaderInfo info {};
+
+    char file_id;
+    stream.get( file_id );
+    if ( file_id != 'P' ) {
+        Log::error( "Invalid header for a PNM file; expected 'P', but got '", file_id, "'." );
+        return { false, {} };
+    }
+
+    // Ideally lines should be checked for comments (starting with #), but at the moment they're not supported.
+    stream >> info.type >> info.width >> info.height;
+
+    if ( info.type != AsciiBit and info.type != BinaryBit ) {
+        stream >> info.max_value;
+        if ( info.max_value != 255 )
+            Log::warning( "PNM file has a max value '", info.max_value, "', which is currently not supported;"
+                          "using 255 as the max value instead." );
+    }
+
+    return { true, info };
+}
+
+Image PBMImageIO::load( std::istream & stream ) const {
+    auto const [success, header] { read_header( stream ) };
+
+    if ( not success )
+        return { 0, 0, nullptr };
+    if ( header.type != AsciiBit and header.type != BinaryBit ) {
+        Log::error( "Invalid header for a PBM file; expected '1' or '4', but got '", header.type, "'." );
+        return { 0, 0, nullptr };
+    }
+
+    Image image { header.width, header.height };
+    unsigned char * pixel { image.pixels.get() };
+    char mini_buffer;
+
+    if ( header.type == AsciiBit ) {
+        for ( unsigned int i { 0 }; i < header.width * header.height; ++i ) {
+            stream >> mini_buffer;
+            if ( mini_buffer == '0' ) // In PBM files 0 indicates a white tile and 1 a black one
+                pixel[0] = 255;
+            else if ( mini_buffer == '1' )
+                pixel[0] = 0;
+            else {
+                Log::error( "Unexpected character '", mini_buffer, "' in image data." );
+                return { 0, 0, nullptr };
+            }
+            pixel[1] = pixel[0];
+            pixel[2] = pixel[0];
+            pixel[3] = 255;
+            pixel += 4;
+        }
+    } else /* header.type == BinaryBit */ {
+        for ( unsigned int row { 0 }; row < header.height; ++row ) {
+            for ( unsigned int col { 0 }; col < header.width; ++col ) {
+                if ( col % 8 == 0 )
+                    stream.get( mini_buffer );
+                pixel[0] = mini_buffer & 0x80 ? 0 : 255;
+                pixel[1] = pixel[0];
+                pixel[2] = pixel[0];
+                pixel[3] = 255;
+                pixel += 4;
+                mini_buffer <<= 1;
+            }
+        }
+    }
+    return image;
+}
+
+void PBMImageIO::save( Image const & image, std::ostream & stream ) const {
+    unsigned char const * pixel { image.pixels.get() };
+    if ( m_ascii_output ) {
+        stream << "P1\n" << image.width << ' ' << image.height << '\n';
+        for ( unsigned int row { 0 }; row < image.height; ++row ) {
+            for ( unsigned int col { 0 }; col < image.width; ++col ) {
+                unsigned int const average { (pixel[0] + pixel[1] + pixel[2]) / 3u };
+                stream << (average < 0x10);
+                pixel += 4;
+            }
+            stream << '\n';
+        }
+    } else /* not m_ascii_output */ {
+        stream << "P4\n" << image.width << ' ' << image.height << '\n';
+        for ( unsigned int row { 0 }; row < image.height; ++row ) {
+            unsigned char mini_buffer { 0 };
+
+            for ( unsigned int col { 0 }; col < image.width; ++col ) {
+                unsigned int const average { (pixel[0] + pixel[1] + pixel[2]) / 3u };
+
+                unsigned int const bit_index { 7 - col % 8 };
+                mini_buffer |= (average < 0x10) << bit_index;
+                if ( col % 8 == 7 ) {
+                    stream << mini_buffer;
+                    mini_buffer = 0;
+                }
+                pixel += 4;
+            }
+            // Write any leftover bits padded with 0s until the end of the byte
+            if ( image.width % 8 )
+                stream << mini_buffer;
+        }
+    }
 }
