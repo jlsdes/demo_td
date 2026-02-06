@@ -15,22 +15,11 @@
 
 
 int main() {
-    Image image { 256, 256 };
-    unsigned char * pixel_data { image.get( 0, 0 ) };
 
-    for ( unsigned int row { 0 }; row < 256; ++row ) {
-        for ( unsigned int col { 0 }; col < 256; ++col ) {
-            *pixel_data = static_cast<unsigned char>(row);
-            *(pixel_data + 1) = static_cast<unsigned char>(col);
-            *(pixel_data + 2) = 0;
-            *(pixel_data + 3) = 255;
-            pixel_data += 4;
-        }
-    }
+    auto image { Image::load( get_main_dir() / "arbitrary.pam" ) };
 
-    image.save( get_main_dir() / "test.pbm", Image::BinaryBit );
-    image.save( get_main_dir() / "test.pgm", Image::BinaryGray );
-    image.save( get_main_dir() / "test.ppm", Image::BinaryPix );
+    if ( image )
+        image->save( get_main_dir() / "reproduction.pnm", Image::AsciiPix );
 
     // auto const main_dir { get_main_dir() };
     // Config::load_config( main_dir / "config.ini" );

@@ -5,7 +5,7 @@
 #include <memory>
 
 
-/** A basic image class with some readers and writers to/from Netpbm formats. */
+/** A basic image class with some readers and writers to/from PNM formats. */
 class Image {
 public:
     Image( unsigned int width, unsigned int height );
