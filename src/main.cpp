@@ -11,8 +11,6 @@
 #include "entity/tile_factory.hpp"
 #include "entity/tower_factory.hpp"
 
-#include "utils/image.hpp"
-
 
 int main() {
     auto const main_dir { get_main_dir() };

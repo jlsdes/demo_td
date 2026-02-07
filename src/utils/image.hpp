@@ -100,4 +100,15 @@ public:
 };
 
 
+/** Handles image data to/from a PNM (Portable AnyMap) format. This class will select one of the other IO classes above
+ *  to handle any of the tasks it gets. */
+class PNMImageIO : public ImageIO {
+public:
+    ~PNMImageIO() override = default;
+
+    [[nodiscard]] Image load( std::istream & stream ) const override;
+    void save( Image const & image, std::ostream & stream ) const override;
+};
+
+
 #endif //DEMO_TD_IMAGE_HPP

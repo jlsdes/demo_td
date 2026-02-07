@@ -317,3 +317,56 @@ void PAMImageIO::save( Image const & image, std::ostream & stream ) const {
     for ( Pixel const * const end { pixel + image.width * image.height }; pixel != end; ++pixel )
         stream.write( reinterpret_cast<char *>(pixel), 4 );
 }
+
+Image PNMImageIO::load( std::istream & stream ) const {
+    char file_id[2];
+    stream.read( file_id, 2 );
+    if ( file_id[0] != 'P' or file_id[1] < '1' or file_id[1] > '7' ) {
+        Log::error( "Invalid header for a PNM file; expected 'P', but got '", file_id[0], "'." );
+        return { 0, 0, nullptr };
+    }
+
+    // Put the 2 extracted characters back because the other load() functions expect them to be there.
+    stream.putback( file_id[1] );
+    stream.putback( file_id[0] );
+
+    switch ( file_id[1] ) {
+    case AsciiBit:
+    case BinaryBit:
+        return PBMImageIO().load( stream );
+    case AsciiGrey:
+    case BinaryGrey:
+        return PGMImageIO().load( stream );
+    case AsciiPix:
+    case BinaryPix:
+        return PPMImageIO().load( stream );
+    case Arbitrary:
+        return PAMImageIO().load( stream );
+    default:
+        Log::error( "Invalid header for a PNM file; expected ['1'...'7'], but got '", file_id[1], "'." );
+        return { 0, 0, nullptr };
+    }
+}
+
+void PNMImageIO::save( Image const & image, std::ostream & stream ) const {
+    Pixel const * const begin { image.pixels.get() };
+    Pixel const * const end { begin + image.width * image.height };
+
+    // If any of the pixels are transparent, then PAM is required
+    for ( Pixel const * pixel { begin }; pixel != end; ++pixel )
+        if ( pixel->a != 255 )
+            return PAMImageIO().save( image, stream );
+
+    // If any of the pixels are not grey, then PPM is required
+    for ( Pixel const * pixel { begin }; pixel != end; ++pixel )
+        if ( pixel->r != pixel->g or pixel->r != pixel->b or pixel->g != pixel->b )
+            return PPMImageIO().save( image, stream );
+
+    // If any of the pixels are not black or white, then PGM is required
+    for ( Pixel const * pixel { begin }; pixel != end; ++pixel )
+        if ( (pixel->r and !~pixel->r) or (pixel->g and !~pixel->g) or (pixel->b and !~pixel->b) )
+            return PGMImageIO().save( image, stream );
+
+    // If none of the above were true, then PBM is an option
+    return PBMImageIO().save( image, stream );
+}
