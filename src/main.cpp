@@ -20,14 +20,15 @@ int main() {
     Log::info( "Loaded config ", (main_dir / "config.ini").string() );
 
     PBMImageIO pbmer {};
-    Image image { pbmer.load_file( main_dir / "ascii_bit.pbm" ) };
+    PGMImageIO pgmer {};
+    Image image { pgmer.load_file( main_dir / "binary_grey.pgm" ) };
 
     auto const pixel { image.pixels.get() };
     if ( not pixel )
         return 0;
 
-    // pbmer.set_ascii();
-    pbmer.save_file( image, main_dir / "reproduction.pnm" );
+    pgmer.set_ascii();
+    pgmer.save_file( image, main_dir / "reproduction.pnm" );
 
     // TopContext context {};
     // ECS & ecs { *context.get_ecs() };

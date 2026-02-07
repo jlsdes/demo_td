@@ -8,10 +8,10 @@
 /// The PNM file types, with their corresponding identifiers as they appear in the files.
 enum PNMFileType : char {
     AsciiBit = '1',
-    AsciiGray = '2',
+    AsciiGrey = '2',
     AsciiPix = '3',
     BinaryBit = '4',
-    BinaryGray = '5',
+    BinaryGrey = '5',
     BinaryPix = '6',
     Arbitrary = '7'
 };
@@ -80,6 +80,16 @@ protected:
 class PBMImageIO : public ImageIO {
 public:
     ~PBMImageIO() override = default;
+
+    [[nodiscard]] Image load( std::istream & stream ) const override;
+    void save( Image const & image, std::ostream & stream ) const override;
+};
+
+
+/** Handles image data to/from the PGM (Portable GreyMap) format. */
+class PGMImageIO : public ImageIO {
+public:
+    ~PGMImageIO() override = default;
 
     [[nodiscard]] Image load( std::istream & stream ) const override;
     void save( Image const & image, std::ostream & stream ) const override;

@@ -31,7 +31,7 @@ void read_ascii_bit( std::istream & stream,
     }
 }
 
-void read_ascii_gray( std::istream & stream,
+void read_ascii_grey( std::istream & stream,
                       unsigned char * pixels,
                       unsigned int const width,
                       unsigned int const height ) {
@@ -82,7 +82,7 @@ void read_binary_bit( std::istream & stream,
     }
 }
 
-void read_binary_gray( std::istream & stream,
+void read_binary_grey( std::istream & stream,
                        unsigned char * pixels,
                        unsigned int const width,
                        unsigned int const height ) {
@@ -178,10 +178,10 @@ std::unique_ptr<Image_> Image_::load( std::filesystem::path const & filename ) {
 
     std::function<void ( std::istream &, unsigned char *, unsigned int, unsigned int )> const readers[] {
         read_ascii_bit,
-        read_ascii_gray,
+        read_ascii_grey,
         read_ascii_pix,
         read_binary_bit,
-        read_binary_gray,
+        read_binary_grey,
         read_binary_pix,
         read_arbitrary
     };
@@ -214,7 +214,7 @@ void write_ascii_bit( std::ostream & stream,
     }
 }
 
-void write_ascii_gray( std::ostream & stream,
+void write_ascii_grey( std::ostream & stream,
                        unsigned char const * pixels,
                        unsigned int const width,
                        unsigned int const height ) {
@@ -265,7 +265,7 @@ void write_binary_bit( std::ostream & stream,
     }
 }
 
-void write_binary_gray( std::ostream & stream,
+void write_binary_grey( std::ostream & stream,
                         unsigned char const * pixels,
                         unsigned int const width,
                         unsigned int const height ) {
@@ -310,10 +310,10 @@ bool Image_::save( std::filesystem::path const & filename, PNMFileType const typ
 
     std::function<void ( std::ostream &, unsigned char const *, unsigned int, unsigned int )> writers[] {
         write_ascii_bit,
-        write_ascii_gray,
+        write_ascii_grey,
         write_ascii_pix,
         write_binary_bit,
-        write_binary_gray,
+        write_binary_grey,
         write_binary_pix,
         write_arbitrary
     };
@@ -481,5 +481,53 @@ void PBMImageIO::save( Image const & image, std::ostream & stream ) const {
             if ( image.width % 8 )
                 stream << mini_buffer;
         }
+    }
+}
+
+Image PGMImageIO::load( std::istream & stream ) const {
+    auto const [success, header] { read_header( stream ) };
+
+    if ( not success )
+        return { 0, 0, nullptr };
+    if ( header.type != AsciiGrey and header.type != BinaryGrey ) {
+        Log::error( "Invalid header for a PGM file; expected '2' or '5', but got '", header.type, "'." );
+        return { 0, 0, nullptr };
+    }
+
+    Image image { header.width, header.height };
+    Pixel * pixel { image.pixels.get() };
+
+    if ( header.type == AsciiGrey ) {
+        // Ascii PGM files contain values ranging from 0 to 255 (or at least the supported files use this range), where
+        // values represent the brightness of a pixel. Here, 0 indicates black, 255 indicates white, and all other
+        // values indicate a shade of grey.
+        for ( Pixel const * const end { pixel + header.width * header.height }; pixel != end; ++pixel ) {
+            unsigned int value;
+            stream >> value;
+            unsigned char const same_value { static_cast<unsigned char>(value) };
+            *pixel = { same_value, same_value, same_value, 255 };
+        }
+    } else /* header.type == BinaryGrey */ {
+        // Binary PGM files contain the same values, but as a single byte instead of a character string.
+        for ( Pixel const * const end { pixel + header.width * header.height }; pixel != end; ++pixel ) {
+            unsigned char value;
+            stream.get( reinterpret_cast<char &>(value) );
+            *pixel = { value, value, value, 255 };
+        }
+    }
+    return image;
+}
+
+void PGMImageIO::save( Image const & image, std::ostream & stream ) const {
+    Pixel const * pixel { image.pixels.get() };
+
+    stream << 'P' << (m_ascii_output ? '2' : '5') << '\n' << image.width << ' ' << image.height << "\n255\n";
+    for ( unsigned int i { 0 }; i < image.width * image.height; ++i ) {
+        unsigned int const average { (pixel->r + pixel->g + pixel->b) / 3u };
+        if ( m_ascii_output )
+            stream << average << (i % image.width == image.width - 1 ? '\n' : ' ');
+        else
+            stream << static_cast<char>(average);
+        ++pixel;
     }
 }
