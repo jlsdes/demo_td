@@ -17,23 +17,6 @@ enum PNMFileType : char {
 };
 
 
-/** A basic image class with some readers and writers to/from PNM formats. */
-class Image_ {
-public:
-    Image_( unsigned int width, unsigned int height, std::unique_ptr<unsigned char[]> && pixels = nullptr );
-
-    static std::unique_ptr<Image_> load( std::filesystem::path const & filename );
-    bool save( std::filesystem::path const & filename, PNMFileType type = Arbitrary ) const;
-
-    unsigned char * get( unsigned int row, unsigned int col );
-
-private:
-    std::unique_ptr<unsigned char[]> m_pixels;
-    unsigned int m_width;
-    unsigned int m_height;
-};
-
-
 struct Pixel {
     unsigned char r;
     unsigned char g;
@@ -100,6 +83,17 @@ public:
 class PPMImageIO : public ImageIO {
 public:
     ~PPMImageIO() override = default;
+
+    [[nodiscard]] Image load( std::istream & stream ) const override;
+    void save( Image const & image, std::ostream & stream ) const override;
+};
+
+
+/** Handles image data to/from the PAM (Portable ArbitraryMap) format. This implementation only supports the RGB_ALPHA
+ *  tuple type, as other use cases can be covered by it or one of the other PNM file types. */
+class PAMImageIO : public ImageIO {
+public:
+    ~PAMImageIO() override = default;
 
     [[nodiscard]] Image load( std::istream & stream ) const override;
     void save( Image const & image, std::ostream & stream ) const override;
