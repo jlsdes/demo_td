@@ -19,16 +19,17 @@ int main() {
     Config::load_config( main_dir / "config.ini" );
     Log::info( "Loaded config ", (main_dir / "config.ini").string() );
 
-    PBMImageIO pbmer {};
-    PGMImageIO pgmer {};
-    Image image { pgmer.load_file( main_dir / "binary_grey.pgm" ) };
+    PBMImageIO bit_io {};
+    PGMImageIO grey_io {};
+    PPMImageIO pix_io {};
+    Image image { pix_io.load_file( main_dir / "binary_pix.ppm" ) };
 
     auto const pixel { image.pixels.get() };
     if ( not pixel )
         return 0;
 
-    pgmer.set_ascii();
-    pgmer.save_file( image, main_dir / "reproduction.pnm" );
+    // pix_io.set_ascii();
+    pix_io.save_file( image, main_dir / "reproduction.pnm" );
 
     // TopContext context {};
     // ECS & ecs { *context.get_ecs() };

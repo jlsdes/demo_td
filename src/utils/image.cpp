@@ -531,3 +531,51 @@ void PGMImageIO::save( Image const & image, std::ostream & stream ) const {
         ++pixel;
     }
 }
+
+Image PPMImageIO::load( std::istream & stream ) const {
+    auto const [success, header] { read_header( stream ) };
+
+    if ( not success )
+        return { 0, 0, nullptr };
+    if ( header.type != AsciiPix and header.type != BinaryPix ) {
+        Log::error( "Invalid header for a PPM file; expected '3' or '6', but got '", header.type, "'." );
+        return { 0, 0, nullptr };
+    }
+
+    Image image { header.width, header.height };
+    Pixel * pixel { image.pixels.get() };
+
+    if ( header.type == AsciiPix ) {
+        // Ascii PPM files contain 3 values per pixel, one for each of the red, green, and blue components.
+        for ( Pixel const * const end { pixel + header.width * header.height }; pixel != end; ++pixel ) {
+            stream >> reinterpret_cast<unsigned int &>(pixel->r);
+            stream >> reinterpret_cast<unsigned int &>(pixel->g);
+            stream >> reinterpret_cast<unsigned int &>(pixel->b);
+            pixel->a = 255;
+        }
+    } else /* header.type == BinaryPix */ {
+        // Binary PPM files contain 3 bytes per pixel, with each byte representing one of the main colour components.
+        for ( Pixel const * const end { pixel + header.width * header.height }; pixel != end; ++pixel ) {
+            stream.get( reinterpret_cast<char &>(pixel->r) );
+            stream.get( reinterpret_cast<char &>(pixel->g) );
+            stream.get( reinterpret_cast<char &>(pixel->b) );
+            pixel->a = 255;
+        }
+    }
+    return image;
+}
+
+void PPMImageIO::save( Image const & image, std::ostream & stream ) const {
+    Pixel const * pixel { image.pixels.get() };
+
+    stream << 'P' << (m_ascii_output ? '3' : '6') << '\n' << image.width << ' ' << image.height << "\n255\n";
+    for ( unsigned int i { 0 }; i < image.width * image.height; ++i ) {
+        if ( m_ascii_output ) {
+            stream << static_cast<unsigned int>(pixel->r) << ' ';
+            stream << static_cast<unsigned int>(pixel->g) << ' ';
+            stream << static_cast<unsigned int>(pixel->b) << ((i + 1) % image.width ? "\n" : "\n\n");
+        } else
+            stream.write( reinterpret_cast<char const *>(pixel), 3 );
+        ++pixel;
+    }
+}

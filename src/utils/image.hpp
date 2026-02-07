@@ -96,4 +96,14 @@ public:
 };
 
 
+/** Handles image data to/from the PPM (Portable PixMap) format. */
+class PPMImageIO : public ImageIO {
+public:
+    ~PPMImageIO() override = default;
+
+    [[nodiscard]] Image load( std::istream & stream ) const override;
+    void save( Image const & image, std::ostream & stream ) const override;
+};
+
+
 #endif //DEMO_TD_IMAGE_HPP
