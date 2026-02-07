@@ -34,15 +34,23 @@ private:
 };
 
 
+struct Pixel {
+    unsigned char r;
+    unsigned char g;
+    unsigned char b;
+    unsigned char a;
+};
+
+
 struct Image {
     unsigned int width;
     unsigned int height;
 
     /// The pixels in row-major order, with every pixel containing 4 integer values with value in [0, 255]. Thus, pixel
     /// locations can be calculated as '(row * width + col) * 4'.
-    std::unique_ptr<unsigned char[]> pixels;
+    std::unique_ptr<Pixel[]> pixels;
 
-    Image( unsigned int width, unsigned int height, std::unique_ptr<unsigned char[]> && pixels = nullptr );
+    Image( unsigned int width, unsigned int height, std::unique_ptr<Pixel[]> && pixels = nullptr );
 };
 
 

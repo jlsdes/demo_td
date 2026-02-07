@@ -22,11 +22,11 @@ int main() {
     PBMImageIO pbmer {};
     Image image { pbmer.load_file( main_dir / "ascii_bit.pbm" ) };
 
-    unsigned char * pixel { image.pixels.get() };
+    auto const pixel { image.pixels.get() };
     if ( not pixel )
         return 0;
 
-    pbmer.set_ascii();
+    // pbmer.set_ascii();
     pbmer.save_file( image, main_dir / "reproduction.pnm" );
 
     // TopContext context {};

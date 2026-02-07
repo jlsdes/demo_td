@@ -326,9 +326,9 @@ unsigned char * Image_::get( unsigned int const row, unsigned int const col ) {
     return m_pixels.get() + (row * m_width + col) * 4;
 }
 
-Image::Image( unsigned int const width, unsigned int const height, std::unique_ptr<unsigned char[]> && pixels )
+Image::Image( unsigned int const width, unsigned int const height, std::unique_ptr<Pixel[]> && pixels )
     : width { width }, height { height },
-      pixels { pixels ? std::move( pixels ) : std::make_unique<unsigned char[]>( width * height * 4 ) } {}
+      pixels { pixels ? std::move( pixels ) : std::make_unique<Pixel[]>( width * height ) } {}
 
 Image ImageIO::load_file( std::filesystem::path const & filename ) const {
     std::ifstream file { filename };
@@ -383,6 +383,13 @@ std::pair<bool, HeaderInfo> read_header( std::istream & stream ) {
                           "using 255 as the max value instead." );
     }
 
+    char c;
+    stream.get( c );
+    if ( c != '\n' ) {
+        Log::warning( "Shouldn't there be a new line here?" );
+        stream.putback( c );
+    }
+
     return { true, info };
 }
 
@@ -397,35 +404,37 @@ Image PBMImageIO::load( std::istream & stream ) const {
     }
 
     Image image { header.width, header.height };
-    unsigned char * pixel { image.pixels.get() };
+    Pixel * pixel { image.pixels.get() };
     char mini_buffer;
 
+    Pixel constexpr black { 0, 0, 0, 255 };
+    Pixel constexpr white { 255, 255, 255, 255 };
+
     if ( header.type == AsciiBit ) {
+        // Ascii PBM files use '0' to represent white and '1' for black. Any other character is invalid.
         for ( unsigned int i { 0 }; i < header.width * header.height; ++i ) {
             stream >> mini_buffer;
-            if ( mini_buffer == '0' ) // In PBM files 0 indicates a white tile and 1 a black one
-                pixel[0] = 255;
-            else if ( mini_buffer == '1' )
-                pixel[0] = 0;
-            else {
+            switch ( mini_buffer ) {
+            case '0':
+                *pixel = white;
+                break;
+            case '1':
+                *pixel = black;
+                break;
+            default:
                 Log::error( "Unexpected character '", mini_buffer, "' in image data." );
                 return { 0, 0, nullptr };
             }
-            pixel[1] = pixel[0];
-            pixel[2] = pixel[0];
-            pixel[3] = 255;
-            pixel += 4;
+            ++pixel;
         }
     } else /* header.type == BinaryBit */ {
+        // Binary PBM files use a single bit per pixel, where 0 indicates white (no ink) and 1 indicates black (ink).
         for ( unsigned int row { 0 }; row < header.height; ++row ) {
             for ( unsigned int col { 0 }; col < header.width; ++col ) {
                 if ( col % 8 == 0 )
                     stream.get( mini_buffer );
-                pixel[0] = mini_buffer & 0x80 ? 0 : 255;
-                pixel[1] = pixel[0];
-                pixel[2] = pixel[0];
-                pixel[3] = 255;
-                pixel += 4;
+                *pixel = mini_buffer & 0x80 ? black : white;
+                ++pixel;
                 mini_buffer <<= 1;
             }
         }
@@ -434,34 +443,41 @@ Image PBMImageIO::load( std::istream & stream ) const {
 }
 
 void PBMImageIO::save( Image const & image, std::ostream & stream ) const {
-    unsigned char const * pixel { image.pixels.get() };
+    Pixel const * pixel { image.pixels.get() };
+
     if ( m_ascii_output ) {
+        // Ascii PBM files contain '0' and '1' characters depending on whether the pixel is white or black respectively.
+        // Contrary to most image files, '0' is in fact a white pixel; these value represent boolean values indicating
+        // ink (black) or no ink (white).
         stream << "P1\n" << image.width << ' ' << image.height << '\n';
         for ( unsigned int row { 0 }; row < image.height; ++row ) {
             for ( unsigned int col { 0 }; col < image.width; ++col ) {
-                unsigned int const average { (pixel[0] + pixel[1] + pixel[2]) / 3u };
-                stream << (average < 0x10);
-                pixel += 4;
+                unsigned int const average { (pixel->r + pixel->g + pixel->b) / 3u };
+                stream << (average & 0x80 ? '0' : '1');
+                ++pixel;
             }
             stream << '\n';
         }
     } else /* not m_ascii_output */ {
+        // In binary BPM files every pixel is represented by a single bit, where 0 indicates white (no ink), and 1
+        // represents black (ink).
         stream << "P4\n" << image.width << ' ' << image.height << '\n';
         for ( unsigned int row { 0 }; row < image.height; ++row ) {
             unsigned char mini_buffer { 0 };
-
             for ( unsigned int col { 0 }; col < image.width; ++col ) {
-                unsigned int const average { (pixel[0] + pixel[1] + pixel[2]) / 3u };
-
-                unsigned int const bit_index { 7 - col % 8 };
-                mini_buffer |= (average < 0x10) << bit_index;
+                // Compute the average of the red, green, and blue components to determine whether the pixel should be
+                // black or white.
+                unsigned int const average { (pixel->r + pixel->g + pixel->b) / 3u };
+                unsigned int const bit_index { 7 - col % 8 }; // Index of the relevant bit within the current byte
+                mini_buffer |= (average & 0x80 ? 0 : 1) << bit_index;
                 if ( col % 8 == 7 ) {
                     stream << mini_buffer;
                     mini_buffer = 0;
                 }
-                pixel += 4;
+                ++pixel;
             }
-            // Write any leftover bits padded with 0s until the end of the byte
+            // Any leftover bits should be padded with zeroes until it's a full byte, and then written to the stream.
+            // Here, the 'mini_buffer' is always reset to 0, so padding isn't necessary anymore.
             if ( image.width % 8 )
                 stream << mini_buffer;
         }
