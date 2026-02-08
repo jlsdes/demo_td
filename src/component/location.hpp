@@ -6,8 +6,9 @@
 #include <glm/glm.hpp>
 
 
-struct Position : Component {
+struct Location : Component {
     glm::vec3 position;
+    glm::vec2 velocity;
 };
 
 

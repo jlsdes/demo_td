@@ -1,7 +1,7 @@
 #include "renderer.hpp"
 #include "component/component_manager.hpp"
 #include "component/drawable.hpp"
-#include "component/position.hpp"
+#include "component/location.hpp"
 #include "graphics/mesh.hpp"
 #include "graphics/shader.hpp"
 #include "utils/config.hpp"
@@ -47,7 +47,7 @@ Renderer::Renderer( Window & window ) : m_window { window },
     }
 }
 
-glm::mat4 compute_transformation( Drawable const & drawable, Position const * const position ) {
+glm::mat4 compute_transformation( Drawable const & drawable, Location const * const position ) {
     auto transformation { glm::identity<glm::mat4>() };
     if ( position )
         transformation = glm::translate( transformation, position->position );
@@ -58,7 +58,7 @@ glm::mat4 compute_transformation( Drawable const & drawable, Position const * co
 
 struct QueueItem {
     Drawable * drawable;
-    Position const * position;
+    Location const * position;
     float priority;
 };
 
@@ -76,7 +76,7 @@ void Renderer::run( EntityManager const & entities, ComponentManager & component
     for ( auto const & shader : std::views::values( m_shaders ) )
         m_camera->update_shader( shader );
 
-    ComponentFlags const position_flag { id_to_flag( components.get_type_id<Position>() ) };
+    ComponentFlags const position_flag { id_to_flag( components.get_type_id<Location>() ) };
 
     // Each instanced mesh needs to be drawn only once, so keeping track of the ones seen avoids duplicates in the queue
     std::set<InstancedMesh<ColourVertex> const *> instanced_meshes {};
@@ -87,9 +87,9 @@ void Renderer::run( EntityManager const & entities, ComponentManager & component
         EntityID const entity { iterator.get_entity() };
         Drawable & drawable { iterator.get_component() };
 
-        Position const * position { nullptr };
+        Location const * position { nullptr };
         if ( entities.has_flags( entity, position_flag ) )
-            position = &components.get_component<Position>( entity );
+            position = &components.get_component<Location>( entity );
 
         if ( drawable.mesh->get_flag( IsInstanced ) ) {
             auto const mesh { dynamic_cast<InstancedMesh<ColourVertex> *>(drawable.mesh) };

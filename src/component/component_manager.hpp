@@ -126,6 +126,10 @@ public:
     /** Returns whether the type ID is valid. */
     [[nodiscard]] bool has_store( ComponentTypeID type_id ) const;
 
+    /** Provides access to the underlying ComponentArray<> object, which is required for this function. */
+    template <SubComponent ComponentType>
+    ComponentArray<ComponentType> & get_array();
+
     template <SubComponent ComponentType>
     [[nodiscard]] ComponentTypeID get_type_id() const;
 
@@ -137,8 +141,11 @@ public:
     [[nodiscard]] Component & get_component( EntityID entity, ComponentTypeID type_id ) const;
 
     template <SubComponent ComponentType>
-    [[nodiscard]] ComponentType & get_component( EntityID entity ) const;
+    [[nodiscard]] ComponentType & get_component( EntityID entity );
 
+    /** Returns an iterator for the component array containing all components of the specified type. These iterators can
+     *  be used to retrieve the actual component data, as well as the associated entity ID. These specific functions
+     *  require the components to be stored in a ComponentArray<>, declared above. */
     template <SubComponent ComponentType>
     [[nodiscard]] ComponentArray<ComponentType>::Iterator begin();
     template <SubComponent ComponentType>

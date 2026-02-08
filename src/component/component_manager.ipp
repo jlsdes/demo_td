@@ -134,6 +134,12 @@ ComponentTypeID ComponentManager::create_store() {
 }
 
 template <SubComponent ComponentType>
+ComponentArray<ComponentType> & ComponentManager::get_array() {
+    ComponentTypeID const type_id { get_type_id<ComponentType>() };
+    return *dynamic_cast<ComponentArray<ComponentType> *>(m_stores.at( type_id ).get());
+}
+
+template <SubComponent ComponentType>
 ComponentTypeID ComponentManager::get_type_id() const {
     return m_types.at( std::type_index { typeid( ComponentType ) } );
 }
@@ -154,24 +160,18 @@ void ComponentManager::insert_component( EntityID const entity, ComponentType co
 }
 
 template <SubComponent ComponentType>
-ComponentType & ComponentManager::get_component( EntityID const entity ) const {
-    ComponentTypeID const type_id { m_types.at( typeid( ComponentType ) ) };
-    auto const array { dynamic_cast<ComponentArray<ComponentType> *>(m_stores.at( type_id ).get()) };
-    return array->get( entity );
+ComponentType & ComponentManager::get_component( EntityID const entity ) {
+    return get_array<ComponentType>().get( entity );
 }
 
 template <SubComponent ComponentType>
 ComponentArray<ComponentType>::Iterator ComponentManager::begin() {
-    ComponentTypeID const type_id { m_types.at( typeid( ComponentType ) ) };
-    auto array { dynamic_cast<ComponentArray<ComponentType> *>(m_stores.at( type_id ).get()) };
-    return array->begin();
+    return get_array<ComponentType>().begin();
 }
 
 template <SubComponent ComponentType>
 ComponentArray<ComponentType>::Iterator ComponentManager::end() {
-    ComponentTypeID const type_id { m_types.at( typeid( ComponentType ) ) };
-    auto array { dynamic_cast<ComponentArray<ComponentType> *>(m_stores.at( type_id ).get()) };
-    return array->end();
+    return get_array<ComponentType>().end();
 }
 
 

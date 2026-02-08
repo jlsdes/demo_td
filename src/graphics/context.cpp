@@ -3,7 +3,7 @@
 #include "window.hpp"
 
 #include "component/drawable.hpp"
-#include "component/position.hpp"
+#include "component/location.hpp"
 #include "component/terrain_tile.hpp"
 #include "component/tower_data.hpp"
 
@@ -51,7 +51,7 @@ TopContext::TopContext() : Context { nullptr }, m_ecs { std::make_unique<ECS>() 
     initialise_glad();
 
     m_ecs->components.create_store<Drawable>();
-    m_ecs->components.create_store<Position>();
+    m_ecs->components.create_store<Location>();
 
     m_ecs->systems.insert_system( std::make_unique<Renderer>( *m_window ), Render );
 }

@@ -76,7 +76,7 @@ add_executable(demo_td
         src/system/renderer.hpp
         src/graphics/entity_component_system.cpp
         src/graphics/entity_component_system.hpp
-        src/component/position.hpp
+        src/component/location.hpp
         src/graphics/mesh.ipp
         src/graphics/context.cpp
         src/graphics/context.hpp
@@ -88,6 +88,8 @@ add_executable(demo_td
         src/entity/tile_factory.hpp
         src/utils/image.cpp
         src/utils/image.hpp
+        src/system/movement.cpp
+        src/system/movement.hpp
 )
 
 # Link the necessary libraries

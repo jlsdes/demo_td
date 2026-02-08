@@ -2,7 +2,7 @@
 #include "graphics/entity_component_system.hpp"
 #include "graphics/mesh_builder.hpp"
 #include "component/drawable.hpp"
-#include "component/position.hpp"
+#include "component/location.hpp"
 
 
 TowerFactory::TowerFactory( ECS * const ecs ) : m_ecs { ecs } {}
@@ -23,7 +23,7 @@ EntityID TowerFactory::build( TowerData::Type const type, glm::vec3 const & posi
     glm::vec3 constexpr tower_scale { 0.3f, 0.1f, 0.3f };
     m_ecs->components.insert_component<TowerData>( tower, { .type = type } );
     m_ecs->components.insert_component<Drawable>( tower, { .mesh = tower_mesh.get(), .scale = tower_scale } );
-    m_ecs->components.insert_component<Position>( tower, { .position = position } );
+    m_ecs->components.insert_component<Location>( tower, { .position = position } );
 
     static MeshBuilder crystal_builder { MeshBuilder::octahedron() };
     static std::array<std::unique_ptr<Mesh<ColourVertex>>, TowerData::NumberTypes> crystal_meshes { nullptr };
@@ -37,7 +37,7 @@ EntityID TowerFactory::build( TowerData::Type const type, glm::vec3 const & posi
     glm::vec3 constexpr crystal_scale { 0.1f, 0.3f, 0.1f };
     glm::vec3 constexpr crystal_offset { 0.f, 0.5f, 0.f };
     m_ecs->components.insert_component<Drawable>( crystal, { .mesh = crystal_mesh.get(), .scale = crystal_scale } );
-    m_ecs->components.insert_component<Position>( crystal, { .position = position + crystal_offset } );
+    m_ecs->components.insert_component<Location>( crystal, { .position = position + crystal_offset } );
 
     return tower;
 }

@@ -17,30 +17,31 @@ int main() {
     Config::load_config( main_dir / "config.ini" );
     Log::info( "Loaded config ", (main_dir / "config.ini").string() );
 
-    // TopContext context {};
-    // ECS & ecs { *context.get_ecs() };
-    //
-    // LevelContext level { &context };
-    // TowerFactory const tower_factory { &ecs };
-    // std::array<EntityID, TowerData::NumberTypes> towers {};
-    // for ( unsigned char type { 0 }; type < TowerData::NumberTypes; ++type ) {
-    //     glm::vec3 const position { 0.f, 0.f, -3.f + static_cast<float>(type) };
-    //     towers.at( type ) = tower_factory.build( static_cast<TowerData::Type>(type), position );
-    // }
-    //
-    // TileFactory const tile_factory { &ecs };
-    // std::array<EntityID, g_chunk_size> tiles { tile_factory.build_chunk( { 0, 0, 0 } ) };
-    //
-    // auto const window { context.get_window() };
-    // while ( not window->is_closing() ) {
-    //     Time::loop_start();
-    //     window->clear();
-    //
-    //     glfwPollEvents();
-    //     ecs.systems.run_group( Render );
-    //
-    //     window->render();
-    // }
+    TopContext context {};
+    ECS & ecs { *context.get_ecs() };
+
+    LevelContext level { &context };
+    TowerFactory const tower_factory { &ecs };
+    std::array<EntityID, TowerData::NumberTypes> towers {};
+    for ( unsigned char type { 0 }; type < TowerData::NumberTypes; ++type ) {
+        glm::vec3 const position { 0.f, 0.f, -3.f + static_cast<float>(type) };
+        towers.at( type ) = tower_factory.build( static_cast<TowerData::Type>(type), position );
+    }
+
+    TileFactory const tile_factory { &ecs };
+    std::array<EntityID, g_chunk_size> chunk_1 { tile_factory.build_chunk( { 0, 0, 0 } ) };
+    std::array<EntityID, g_chunk_size> chunk_2 { tile_factory.build_chunk( { 0, 0, 1 } ) };
+
+    auto const window { context.get_window() };
+    while ( not window->is_closing() ) {
+        Time::loop_start();
+        window->clear();
+
+        glfwPollEvents();
+        ecs.systems.run_group( Render );
+
+        window->render();
+    }
 
     return 0;
 }

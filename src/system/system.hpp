@@ -1,8 +1,6 @@
 #ifndef DEMO_TD_SYSTEM_HPP
 #define DEMO_TD_SYSTEM_HPP
 
-#include "component/component.hpp"
-
 #include <type_traits>
 
 
