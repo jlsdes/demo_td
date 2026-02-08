@@ -52,7 +52,8 @@ private:
     std::map<int, std::map<unsigned int, std::function<void ( int, int )>>> m_keyboard_observers;
     std::map<unsigned int, std::function<void ( double, double )>> m_mouse_observers;
 
-    /// The next ID to be used when a callback function is registered.
+    /// The next ID to be used when a callback function is registered. The first ID generated is 1, and increases
+    /// consecutively. As such, 0 should never be a valid ID and can be used to indicate the absence of an ID.
     unsigned int m_next_id;
 };
 

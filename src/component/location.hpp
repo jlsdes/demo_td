@@ -8,7 +8,7 @@
 
 struct Location : Component {
     glm::vec3 position;
-    glm::vec2 velocity;
+    glm::vec3 velocity;
 };
 
 
