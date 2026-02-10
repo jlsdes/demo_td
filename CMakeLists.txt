@@ -92,6 +92,8 @@ add_executable(demo_td
         src/utils/image.hpp
         src/system/movement.cpp
         src/system/movement.hpp
+        src/system/player_input.cpp
+        src/system/player_input.hpp
 )
 
 # Link the necessary libraries
