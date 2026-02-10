@@ -2,7 +2,6 @@
 #include "shader.hpp"
 #include "utils/config.hpp"
 #include "utils/time.hpp"
-#include "utils/log.hpp"
 
 #include <GLFW/glfw3.h>
 #include <glm/gtc/matrix_transform.hpp>
@@ -97,6 +96,18 @@ void Camera::rotate( glm::vec2 const & mouse_position ) {
     m_pitch -= offset.y;
     set_rotation( m_yaw, m_pitch );
     previous_position = mouse_position;
+}
+
+glm::vec3 Camera::get_forward() const {
+    return m_forward;
+}
+
+glm::vec3 Camera::get_right() const {
+    return m_right;
+}
+
+glm::vec3 Camera::get_up() const {
+    return m_up;
 }
 
 void Camera::update() {

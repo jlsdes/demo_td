@@ -1,4 +1,5 @@
 #include "context.hpp"
+#include "camera.hpp"
 #include "entity_component_system.hpp"
 #include "window.hpp"
 
@@ -45,7 +46,13 @@ void initialise_glad() {
     glEnable( GL_CULL_FACE );
 }
 
-TopContext::TopContext() : Context { nullptr }, m_ecs { std::make_unique<ECS>() }, m_window { nullptr } {
+// TODO move these somewhere better (config perhaps?)
+glm::vec3 constexpr g_initial_position { -3.f, 0.f, 0.f };
+glm::vec3 constexpr g_initial_target { 0.f, 0.f, 0.f };
+
+
+TopContext::TopContext() : Context { nullptr }, m_ecs { std::make_unique<ECS>() }, m_window { nullptr },
+                           m_camera { std::make_unique<Camera>( g_initial_position, g_initial_target ) } {
     initialise_glfw();
     m_window = std::make_unique<Window>();
     initialise_glad();
@@ -53,7 +60,7 @@ TopContext::TopContext() : Context { nullptr }, m_ecs { std::make_unique<ECS>() 
     m_ecs->components.create_store<Drawable>();
     m_ecs->components.create_store<Location>();
 
-    m_ecs->systems.insert_system( std::make_unique<Renderer>( m_ecs.get(), *m_window ), Render );
+    m_ecs->systems.insert_system( std::make_unique<Renderer>( m_ecs.get(), *m_window, *m_camera ), Render );
 }
 
 TopContext::~TopContext() = default;

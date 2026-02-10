@@ -33,7 +33,6 @@ public:
      *  upward vector is always (0, 1, 0). */
     Camera( glm::vec3 const & position, glm::vec3 const & target );
 
-    /** Destructor. */
     ~Camera() = default;
 
     /** Moves the camera to a specific position, or in a given direction. */
@@ -45,6 +44,11 @@ public:
     void set_rotation( glm::vec3 const & look_in_direction );
     void set_rotation( float yaw, float pitch );
     void rotate( glm::vec2 const & mouse_position );
+
+    /** Directional vectors related to the orientation of the camera. */
+    [[nodiscard]] glm::vec3 get_forward() const;
+    [[nodiscard]] glm::vec3 get_right() const;
+    [[nodiscard]] glm::vec3 get_up() const;
 
     /** Updates the camera's internal data. */
     void update();

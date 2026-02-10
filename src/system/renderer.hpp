@@ -6,23 +6,18 @@
 #include "graphics/shader.hpp"
 #include "graphics/window.hpp"
 
-#include <memory>
-#include <string>
-
 
 /** Renders all drawable components. */
 class Renderer : public System {
 public:
-    Renderer( ECS * ecs, Window & window );
+    Renderer( ECS * ecs, Window & window, Camera & camera );
     ~Renderer() override = default;
 
     void run() override;
 
-    Shader & get_shader( std::string const & name = "main" );
-
 private:
     Window & m_window;
-    std::unique_ptr<Camera> m_camera;
+    Camera & m_camera;
     ShaderStore m_shaders;
 };
 

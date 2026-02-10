@@ -7,6 +7,7 @@
 #include "graphics/input_manager.hpp"
 
 #include <array>
+#include <bitset>
 #include <map>
 #include <ranges>
 #include <set>
@@ -55,19 +56,26 @@ public:
 
     void run() override;
 
-    /** Sets which entity is being controlled by the player. Normally this should be a camera. */
-    void set_player_entity( EntityID entity );
-    /** Disables player input affecting any entity (through this system at least). */
-    void unset_player_entity();
+    /// Various configuration flags for the PlayerInput system.
+    enum Flag {
+        CameraActive, // Whether the camera can be moved by the player (can be false for e.g. menus)
+        FreeCamera, // Whether the camera can fly around freely without constraints; this should usually be false
+        NumberFlags // Not a valid flag; must remain as the last enum value to indicate the total number of flags
+    };
+
+    /** Flag management. */
+    void set_flag( Flag flag, bool value = true );
+    void unset_flag( Flag flag );
+    [[nodiscard]] bool get_flag( Flag flag ) const;
 
     /** Callback function that reacts to relevant keyboard input from the player. */
     void player_input( int key, int action );
 
 private:
+    std::bitset<NumberFlags> m_flags;
+
     /// The camera entity, which has (at least) a Location component, containing the camera's position and orientation.
     EntityID m_camera_entity;
-    /// Whether the camera can be moved.
-    bool m_camera_active;
 
     /// A mapping of keyboard key codes to their respective flag indices. A value of 0 in this array indicates that the
     /// key is not being used. This could just be the map defined above, but arrays tend to be more efficient.

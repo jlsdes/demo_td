@@ -4,8 +4,9 @@
 #include <memory>
 
 
-struct ECS;
+class Camera;
 class Window;
+struct ECS;
 
 
 /** Contexts initialise any entities and systems that are required to run the associated code. When the context object
@@ -51,6 +52,7 @@ public:
 private:
     std::unique_ptr<ECS> m_ecs;
     std::unique_ptr<Window> m_window;
+    std::unique_ptr<Camera> m_camera;
 };
 
 

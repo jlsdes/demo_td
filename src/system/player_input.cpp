@@ -11,7 +11,7 @@ unsigned int register_callbacks( InputManager & input_manager, PlayerInput & sys
 }
 
 PlayerInput::PlayerInput( ECS * const ecs, InputManager & input_manager )
-    : System { ecs }, m_camera_entity { 0 }, m_camera_active { false }, m_controls { 0 }, m_camera_inputs { 0 },
+    : System { ecs }, m_flags { 0b00 }, m_camera_entity { 0 }, m_controls { 0 }, m_camera_inputs { 0 },
       m_input_manager { input_manager }, m_callback_id { register_callbacks( input_manager, *this ) } {}
 
 PlayerInput::~PlayerInput() {
@@ -21,13 +21,28 @@ PlayerInput::~PlayerInput() {
 
 void PlayerInput::run() {}
 
-void PlayerInput::set_player_entity( EntityID const entity ) {
-    m_camera_entity = entity;
-    m_camera_active = true;
+void PlayerInput::set_flag( Flag const flag, bool const value ) {
+    // // Add on-update actions to the flag setting maybe?
+    // if ( m_flags[flag] == value )
+    //     return;
+    // switch ( flag ) {
+    // case FreeCamera:
+    //     break;
+    // default:
+    //     if ( flag < NumberFlags ) // Valid flag, but no on-update action
+    //         break;
+    //     Log::error( "PlayerInput system received an invalid flag '", flag, "', ignoring." );
+    //     return;
+    // }
+    m_flags[flag] = value;
 }
 
-void PlayerInput::unset_player_entity() {
-    m_camera_active = false;
+void PlayerInput::unset_flag( Flag const flag ) {
+    set_flag( flag, false );
+}
+
+bool PlayerInput::get_flag( Flag const flag ) const {
+    return m_flags[flag];
 }
 
 void PlayerInput::player_input( int const key, int const action ) {
@@ -50,6 +65,6 @@ void PlayerInput::player_input( int const key, int const action ) {
         (m_camera_inputs.at( Right ) > 0) - (m_camera_inputs.at( Left ) > 0),
         (m_camera_inputs.at( Up ) > 0) - (m_camera_inputs.at( Down ) > 0),
     };
-    if ( m_camera_inputs.at( Sprint ))
+    if ( m_camera_inputs.at( Sprint ) )
         camera_location.velocity *= 2.f;
 }
