@@ -3,6 +3,8 @@ project(demo_td)
 
 set(CMAKE_CXX_STANDARD 26)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
+
 # Using FetchContent to download some dependencies
 include(FetchContent)
 

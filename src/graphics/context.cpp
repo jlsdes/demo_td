@@ -53,7 +53,7 @@ TopContext::TopContext() : Context { nullptr }, m_ecs { std::make_unique<ECS>() 
     m_ecs->components.create_store<Drawable>();
     m_ecs->components.create_store<Location>();
 
-    m_ecs->systems.insert_system( std::make_unique<Renderer>( *m_window ), Render );
+    m_ecs->systems.insert_system( std::make_unique<Renderer>( m_ecs.get(), *m_window ), Render );
 }
 
 TopContext::~TopContext() = default;

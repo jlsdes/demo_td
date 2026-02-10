@@ -13,10 +13,10 @@
 /** Renders all drawable components. */
 class Renderer : public System {
 public:
-    explicit Renderer( Window & window );
+    Renderer( ECS * ecs, Window & window );
     ~Renderer() override = default;
 
-    void run( EntityManager const & entities, ComponentManager & components ) override;
+    void run() override;
 
     Shader & get_shader( std::string const & name = "main" );
 

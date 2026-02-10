@@ -9,8 +9,6 @@
 
 
 struct ECS;
-class EntityManager;
-class ComponentManager;
 
 
 /** The two main groups of systems; other values can be used as well. */
@@ -49,8 +47,7 @@ public:
 
 private:
     /// The ECS object contains this object, and the partnered EntityManager and ComponentManager objects.
-    EntityManager & m_entities;
-    ComponentManager & m_components;
+    ECS * const m_ecs;
 
     std::map<std::type_index, std::unique_ptr<System>> m_systems;
     std::map<std::type_index, unsigned int> m_groups;

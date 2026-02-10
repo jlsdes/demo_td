@@ -19,9 +19,10 @@ glm::vec3 constexpr g_initial_position { -3.f, 0.f, 0.f };
 glm::vec3 constexpr g_initial_target { 0.f, 0.f, 0.f };
 
 
-Renderer::Renderer( Window & window ) : m_window { window },
-                                        m_camera { std::make_unique<Camera>( g_initial_position, g_initial_target ) },
-                                        m_shaders {} {
+Renderer::Renderer( ECS * const ecs, Window & window )
+    : System { ecs }, m_window { window },
+      m_camera { std::make_unique<Camera>( g_initial_position, g_initial_target ) }, m_shaders {} {
+
     m_camera->set_free_view( m_window.get_input_manager() );
 
     glm::vec3 constexpr ambient_light { 0.01f };
@@ -70,13 +71,15 @@ struct CompareItems {
 
 using RenderQueue = std::priority_queue<QueueItem, std::deque<QueueItem>, CompareItems>;
 
-void Renderer::run( EntityManager const & entities, ComponentManager & components ) {
+void Renderer::run() {
+    auto & components { m_ecs->components };
+
     // Update the camera attributes, and make sure all shaders are synchronised on this
     m_camera->update();
     for ( auto const & shader : std::views::values( m_shaders ) )
         m_camera->update_shader( shader );
 
-    ComponentFlags const position_flag { id_to_flag( components.get_type_id<Location>() ) };
+    ComponentFlags const position_flag { id_to_flag( m_ecs->components.get_type_id<Location>() ) };
 
     // Each instanced mesh needs to be drawn only once, so keeping track of the ones seen avoids duplicates in the queue
     std::set<InstancedMesh<ColourVertex> const *> instanced_meshes {};
@@ -88,7 +91,7 @@ void Renderer::run( EntityManager const & entities, ComponentManager & component
         Drawable & drawable { iterator.get_component() };
 
         Location const * position { nullptr };
-        if ( entities.has_flags( entity, position_flag ) )
+        if ( m_ecs->entities.has_flags( entity, position_flag ) )
             position = &components.get_component<Location>( entity );
 
         if ( drawable.mesh->get_flag( IsInstanced ) ) {
