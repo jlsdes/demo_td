@@ -20,12 +20,12 @@ glm::vec3 constexpr world_up { 0.f, 1.f, 0.f };
 
 /// Computes the right-facing vector for a given forward-facing vector.
 inline glm::vec3 compute_right( glm::vec3 const & forward ) {
-    return glm::normalize( glm::cross( world_up, forward ) );
+    return glm::normalize( glm::cross( forward, world_up ) );
 }
 
 /// Computes the upward-facing vector for given forward- and right-facing vectors.
 inline glm::vec3 compute_up( glm::vec3 const & forward, glm::vec3 const & right ) {
-    return glm::normalize( glm::cross( forward, right ) );
+    return glm::normalize( glm::cross( right, forward ) );
 }
 
 
@@ -109,8 +109,8 @@ void Camera::update() {
     if ( moving_bf || moving_rl || moving_ud ) {
         glm::vec3 direction { 0.f };
         if ( moving_bf ) direction += m_movement[Forward] ? m_forward : -m_forward;
-        if ( moving_rl ) direction += m_movement[Right] ? -m_right : m_right;
-        if ( moving_ud ) direction += m_movement[Up] ? m_up : -m_up;
+        if ( moving_rl ) direction += m_movement[Right] ? m_right : -m_right;
+        if ( moving_ud ) direction += m_movement[Up] ? world_up : -world_up;
         translate( direction );
     }
 }
