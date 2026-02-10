@@ -64,8 +64,10 @@ public:
     void player_input( int key, int action );
 
 private:
-    EntityID m_player_entity;
-    bool m_player_active;
+    /// The camera entity, which has (at least) a Location component, containing the camera's position and orientation.
+    EntityID m_camera_entity;
+    /// Whether the camera can be moved.
+    bool m_camera_active;
 
     /// A mapping of keyboard key codes to their respective flag indices. A value of 0 in this array indicates that the
     /// key is not being used. This could just be the map defined above, but arrays tend to be more efficient.
@@ -75,7 +77,7 @@ private:
     /// keys can represent the same action. E.g., suppose W and UP are both being pressed and UP gets released, then the
     /// camera should keep moving forward because W is still being pressed. Setting a Forward-indicating bool on any
     /// action would not achieve this, but in-/decrementing a counter does.
-    std::array<unsigned char, NumberActions> m_input_counts;
+    std::array<unsigned char, NumberActions> m_camera_inputs;
 
     InputManager & m_input_manager;
     unsigned int m_callback_id;
