@@ -8,6 +8,8 @@
 #include "component/terrain_tile.hpp"
 #include "component/tower_data.hpp"
 
+#include "system/controller.hpp"
+#include "system/movement.hpp"
 #include "system/renderer.hpp"
 
 #include <glad/gl.h>
@@ -62,9 +64,23 @@ TopContext::TopContext() : Context { nullptr }, m_ecs { std::make_unique<ECS>() 
     m_ecs->components.create_store<Location>();
 
     m_ecs->systems.insert_system( std::make_unique<Renderer>( m_ecs.get(), *m_window, *m_camera ), Render );
+    m_ecs->systems.insert_system( std::make_unique<Movement>( m_ecs.get() ), General );
+    m_ecs->systems.insert_system( std::make_unique<Controller>( m_ecs.get(), *m_window ), General );
 }
 
-TopContext::~TopContext() = default;
+TopContext::~TopContext() {
+    // Ensure destruction happens in the right order to prevent fun memory corruptions
+    m_ecs->systems.remove_system<Controller>();
+    m_ecs->systems.remove_system<Movement>();
+    m_ecs->systems.remove_system<Renderer>();
+
+    m_ecs->components.remove_store( m_ecs->components.get_type_id<Location>() );
+    m_ecs->components.remove_store( m_ecs->components.get_type_id<Drawable>() );
+
+    m_camera = nullptr;
+    m_window = nullptr;
+    m_ecs = nullptr;
+}
 
 LevelContext::LevelContext( Context const * const parent ) : Context { parent } {
     assert( parent );

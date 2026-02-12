@@ -38,6 +38,7 @@ int main() {
         window->clear();
 
         glfwPollEvents();
+        ecs.systems.run_group( General );
         ecs.systems.run_group( Render );
 
         window->render();

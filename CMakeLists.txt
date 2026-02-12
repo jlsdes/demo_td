@@ -95,6 +95,8 @@ add_executable(demo_td
         src/utils/image.hpp
         src/system/movement.cpp
         src/system/movement.hpp
+        src/system/controller.cpp
+        src/system/controller.hpp
 )
 
 # Link the necessary libraries

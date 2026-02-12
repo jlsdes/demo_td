@@ -41,7 +41,7 @@ void InputManager::forget_keyboard( std::set<int> const & keys, unsigned int con
         forget_keyboard( key, callback_id );
 }
 
-unsigned int InputManager::observe_mouse( std::function<void( int, int )> const & callback ) {
+unsigned int InputManager::observe_mouse( std::function<void( double, double )> const & callback ) {
     m_mouse_observers.emplace( m_next_id, callback );
     return m_next_id++;
 }
