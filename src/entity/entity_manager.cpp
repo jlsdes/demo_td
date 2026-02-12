@@ -109,3 +109,14 @@ void EntityManager::unset_all( ComponentTypeID const component_type ) {
     for ( auto iterator { begin( flag ) }; iterator != end(); ++iterator )
         m_component_flags.at( *iterator ) ^= flag;
 }
+
+void EntityManager::set_entity_name( std::string const & name, EntityID const id, bool const ignore_existing ) {
+    if ( not ignore_existing and m_named_entities.contains( name ) )
+        Log::warning( "The named entity '", name, "' is being changed to a new ID." );
+    m_named_entities.insert_or_assign( name, id );
+}
+
+EntityID EntityManager::get_entity_id( std::string const & name ) const {
+    assert( m_named_entities.contains( name ) );
+    return m_named_entities.at( name );
+}

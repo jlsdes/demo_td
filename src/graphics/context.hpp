@@ -50,9 +50,9 @@ public:
     void enable_systems() override {}
 
 private:
-    std::unique_ptr<ECS> m_ecs;
     std::unique_ptr<Window> m_window;
     std::unique_ptr<Camera> m_camera;
+    std::unique_ptr<ECS> m_ecs;
 };
 
 

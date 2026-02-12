@@ -52,10 +52,15 @@ void initialise_glad() {
 // Camera initialisation constants
 glm::vec3 constexpr initial_position { -3.f, 0.f, 0.f };
 glm::vec3 constexpr initial_target { 0.f, 0.f, 0.f };
+Location const initial_location {
+    .position = initial_position,
+    .orientation = glm::quatLookAt( initial_target - initial_position, glm::vec3 { 0.f, 1.f, 0.f } )
+};
 
 
-TopContext::TopContext() : Context { nullptr }, m_ecs { std::make_unique<ECS>() }, m_window { nullptr },
-                           m_camera { std::make_unique<Camera>( initial_position, initial_target ) } {
+TopContext::TopContext() : Context { nullptr }, m_window { nullptr },
+                           m_camera { std::make_unique<Camera>( initial_position, initial_target ) },
+                           m_ecs { std::make_unique<ECS>() } {
     initialise_glfw();
     m_window = std::make_unique<Window>();
     initialise_glad();
@@ -66,21 +71,13 @@ TopContext::TopContext() : Context { nullptr }, m_ecs { std::make_unique<ECS>() 
     m_ecs->systems.insert_system( std::make_unique<Renderer>( m_ecs.get(), *m_window, *m_camera ), Render );
     m_ecs->systems.insert_system( std::make_unique<Movement>( m_ecs.get() ), General );
     m_ecs->systems.insert_system( std::make_unique<Controller>( m_ecs.get(), *m_window ), General );
+
+    EntityID const camera_entity { m_ecs->entities.create() };
+    m_ecs->components.insert_component( camera_entity, initial_location );
+    m_ecs->entities.set_entity_name( "camera", camera_entity );
 }
 
-TopContext::~TopContext() {
-    // Ensure destruction happens in the right order to prevent fun memory corruptions
-    m_ecs->systems.remove_system<Controller>();
-    m_ecs->systems.remove_system<Movement>();
-    m_ecs->systems.remove_system<Renderer>();
-
-    m_ecs->components.remove_store( m_ecs->components.get_type_id<Location>() );
-    m_ecs->components.remove_store( m_ecs->components.get_type_id<Drawable>() );
-
-    m_camera = nullptr;
-    m_window = nullptr;
-    m_ecs = nullptr;
-}
+TopContext::~TopContext() = default;
 
 LevelContext::LevelContext( Context const * const parent ) : Context { parent } {
     assert( parent );

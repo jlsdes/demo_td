@@ -5,6 +5,8 @@
 #include "component/component.hpp"
 
 #include <array>
+#include <map>
+#include <string>
 
 
 struct ECS;
@@ -71,6 +73,12 @@ public:
     /** Called by the ComponentManager when a component type is removed entirely. */
     void unset_all( ComponentTypeID component_type );
 
+    /** Assigns the ID to the name. If the name was already registered, then the old value is overwritten. In this case
+     *  a warning will be logged unless 'ignore_existing' is set to true. */
+    void set_entity_name( std::string const & name, EntityID id, bool ignore_existing = false );
+    /** Returns the entity ID associated with the given name. Throws an exception if the name isn't registered. */
+    [[nodiscard]] EntityID get_entity_id( std::string const & name ) const;
+
 private:
     /// The ECS object contains this object, and the partnered ComponentManager and SystemManager objects.
     ComponentManager & m_components;
@@ -79,8 +87,11 @@ private:
     /// The components that each entity consists of.
     std::array<ComponentFlags, g_max_entities> m_component_flags;
 
+    /// A mapping of entity names to their respective IDs, reserved for specific entities only, e.g. the camera.
+    std::map<std::string, EntityID> m_named_entities;
+
     using SegmentType = unsigned long long;
-    static unsigned int constexpr s_segment_size { sizeof( SegmentType ) * 8 }; // Size in 64 bit words
+    static unsigned int constexpr s_segment_size { sizeof( SegmentType ) * 8 }; // Size of a single segment in bits
     static unsigned int constexpr s_array_size { g_max_entities / s_segment_size }; // Size in number of segments
 
     /// Existence indicators, where each bit shows whether the associated ID is currently in use.

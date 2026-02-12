@@ -8,7 +8,6 @@ Controller::Controller( ECS * const ecs, Window & window )
     : System { ecs }, m_input_manager { window.get_input_manager() } {
     m_mouse_callback =
         m_input_manager.observe_mouse( []( double const x, double const y ) {
-            Log::debug( "Mouse is at ", x, ", ", y );
         } );
 }
 
