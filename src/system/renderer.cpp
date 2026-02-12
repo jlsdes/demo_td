@@ -18,8 +18,6 @@
 Renderer::Renderer( ECS * const ecs, Window & window, Camera & camera )
     : System { ecs }, m_window { window }, m_camera { camera }, m_shaders {} {
 
-    m_camera.set_free_view( m_window.get_input_manager() );
-
     glm::vec3 constexpr ambient_light { 0.01f };
     glm::vec3 constexpr sun_light { 1.f };
     glm::vec3 constexpr sun_direction { -0.2f, 1.f, -0.5f };

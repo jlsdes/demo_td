@@ -70,11 +70,7 @@ TopContext::TopContext() : Context { nullptr }, m_window { nullptr },
 
     m_ecs->systems.insert_system( std::make_unique<Renderer>( m_ecs.get(), *m_window, *m_camera ), Render );
     m_ecs->systems.insert_system( std::make_unique<Movement>( m_ecs.get() ), General );
-    m_ecs->systems.insert_system( std::make_unique<Controller>( m_ecs.get(), *m_window ), General );
-
-    EntityID const camera_entity { m_ecs->entities.create() };
-    m_ecs->components.insert_component( camera_entity, initial_location );
-    m_ecs->entities.set_entity_name( "camera", camera_entity );
+    m_ecs->systems.insert_system( std::make_unique<Controller>( m_ecs.get(), *m_window, *m_camera ), General );
 }
 
 TopContext::~TopContext() = default;
