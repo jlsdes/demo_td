@@ -10,11 +10,11 @@ struct ECS;
 
 
 /** Contexts initialise any entities and systems that are required to run the associated code. When the context object
- *  is destroyed, those entities and systems are also removed again.
+ *  is destroyed, those entities and systems are removed again.
  *  These contexts generally function within a hierarchy. For example, the TopContext object handles general program
- *  initialisation such as OpenGL stuff, and then the LevelContext can later on initialise level-specific stuff (which I
- *  haven't implemented at the time of writing). Contexts can use ancestors' functionality, and they can either extend
- *  or replace functionality as well. */
+ *  initialisation such as window creation for example, and then the LevelContext initialises level-specific stuff later
+ *  on (which I haven't implemented at the time of writing). Contexts can use ancestors' functionality, and they can
+ *  either extend or replace functionality as well. */
 class Context {
 protected:
     explicit Context( Context const * parent );

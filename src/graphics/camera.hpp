@@ -13,15 +13,16 @@
 class Shader;
 
 
-/** The directions the camera can move in. */
-enum MovementBit {
-    Forward = 0,
-    Backward = 1,
-    Right = 2,
-    Left = 3,
-    Up = 4,
-    Down = 5,
-    Sprint = 6,
+/// The keyboard-related actions that affect the camera.
+enum CameraActions : unsigned char {
+    Forward,
+    Backward,
+    Left,
+    Right,
+    Up,
+    Down,
+    Sprint,
+    NumberActions // Must remain the last value in this enum; not a valid enum value
 };
 
 

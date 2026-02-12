@@ -3,7 +3,10 @@ project(demo_td)
 
 set(CMAKE_CXX_STANDARD 26)
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
+# Required for clangd
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+# Also required for clangd, as otherwise commands that are not supported by clangd would be generated
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 # Using FetchContent to download some dependencies
 include(FetchContent)
@@ -92,8 +95,6 @@ add_executable(demo_td
         src/utils/image.hpp
         src/system/movement.cpp
         src/system/movement.hpp
-        src/system/player_input.cpp
-        src/system/player_input.hpp
 )
 
 # Link the necessary libraries

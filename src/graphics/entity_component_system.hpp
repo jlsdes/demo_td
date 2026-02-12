@@ -7,7 +7,6 @@
 
 
 // Entity-Component-System implementation based on https://austinmorlan.com/posts/entity_component_system/
-// but with differences
 
 
 struct ECS {

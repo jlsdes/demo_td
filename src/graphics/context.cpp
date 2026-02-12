@@ -47,12 +47,13 @@ void initialise_glad() {
 }
 
 // TODO move these somewhere better (config perhaps?)
-glm::vec3 constexpr g_initial_position { -3.f, 0.f, 0.f };
-glm::vec3 constexpr g_initial_target { 0.f, 0.f, 0.f };
+// Camera initialisation constants
+glm::vec3 constexpr initial_position { -3.f, 0.f, 0.f };
+glm::vec3 constexpr initial_target { 0.f, 0.f, 0.f };
 
 
 TopContext::TopContext() : Context { nullptr }, m_ecs { std::make_unique<ECS>() }, m_window { nullptr },
-                           m_camera { std::make_unique<Camera>( g_initial_position, g_initial_target ) } {
+                           m_camera { std::make_unique<Camera>( initial_position, initial_target ) } {
     initialise_glfw();
     m_window = std::make_unique<Window>();
     initialise_glad();

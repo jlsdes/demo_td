@@ -10,8 +10,7 @@ class GLFWwindow;
 
 
 /** Manages inputs from the user, i.e. keyboard and mouse inputs. */
-class InputManager
-{
+class InputManager {
 public:
     /** Constructor and destructor. */
     explicit InputManager();
@@ -25,8 +24,7 @@ public:
      *  which is required if the callback function needs to be removed. The ID is unique per observer_keyboard() call,
      *  and thus probably per callback function, but can represent multiple keys. */
     unsigned int observe_keyboard( int key, std::function<void( int, int )> const & callback );
-    unsigned int observe_keyboard( std::set<int> const & keys,
-                                                 std::function<void( int, int )> const & callback );
+    unsigned int observe_keyboard( std::set<int> const & keys, std::function<void( int, int )> const & callback );
 
     /** Removes the callback function from the observer list of that key. */
     void forget_keyboard( int key, unsigned int callback_id );
