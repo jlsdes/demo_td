@@ -140,7 +140,7 @@ void Camera::set_free_view( InputManager & input_manager ) {
     input_manager.observe_keyboard( keys, [this]( int const key, int const action ) {
         this->toggle_movement( key, action );
     } );
-    input_manager.observe_mouse( [this]( double const x_position, double const y_position ) {
+    input_manager.observe_cursor( [this]( double const x_position, double const y_position ) {
         this->rotate( glm::vec2 { x_position, y_position } );
     } );
     // Capture the mouse, hiding it

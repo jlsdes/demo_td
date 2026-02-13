@@ -1,16 +1,36 @@
 #ifndef DEMO_TD_INPUT_MANAGER_HPP
 #define DEMO_TD_INPUT_MANAGER_HPP
 
+#include <array>
 #include <functional>
 #include <map>
-#include <set>
+#include <ranges>
+#include <variant>
+
+#include <glad/gl.h>
+#include <GLFW/glfw3.h>
 
 
 class GLFWwindow;
 
 
-using KeyCallbackFunction = std::function<void(int, int)>;
-using MouseCallbackFunction = std::function<void(double, double)>;
+enum InputType {
+    KeyboardInput,
+    MouseButtonInput,
+    CursorInput,
+    ScrollInput,
+};
+
+
+using KeyCallbackFunction = std::function<void( int, int )>;
+using MouseCallbackFunction = std::function<void( int, int )>;
+using CursorCallbackFunction = std::function<void( double, double )>;
+using ScrollCallbackFunction = std::function<void( double, double )>;
+
+
+/// A (type-safe) union of the various callback functions.
+using CallbackFunction = std::variant<KeyCallbackFunction, MouseCallbackFunction, CursorCallbackFunction,
+                                      ScrollCallbackFunction>;
 
 
 /** Manages inputs from the user, i.e. keyboard and mouse inputs. */
@@ -23,41 +43,60 @@ public:
     /** Registers the object's callback function with OpenGL. */
     static void initialise( GLFWwindow * glfw_window );
 
-    /** Registers the callback function as an observer of a key action. Whenever that key is pressed/released/... the
-     *  callback function will be called. The returned value is the ID under which the callback function is registered,
-     *  which is required if the callback function needs to be removed. The ID is unique per observer_keyboard() call,
-     *  and thus probably per callback function, but can represent multiple keys. */
-    unsigned int observe_keyboard( int key, KeyCallbackFunction const & callback );
-    unsigned int observe_keyboard( std::set<int> const & keys, KeyCallbackFunction const & callback );
+    /** Registers a callback function for an input event. The 'type' argument and the underlying type of 'callback' are
+     *  assumed to, e.g. if 'type' is ScrollInput then 'callback.scroll_function' is used. The 'key' parameter is only
+     *  used for input types that require it (KeyboardInput and MouseButtonInput), otherwise it is ignored.
+     *  The returned value is the callback ID, which is required to remove the callback function again. */
+    [[nodiscard]] unsigned int observe_input( InputType type, CallbackFunction const & callback, int key = 0 );
 
-    /** Removes the callback function from the observer list of that key. */
-    void forget_keyboard( int key, unsigned int callback_id );
-    void forget_keyboard( std::set<int> const & keys, unsigned int callback_id );
-
-    /** Registers the callback function as an observer of the mouse. Whenever the mouse is moved the callback function
-     *  will be called. The returned value is the ID under which the callback function is registered, this is required
-     *  if the callback needs to be unregistered. */
-    unsigned int observe_mouse( MouseCallbackFunction const & callback );
-
-    /** Removes the callback function from the observer list. */
-    void forget_mouse( unsigned int callback_id );
-
-    /** The callback function that handles keyboard inputs. */
-    static void handle_keyboard( GLFWwindow * glfw_window, int key, int, int action, int );
-
-    /** The callback function that handles mouse inputs. */
-    static void handle_mouse( GLFWwindow * glfw_window, double x, double y );
+    /** Removes the registered callback function associated with the ID. */
+    void forget_input( unsigned int callback_id );
 
 private:
-    /// A mapping of received inputs to interested objects/callback functions. Each registered callback function is
-    /// given an ID, which is used to identify the callback function in the submaps.
-    std::map<int, std::map<unsigned int, KeyCallbackFunction>> m_keyboard_observers;
-    std::map<unsigned int, MouseCallbackFunction> m_mouse_observers;
+    /** The callback function that handles keyboard inputs. */
+    static void handle_keyboard( GLFWwindow * window, int key, int, int action, int );
+
+    /** The callback function that handles mouse inputs. */
+    static void handle_cursor( GLFWwindow * window, double x, double y );
+
+    static unsigned int constexpr max_number_keys { GLFW_KEY_LAST + 1 };
+    static unsigned int constexpr max_number_buttons { GLFW_MOUSE_BUTTON_LAST + 1 };
+    static unsigned int constexpr max_number_inputs { max_number_keys + max_number_buttons + 1 + 1 };
+
+    static unsigned int constexpr type_offsets[] { 0, max_number_keys, max_number_inputs - 2, max_number_inputs - 1 };
+    static bool constexpr type_has_key[] { true, true, false, false };
+
+    /** Returns the index to 'm_observers' for the given inputs. */
+    [[nodiscard]] unsigned int compute_index( InputType type, int key = 0 ) const;
+
+    /** Notifies all observers registered for 't_input_type' and 'key'. If the callback function requires has the key/
+     *  button as its first parameter, then it must be passed in twice: first as 'key', and second as the first value of
+     *  'values'. */
+    template <InputType t_input_type, typename... ValueTypes>
+    void notify_observers( int key, ValueTypes &&... values );
+
+    /// The callback functions for each of the input type in one large array. Each of the input types have a single
+    /// contiguous block of observers, which start at the offsets defined above. Multiple observers can observe the same
+    /// input, and because of that each specific input has a map of callback functions.
+    std::array<std::map<unsigned int, CallbackFunction>, max_number_inputs> m_observers;
+
+    /// A mapping of callback IDs to array indices.
+    std::map<unsigned int, unsigned int> m_bindings;
 
     /// The next ID to be used when a callback function is registered. The first ID generated is 1, and increases
     /// consecutively. As such, 0 should never be a valid ID and can be used to indicate the absence of an ID.
     unsigned int m_next_id;
 };
+
+
+// Template definition(s)
+
+template <InputType t_input_type, typename... ValueTypes>
+void InputManager::notify_observers( int const key, ValueTypes &&... values ) {
+    auto & observers { m_observers.at( compute_index( t_input_type, key ) ) };
+    for ( auto & callback : std::views::values( observers ) )
+        std::get<t_input_type>( callback )( values... );
+}
 
 
 #endif //DEMO_TD_INPUT_MANAGER_HPP

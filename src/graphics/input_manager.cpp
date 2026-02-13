@@ -2,72 +2,48 @@
 #include "window.hpp"
 #include "utils/log.hpp"
 
-#include <GLFW/glfw3.h>
-
 #include <format>
-#include <ranges>
 
 
-InputManager::InputManager() : m_keyboard_observers {}, m_mouse_observers {}, m_next_id { 1 } {}
+InputManager::InputManager() : m_observers {}, m_bindings {}, m_next_id { 1 } {}
 
 void InputManager::initialise( GLFWwindow * const glfw_window ) {
     glfwSetKeyCallback( glfw_window, handle_keyboard );
-    glfwSetCursorPosCallback( glfw_window, handle_mouse );
+    glfwSetCursorPosCallback( glfw_window, handle_cursor );
 }
 
-unsigned int InputManager::observe_keyboard( int const key, std::function<void( int, int )> const & callback ) {
-    // operator[] automatically inserts the key if it isn't present yet
-    m_keyboard_observers[key].emplace( m_next_id, callback );
+unsigned int InputManager::observe_input( InputType const type, CallbackFunction const & callback, int const key ) {
+    unsigned int const index { compute_index( type, key ) };
+    m_bindings.emplace( m_next_id, index );
+    m_observers.at( index ).emplace( m_next_id, callback );
     return m_next_id++;
 }
 
-unsigned int InputManager::observe_keyboard( std::set<int> const & keys,
-                                             std::function<void( int, int )> const & callback ) {
-    for ( auto const & key : keys )
-        m_keyboard_observers[key].emplace( m_next_id, callback );
-    return m_next_id++;
+void InputManager::forget_input( unsigned int const callback_id ) {
+    if ( not m_bindings.contains( callback_id ) ) {
+        Log::error( "Attempted to remove an input observer with an ID (", callback_id, ") that isn't registered;"
+                    "ignoring." );
+        return;
+    }
+    unsigned int const index { m_bindings.at( callback_id ) };
+    m_observers.at( index ).erase( callback_id );
+    m_bindings.erase( callback_id );
 }
 
-void InputManager::forget_keyboard( int const key, unsigned int const callback_id ) {
-    if ( m_keyboard_observers.contains( key ) && m_keyboard_observers.at( key ).contains( callback_id ) )
-        m_keyboard_observers.at( key ).erase( callback_id );
-    else
-        Log::error( "Attempted to forget a keybind for a key (", key, ") and callback ID (", callback_id,
-                    ") that weren't registered." );
-}
-
-void InputManager::forget_keyboard( std::set<int> const & keys, unsigned int const callback_id ) {
-    for ( auto const & key : keys )
-        forget_keyboard( key, callback_id );
-}
-
-unsigned int InputManager::observe_mouse( std::function<void( double, double )> const & callback ) {
-    m_mouse_observers.emplace( m_next_id, callback );
-    return m_next_id++;
-}
-
-void InputManager::forget_mouse( unsigned int const callback_id ) {
-    if ( m_mouse_observers.contains( callback_id ) )
-        m_mouse_observers.erase( callback_id );
-    else
-        Log::error( "Attempted to forget a mouse callback (", callback_id, ") that wasn't registered." );
-}
-
-/// Helper function for the callbacks that returns the InputManager associated with a GLFW window.
-inline InputManager & get_input_manager( GLFWwindow * const glfw_window ) {
+InputManager & get_input_manager( GLFWwindow * const glfw_window ) {
     return static_cast<Window *>(glfwGetWindowUserPointer( glfw_window ))->get_input_manager();
 }
 
-void InputManager::handle_keyboard( GLFWwindow * const glfw_window, int const key, int, int const action, int ) {
-    InputManager & input_manager { get_input_manager( glfw_window ) };
-    if ( input_manager.m_keyboard_observers.contains( key ) ) {
-        for ( auto const & callback : std::views::values( input_manager.m_keyboard_observers.at( key ) ) )
-            callback( key, action );
-    }
+void InputManager::handle_keyboard( GLFWwindow * const window, int const key, int, int const action, int ) {
+    InputManager & input_manager { get_input_manager( window ) };
+    input_manager.notify_observers<KeyboardInput>( key, key, action );
 }
 
-void InputManager::handle_mouse( GLFWwindow * const glfw_window, double const x, double const y ) {
-    InputManager & input_manager { get_input_manager( glfw_window ) };
-    for ( auto const & callback : std::views::values( input_manager.m_mouse_observers ) )
-        callback( x, y );
+void InputManager::handle_cursor( GLFWwindow * const window, double const x, double const y ) {
+    InputManager & input_manager { get_input_manager( window ) };
+    input_manager.notify_observers<CursorInput>( 0, x, y );
+}
+
+unsigned int InputManager::compute_index( InputType const type, int const key ) const {
+    return type_offsets[type] + (type_has_key[type] ? key : 0u);
 }

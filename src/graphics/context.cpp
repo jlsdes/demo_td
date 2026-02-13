@@ -64,13 +64,14 @@ TopContext::TopContext() : Context { nullptr }, m_window { nullptr },
     initialise_glfw();
     m_window = std::make_unique<Window>();
     initialise_glad();
+    InputManager & input_manager { m_window->get_input_manager() };
 
     m_ecs->components.create_store<Drawable>();
     m_ecs->components.create_store<Location>();
 
     m_ecs->systems.insert_system( std::make_unique<Renderer>( m_ecs.get(), *m_window, *m_camera ), Render );
     m_ecs->systems.insert_system( std::make_unique<Movement>( m_ecs.get() ), General );
-    m_ecs->systems.insert_system( std::make_unique<Controller>( m_ecs.get(), *m_window, *m_camera ), General );
+    m_ecs->systems.insert_system( std::make_unique<Controller>( m_ecs.get(), input_manager, *m_camera ), General );
 }
 
 TopContext::~TopContext() = default;
