@@ -27,13 +27,10 @@ void InputManager::forget_input( unsigned int const callback_id ) {
 
 std::pair<InputType, int> InputManager::get_input_data( unsigned int const callback_id ) const {
     unsigned int const index { m_bindings.at( callback_id ) };
-    if ( index == type_offsets[ScrollInput] )
-        return { ScrollInput, 0 };
-    if ( index == type_offsets[CursorInput] )
-        return { CursorInput, 0 };
-    if ( index >= type_offsets[MouseButtonInput] )
-        return { MouseButtonInput, index - type_offsets[MouseButtonInput] };
-    return { KeyboardInput, index };
+    for ( int type { LastInputType }; type > FirstInputType; --type )
+        if ( index >= type_offsets[type] )
+            return { static_cast<InputType>(type), index - type_offsets[type] };
+    return { FirstInputType, index };
 }
 
 InputManager & get_input_manager( GLFWwindow * const glfw_window ) {

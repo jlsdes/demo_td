@@ -20,6 +20,8 @@ enum InputType {
     MouseButtonInput,
     CursorInput,
     ScrollInput,
+    FirstInputType = KeyboardInput,
+    LastInputType = ScrollInput
 };
 
 
