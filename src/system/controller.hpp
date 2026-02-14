@@ -5,6 +5,7 @@
 #include "graphics/camera.hpp"
 
 #include <array>
+#include <bitset>
 
 
 class InputManager;
@@ -21,21 +22,31 @@ public:
 
 private:
     void handle_camera_key( Camera::Action action, bool is_pressing ) const;
-    void camera_rotation( double x, double y ) const;
+    void handle_camera_rotation( double x, double y ) const;
+    void toggle_camera_mode();
 
     InputManager & m_input_manager;
     Camera & m_camera;
 
-    static unsigned char constexpr CameraEnableRotate { Camera::NumberActions };
-    static unsigned char constexpr CameraRotate { CameraEnableRotate + 1 };
-    static unsigned char constexpr NumberActions { CameraRotate + 1 };
+    enum Action {
+        // The first values are reserved for the Camera::Action enum values
+        CameraEnableRotate = Camera::NumberActions,
+        CameraRotate,
+        CameraFreeView,
+        NumberActions ///< Not a valid action; must remain the final enum value to indicate the total number of actions.
+    };
 
     /// All registered callback IDs. The first few callbacks in this array are used for camera movement actions, and
     /// have indices that are the same as the values in the CameraAction enum. The other action(s) have indices that are
     /// defined above.
     std::array<unsigned int, NumberActions> m_callback_ids;
 
-    bool m_is_camera_rotating;
+    enum Flag {
+        IsCameraRotating,
+        IsCameraFreeView,
+    };
+
+    std::bitset<2> m_flags;
 };
 
 

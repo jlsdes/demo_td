@@ -30,10 +30,10 @@ Camera::Camera( glm::vec3 const & position, glm::vec3 const & target )
       m_speed { 1.f }, m_sensitivity { 1.f } {
     // Try to load attributes from the config, and if it fails just continue with the default values
     try {
-        m_speed = Config::get<float>( "Camera", "speed" );
+        set_speed( Config::get<float>( "Camera", "speed" ) );
     } catch ( std::out_of_range const & ) {}
     try {
-        m_sensitivity = Config::get<float>( "Camera", "sensitivity" );
+        set_sensitivity( Config::get<float>( "Camera", "sensitivity" ) );
     } catch ( std::out_of_range const & ) {}
 
     set_rotation( target - position );
