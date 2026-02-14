@@ -14,13 +14,6 @@ void InputManager::initialise( GLFWwindow * const glfw_window ) {
     glfwSetScrollCallback( glfw_window, handle_scroll );
 }
 
-unsigned int InputManager::observe_input( InputType const type, CallbackFunction const & callback, int const key ) {
-    unsigned int const index { compute_index( type, key ) };
-    m_bindings.emplace( m_next_id, index );
-    m_observers.at( index ).emplace( m_next_id, callback );
-    return m_next_id++;
-}
-
 void InputManager::forget_input( unsigned int const callback_id ) {
     if ( not m_bindings.contains( callback_id ) ) {
         Log::error( "Attempted to remove an input observer with an ID (", callback_id, ") that isn't registered;"
@@ -56,7 +49,10 @@ void InputManager::handle_keyboard( GLFWwindow * const window,
     input_manager.notify_observers<KeyboardInput>( key, key, action );
 }
 
-void InputManager::handle_mouse_button( GLFWwindow * const window, int const button, int const action, int const mods ) {
+void InputManager::handle_mouse_button( GLFWwindow * const window,
+                                        int const button,
+                                        int const action,
+                                        int const mods ) {
     InputManager & input_manager { get_input_manager( window ) };
     input_manager.notify_observers<MouseButtonInput>( button, button, action );
 }
@@ -69,8 +65,4 @@ void InputManager::handle_cursor( GLFWwindow * const window, double const x, dou
 void InputManager::handle_scroll( GLFWwindow * const window, double const x_offset, double const y_offset ) {
     InputManager & input_manager { get_input_manager( window ) };
     input_manager.notify_observers<ScrollInput>( 0, x_offset, y_offset );
-}
-
-unsigned int constexpr InputManager::compute_index( InputType const type, int const key ) {
-    return type_offsets[type] + (type_has_key[type] ? key : 0u);
 }

@@ -14,6 +14,7 @@
 class GLFWwindow;
 
 
+/** The supported input types. */
 enum InputType {
     KeyboardInput,
     MouseButtonInput,
@@ -22,6 +23,7 @@ enum InputType {
 };
 
 
+/// The desired callback function types for each type of input.
 using KeyCallbackFunction = std::function<void( int, int )>;
 using MouseCallbackFunction = std::function<void( int, int )>;
 using CursorCallbackFunction = std::function<void( double, double )>;
@@ -33,10 +35,9 @@ using CallbackFunction = std::variant<KeyCallbackFunction, MouseCallbackFunction
                                       ScrollCallbackFunction>;
 
 
-/** Converts a callback function into the CallbackFunction type. The provided callback function must of course have the
- *  correct signature. */
-template <InputType t_input_type, typename Callback>
-CallbackFunction make_callback( Callback const & callback );
+/// Links the input types with their associated callback functions.
+template <InputType t_type>
+using InputHandler = std::variant_alternative_t<t_type, CallbackFunction>;
 
 
 /** Manages inputs from the user, i.e. keyboard and mouse inputs. */
@@ -53,7 +54,8 @@ public:
      *  assumed to, e.g. if 'type' is ScrollInput then 'callback.scroll_function' is used. The 'key' parameter is only
      *  used for input types that require it (KeyboardInput and MouseButtonInput), otherwise it is ignored.
      *  The returned value is the callback ID, which is required to remove the callback function again. */
-    [[nodiscard]] unsigned int observe_input( InputType type, CallbackFunction const & callback, int key = 0 );
+    template <InputType t_type>
+    [[nodiscard]] unsigned int observe_input( InputHandler<t_type> const & callback, int key = 0 );
 
     /** Removes the registered callback function associated with the ID. */
     void forget_input( unsigned int callback_id );
@@ -78,10 +80,16 @@ private:
     /** Returns the index to 'm_observers' for the given inputs. */
     [[nodiscard]] static unsigned int constexpr compute_index( InputType type, int key = 0 );
 
-    /** Notifies all observers registered for 't_input_type' and 'key'. If the callback function requires has the key/
+    /** Converts a callback function into the CallbackFunction type. The provided callback function must of course have the
+     *  correct signature. */
+    template <InputType t_type>
+    static CallbackFunction make_callback( InputHandler<t_type> const & callback );
+
+    /** Notifies all observers registered for 't_type' and 'key'. If the callback function requires has the key/
      *  button as its first parameter, then it must be passed in twice: first as 'key', and second as the first value of
      *  'values'. */
-    template <InputType t_input_type, typename... ValueTypes>
+    template <InputType t_type, typename... ValueTypes>
+        requires std::is_invocable_v<InputHandler<t_type>, ValueTypes...>
     void notify_observers( int key, ValueTypes &&... values );
 
     /// The callback functions for each of the input type in one large array. Each of the input types have a single
@@ -100,16 +108,28 @@ private:
 
 // Template definition(s)
 
-template <InputType t_input_type, typename Callback>
-CallbackFunction make_callback( Callback const & callback ) {
-    return CallbackFunction { std::in_place_index<t_input_type>, callback };
+template <InputType t_type>
+CallbackFunction InputManager::make_callback( InputHandler<t_type> const & callback ) {
+    return CallbackFunction { std::in_place_index<t_type>, callback };
 }
 
-template <InputType t_input_type, typename... ValueTypes>
+template <InputType t_type>
+unsigned int InputManager::observe_input( InputHandler<t_type> const & callback, int const key ) {
+    unsigned int const index { compute_index( t_type, key ) };
+    m_observers.at( index ).emplace( m_next_id, CallbackFunction { std::in_place_index<t_type>, callback } );
+    m_bindings.emplace( m_next_id, index );
+    return m_next_id++;
+}
+
+template <InputType t_type, typename... ValueTypes> requires std::is_invocable_v<InputHandler<t_type>, ValueTypes...>
 void InputManager::notify_observers( int const key, ValueTypes &&... values ) {
-    auto & observers { m_observers.at( compute_index( t_input_type, key ) ) };
+    auto & observers { m_observers.at( compute_index( t_type, key ) ) };
     for ( auto & callback : std::views::values( observers ) )
-        std::get<t_input_type>( callback )( values... );
+        std::get<t_type>( callback )( values... );
+}
+
+unsigned int constexpr InputManager::compute_index( InputType const type, int const key ) {
+    return type_offsets[type] + (type_has_key[type] ? key : 0u);
 }
 
 

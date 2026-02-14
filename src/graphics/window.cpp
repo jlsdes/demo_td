@@ -27,9 +27,9 @@ Window::Window( unsigned int const width, unsigned int const height, char const 
 
     // The input manager can only be set up once GLFW has been initialised
     InputManager::initialise( m_window );
-    auto const close_callback = make_callback<KeyboardInput>( [this]( int, int ) { this->close(); } );
-    m_callback_ids[0] = m_input_manager.observe_input( KeyboardInput, close_callback, GLFW_KEY_ESCAPE );
-    m_callback_ids[1] = m_input_manager.observe_input( KeyboardInput, close_callback, GLFW_KEY_CAPS_LOCK );
+    auto const close_callback { [this]( int, int ) { this->close(); } };
+    m_callback_ids[0] = m_input_manager.observe_input<KeyboardInput>( close_callback, GLFW_KEY_ESCAPE );
+    m_callback_ids[1] = m_input_manager.observe_input<KeyboardInput>( close_callback, GLFW_KEY_CAPS_LOCK );
 }
 
 Window::~Window() {
