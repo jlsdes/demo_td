@@ -7,13 +7,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <cassert>
-#include <ranges>
-#include <set>
 
 
-// Camera parameters
-float constexpr camera_speed { 1.f };
-float constexpr camera_sensitivity { 0.002f };
+float constexpr sensitivity_multiplier { 0.004f }; ///< Allows the sensitivity default to be a nice round 1.
 glm::vec3 constexpr world_up { 0.f, 1.f, 0.f };
 
 
@@ -30,19 +26,18 @@ inline glm::vec3 compute_up( glm::vec3 const & forward, glm::vec3 const & right 
 
 Camera::Camera( glm::vec3 const & position, glm::vec3 const & target )
     : m_position { position }, m_yaw {}, m_pitch {}, m_forward { glm::normalize( target - position ) },
-      m_right { compute_right( m_forward ) }, m_up { compute_up( m_forward, m_right ) },  m_movement {} {
+      m_right { compute_right( m_forward ) }, m_up { compute_up( m_forward, m_right ) }, m_movement {},
+      m_speed { 1.f }, m_sensitivity { 1.f } {
+    // Try to load attributes from the config, and if it fails just continue with the default values
+    try {
+        m_speed = Config::get<float>( "Camera", "speed" );
+    } catch ( std::out_of_range const & ) {}
+    try {
+        m_sensitivity = Config::get<float>( "Camera", "sensitivity" );
+    } catch ( std::out_of_range const & ) {}
+
     set_rotation( target - position );
     update();
-
-    // Default keybinds for free-view camera
-    Config::set_current_section( "Controls" );
-    m_controls[Config::get<int>( "forward" )] = Forward;
-    m_controls[Config::get<int>( "left" )] = Left;
-    m_controls[Config::get<int>( "backward" )] = Backward;
-    m_controls[Config::get<int>( "right" )] = Right;
-    m_controls[Config::get<int>( "up" )] = Up;
-    m_controls[Config::get<int>( "down" )] = Down;
-    m_controls[Config::get<int>( "sprint" )] = 6;
 }
 
 void Camera::set_position( glm::vec3 const & position ) {
@@ -79,23 +74,14 @@ void Camera::set_rotation( float const yaw, float const pitch ) {
 void Camera::translate( glm::vec3 const & direction ) {
     auto const elapsed_time { static_cast<float>(Time::get_elapsed_time()) };
     auto const sprint { m_movement[Sprint] ? 2.f : 1.f };
-    m_position += camera_speed * elapsed_time * sprint * glm::normalize( direction );
+    m_position += m_speed * elapsed_time * sprint * glm::normalize( direction );
 }
 
-void Camera::rotate( glm::vec2 const & mouse_position ) {
-    static glm::vec2 previous_position { 0.f, 0.f };
-    static bool first_call { true };
-    if ( first_call ) {
-        previous_position = mouse_position;
-        first_call = false;
-        return;
-    }
-
-    glm::vec2 const offset { (mouse_position - previous_position) * camera_sensitivity };
+void Camera::rotate( glm::vec2 const & mouse_offset ) {
+    glm::vec2 const offset { mouse_offset * m_sensitivity * sensitivity_multiplier };
     m_yaw += offset.x;
     m_pitch -= offset.y;
     set_rotation( m_yaw, m_pitch );
-    previous_position = mouse_position;
 }
 
 glm::vec3 Camera::get_forward() const {
@@ -108,6 +94,24 @@ glm::vec3 Camera::get_right() const {
 
 glm::vec3 Camera::get_up() const {
     return m_up;
+}
+
+float Camera::get_speed() const {
+    return m_speed;
+}
+
+void Camera::set_speed( float const speed ) {
+    assert( speed >= 0.f );
+    m_speed = speed;
+}
+
+float Camera::get_sensitivity() const {
+    return m_sensitivity;
+}
+
+void Camera::set_sensitivity( float const sensitivity ) {
+    assert( sensitivity >= 0.f );
+    m_sensitivity = sensitivity;
 }
 
 void Camera::update() {
@@ -131,11 +135,7 @@ void Camera::update_shader( Shader const & shader ) const {
     shader.set_uniform( "view", glm::lookAt( m_position, m_position + m_forward, m_up ) );
 }
 
-void Camera::toggle_movement( int const key, int const action ) {
-    assert( m_controls.contains( key ) );
-    // GLFW_REPEAT is also a valid action, but we don't need it here
-    if ( action == GLFW_PRESS )
-        m_movement |= 1 << m_controls.at( key );
-    else if ( action == GLFW_RELEASE )
-        m_movement &= ~(1 << m_controls.at( key ));
+void Camera::toggle_movement( Action const action, bool const is_pressing ) {
+    assert( action < NumberActions );
+    m_movement[action] = is_pressing;
 }
