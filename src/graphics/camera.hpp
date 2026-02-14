@@ -56,10 +56,6 @@ public:
     /** Updates the given shader using the camera's (updated) data. */
     void update_shader( Shader const & shader ) const;
 
-    /** Sets the camera to free view mode, which lets the user move around freely.
-     * @param input_manager The current window's InputManager object that the camera wants its callback functions to. */
-    void set_free_view( InputManager & input_manager );
-
     /** Toggles whether the camera should move in one of the main directions (enumerated in Direction), depending on the
      *  specific key and whether it's being pressed or released. This function is used as a callback function registered
      *  to an InputManager object. */

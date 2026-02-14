@@ -6,35 +6,42 @@
 #include "utils/log.hpp"
 
 #include <cassert>
+#include <string>
 
 #include "graphics/entity_component_system.hpp"
 
 
+std::string constexpr config_names[] {
+    "forward",
+    "backward",
+    "right",
+    "left",
+    "up",
+    "down",
+    "sprint",
+};
+
+
 Controller::Controller( ECS * const ecs, InputManager & input_manager, Camera & camera )
-    : System { ecs }, m_input_manager { input_manager }, m_camera { camera }, m_mouse_callback { 0 } {
-    // Read the controls listed in the config, which are assumed to be there
-    std::set const camera_keys {
-        Config::get<int>( "Controls", "forward" ),
-        Config::get<int>( "Controls", "backward" ),
-        Config::get<int>( "Controls", "right" ),
-        Config::get<int>( "Controls", "left" ),
-        Config::get<int>( "Controls", "up" ),
-        Config::get<int>( "Controls", "down" ),
-        Config::get<int>( "Controls", "sprint" ),
+    : System { ecs }, m_input_manager { input_manager }, m_camera { camera }, m_callback_ids {} {
+    //  Set up the camera controls first
+    auto const key_callback {
+        make_callback<KeyboardInput>( [this]( int const key, int const action ) { camera_translation( key, action ); } )
     };
+    for ( unsigned char action { CameraKeyFirst }; action <= CameraKeyLast; ++action ) {
+        auto const key { Config::get<int>( "Controls", config_names[action] ) };
+        m_callback_ids[action] = m_input_manager.observe_input( KeyboardInput, key_callback, key );
+    }
 
-    auto const key_callback { [this]( int const key, int const action ) { this->camera_translation( key, action ); } };
-    auto const callback_id { m_input_manager.observe_keyboard( camera_keys, key_callback ) };
-    for ( int const key : camera_keys )
-        m_key_callbacks.at( key ) = { callback_id, MoveCamera };
-
-    auto const mouse_callback { [this]( double const x, double const y ) { camera_rotation( x, y ); } };
-    m_mouse_callback = m_input_manager.observe_cursor( mouse_callback );
+    CallbackFunction const mouse_callback {
+        make_callback<CursorInput>( [this]( double const x, double const y ) { camera_rotation( x, y ); } )
+    };
+    m_callback_ids[CameraRotate] = m_input_manager.observe_input( CursorInput, mouse_callback );
 }
 
 Controller::~Controller() {
-    if ( m_mouse_callback )
-        m_input_manager.forget_cursor( m_mouse_callback );
+    for ( unsigned int const callback_id : m_callback_ids )
+        m_input_manager.forget_input( callback_id );
     System::~System();
 }
 

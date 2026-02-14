@@ -12,7 +12,8 @@ Window::Window()
     ) {}
 
 Window::Window( unsigned int const width, unsigned int const height, char const * const title )
-    : m_window { glfwCreateWindow( static_cast<int>(width), static_cast<int>(height), title, nullptr, nullptr ) } {
+    : m_window { glfwCreateWindow( static_cast<int>(width), static_cast<int>(height), title, nullptr, nullptr ) },
+      m_callback_ids {} {
     // Create the new window using GLFW
     if ( not m_window ) {
         glfwTerminate();
@@ -26,11 +27,14 @@ Window::Window( unsigned int const width, unsigned int const height, char const 
 
     // The input manager can only be set up once GLFW has been initialised
     InputManager::initialise( m_window );
-    auto close_callback = [this]( int, int ) { this->close(); };
-    m_input_manager.observe_keyboard( { GLFW_KEY_ESCAPE, GLFW_KEY_CAPS_LOCK }, close_callback );
+    auto const close_callback = make_callback<KeyboardInput>( [this]( int, int ) { this->close(); } );
+    m_callback_ids[0] = m_input_manager.observe_input( KeyboardInput, close_callback, GLFW_KEY_ESCAPE );
+    m_callback_ids[1] = m_input_manager.observe_input( KeyboardInput, close_callback, GLFW_KEY_CAPS_LOCK );
 }
 
 Window::~Window() {
+    m_input_manager.forget_input( m_callback_ids[1] );
+    m_input_manager.forget_input( m_callback_ids[0] );
     if ( m_window )
         glfwDestroyWindow( m_window );
 }

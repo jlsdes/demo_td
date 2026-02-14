@@ -33,6 +33,12 @@ using CallbackFunction = std::variant<KeyCallbackFunction, MouseCallbackFunction
                                       ScrollCallbackFunction>;
 
 
+/** Converts a callback function into the CallbackFunction type. The provided callback function must of course have the
+ *  correct signature. */
+template <InputType t_input_type, typename Callback>
+CallbackFunction make_callback( Callback const & callback );
+
+
 /** Manages inputs from the user, i.e. keyboard and mouse inputs. */
 class InputManager {
 public:
@@ -52,22 +58,25 @@ public:
     /** Removes the registered callback function associated with the ID. */
     void forget_input( unsigned int callback_id );
 
+    /** Returns the input type and key under which the callback is registered. */
+    [[nodiscard]] std::pair<InputType, int> get_input_data( unsigned int callback_id ) const;
+
 private:
-    /** The callback function that handles keyboard inputs. */
+    /** Callback functions for the various input types. */
     static void handle_keyboard( GLFWwindow * window, int key, int, int action, int );
-
-    /** The callback function that handles mouse inputs. */
+    static void handle_mouse_button( GLFWwindow * window, int button, int action, int );
     static void handle_cursor( GLFWwindow * window, double x, double y );
+    static void handle_scroll( GLFWwindow * window, double x_offset, double y_offset );
 
+    /// Utility constants for easier access to 'm_observers'.
     static unsigned int constexpr max_number_keys { GLFW_KEY_LAST + 1 };
     static unsigned int constexpr max_number_buttons { GLFW_MOUSE_BUTTON_LAST + 1 };
     static unsigned int constexpr max_number_inputs { max_number_keys + max_number_buttons + 1 + 1 };
-
     static unsigned int constexpr type_offsets[] { 0, max_number_keys, max_number_inputs - 2, max_number_inputs - 1 };
     static bool constexpr type_has_key[] { true, true, false, false };
 
     /** Returns the index to 'm_observers' for the given inputs. */
-    [[nodiscard]] unsigned int compute_index( InputType type, int key = 0 ) const;
+    [[nodiscard]] static unsigned int constexpr compute_index( InputType type, int key = 0 );
 
     /** Notifies all observers registered for 't_input_type' and 'key'. If the callback function requires has the key/
      *  button as its first parameter, then it must be passed in twice: first as 'key', and second as the first value of
@@ -90,6 +99,11 @@ private:
 
 
 // Template definition(s)
+
+template <InputType t_input_type, typename Callback>
+CallbackFunction make_callback( Callback const & callback ) {
+    return CallbackFunction { std::in_place_index<t_input_type>, callback };
+}
 
 template <InputType t_input_type, typename... ValueTypes>
 void InputManager::notify_observers( int const key, ValueTypes &&... values ) {

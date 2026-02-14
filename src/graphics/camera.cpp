@@ -131,22 +131,6 @@ void Camera::update_shader( Shader const & shader ) const {
     shader.set_uniform( "view", glm::lookAt( m_position, m_position + m_forward, m_up ) );
 }
 
-void Camera::set_free_view( InputManager & input_manager ) {
-    // Create a set with all keys used for movement, and register them in one go because we can
-    std::set<int> keys {};
-    for ( int const & key : std::views::keys( m_controls ) )
-        keys.emplace( key );
-
-    input_manager.observe_keyboard( keys, [this]( int const key, int const action ) {
-        this->toggle_movement( key, action );
-    } );
-    input_manager.observe_cursor( [this]( double const x_position, double const y_position ) {
-        this->rotate( glm::vec2 { x_position, y_position } );
-    } );
-    // Capture the mouse, hiding it
-    glfwSetInputMode( glfwGetCurrentContext(), GLFW_CURSOR, GLFW_CURSOR_DISABLED );
-}
-
 void Camera::toggle_movement( int const key, int const action ) {
     assert( m_controls.contains( key ) );
     // GLFW_REPEAT is also a valid action, but we don't need it here

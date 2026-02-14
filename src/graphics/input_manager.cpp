@@ -9,7 +9,9 @@ InputManager::InputManager() : m_observers {}, m_bindings {}, m_next_id { 1 } {}
 
 void InputManager::initialise( GLFWwindow * const glfw_window ) {
     glfwSetKeyCallback( glfw_window, handle_keyboard );
+    glfwSetMouseButtonCallback( glfw_window, handle_mouse_button );
     glfwSetCursorPosCallback( glfw_window, handle_cursor );
+    glfwSetScrollCallback( glfw_window, handle_scroll );
 }
 
 unsigned int InputManager::observe_input( InputType const type, CallbackFunction const & callback, int const key ) {
@@ -30,13 +32,33 @@ void InputManager::forget_input( unsigned int const callback_id ) {
     m_bindings.erase( callback_id );
 }
 
+std::pair<InputType, int> InputManager::get_input_data( unsigned int const callback_id ) const {
+    unsigned int const index { m_bindings.at( callback_id ) };
+    if ( index == type_offsets[ScrollInput] )
+        return { ScrollInput, 0 };
+    if ( index == type_offsets[CursorInput] )
+        return { CursorInput, 0 };
+    if ( index >= type_offsets[MouseButtonInput] )
+        return { MouseButtonInput, index - type_offsets[MouseButtonInput] };
+    return { KeyboardInput, index };
+}
+
 InputManager & get_input_manager( GLFWwindow * const glfw_window ) {
     return static_cast<Window *>(glfwGetWindowUserPointer( glfw_window ))->get_input_manager();
 }
 
-void InputManager::handle_keyboard( GLFWwindow * const window, int const key, int, int const action, int ) {
+void InputManager::handle_keyboard( GLFWwindow * const window,
+                                    int const key,
+                                    int const scancode,
+                                    int const action,
+                                    int const mods ) {
     InputManager & input_manager { get_input_manager( window ) };
     input_manager.notify_observers<KeyboardInput>( key, key, action );
+}
+
+void InputManager::handle_mouse_button( GLFWwindow * const window, int const button, int const action, int const mods ) {
+    InputManager & input_manager { get_input_manager( window ) };
+    input_manager.notify_observers<MouseButtonInput>( button, button, action );
 }
 
 void InputManager::handle_cursor( GLFWwindow * const window, double const x, double const y ) {
@@ -44,6 +66,11 @@ void InputManager::handle_cursor( GLFWwindow * const window, double const x, dou
     input_manager.notify_observers<CursorInput>( 0, x, y );
 }
 
-unsigned int InputManager::compute_index( InputType const type, int const key ) const {
+void InputManager::handle_scroll( GLFWwindow * const window, double const x_offset, double const y_offset ) {
+    InputManager & input_manager { get_input_manager( window ) };
+    input_manager.notify_observers<ScrollInput>( 0, x_offset, y_offset );
+}
+
+unsigned int constexpr InputManager::compute_index( InputType const type, int const key ) {
     return type_offsets[type] + (type_has_key[type] ? key : 0u);
 }

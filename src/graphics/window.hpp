@@ -45,6 +45,8 @@ private:
 
     /// The attached input manager for this window.
     InputManager m_input_manager;
+
+    unsigned int m_callback_ids[2];
 };
 
 
