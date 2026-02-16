@@ -11,17 +11,14 @@
 #include <GLFW/glfw3.h>
 
 
-class GLFWwindow;
-
-
 /** The supported input types. */
-enum InputType {
+enum InputType : unsigned char {
     KeyboardInput,
     MouseButtonInput,
     CursorInput,
     ScrollInput,
-    FirstInputType = KeyboardInput,
-    LastInputType = ScrollInput
+    FirstInputType = KeyboardInput, ///< Utility value for iterating over the input types.
+    LastInputType = ScrollInput ///< Utility value for iterating over the input types.
 };
 
 

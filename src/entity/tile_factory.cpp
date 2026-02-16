@@ -13,27 +13,10 @@
 
 TileFactory::TileFactory( ECS * const ecs ) : m_ecs { ecs } {}
 
-auto constexpr F { 0.5f * (std::numbers::sqrt3_v<float> - 1) };
-auto constexpr G { 0.5f - std::numbers::sqrt3_v<float> / 6.f };
-
-constexpr glm::vec3 skew( float const x, float const y ) {
-    float const skewing_factor { F * (x + y) };
-    return { x + skewing_factor, 0.f, y + skewing_factor };
-}
-
-constexpr glm::vec3 unskew( float const x, float const y ) {
-    float const unskewing_factor { G * (x + y) };
-    return { x - unskewing_factor, 0.f, y - unskewing_factor };
-}
-
-constexpr glm::vec3 unskew( int const x, int const y ) {
-    return unskew( static_cast<float>(x), static_cast<float>(y) );
-}
-
-glm::vec3 constexpr bottom_left { unskew( 0, 0 ) };
-glm::vec3 constexpr bottom_right { unskew( 1, 0 ) };
-glm::vec3 constexpr top_left { unskew( 0, 1 ) };
-glm::vec3 constexpr top_right { unskew( 1, 1 ) };
+glm::vec3 constexpr bottom_left { tile_position( 0, 0 ) };
+glm::vec3 constexpr bottom_right { tile_position( 1, 0 ) };
+glm::vec3 constexpr top_left { tile_position( 0, 1 ) };
+glm::vec3 constexpr top_right { tile_position( 1, 1 ) };
 
 glm::vec3 constexpr main_colour { 0.5f, 0.5f, 0.5f };
 glm::vec3 constexpr border_colour { 0.2f, 0.2f, 0.2f };
@@ -65,11 +48,11 @@ EntityID TileFactory::build( SkewedCoordinate const tile_id ) const {
         orientation = glm::quat { glm::vec3 { 0.f, std::numbers::pi_v<float> / 3.f, 0.f } };
 
     Drawable const drawable { .mesh = &mesh, .orientation = orientation, .priority = Terrain };
-    Location const position { .position = unskew( tile_id.x, tile_id.y ) };
+    Location const position { .position = tile_position( tile_id.x, tile_id.y ) };
 
     EntityID const entity { m_ecs->entities.create() };
-    m_ecs->components.insert_component<Drawable>( entity, drawable );
-    m_ecs->components.insert_component<Location>( entity, position );
+    m_ecs->components.insert_component( entity, drawable );
+    m_ecs->components.insert_component( entity, position );
     return entity;
 }
 

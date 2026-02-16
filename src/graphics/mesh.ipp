@@ -69,7 +69,7 @@ unsigned int set_vertex_attributes() {
 template <VertexType V>
 Mesh<V>::Mesh( std::vector<V> const & vertices, std::vector<unsigned int> const & indices, int const draw_mode )
     : m_vertices { vertices }, m_indices { indices }, m_vertex_buffer { 0 }, m_vertex_array { 0 },
-      m_element_buffer { 0 }, m_draw_mode { draw_mode }, m_creation_thread { 0 }, m_flags { s_default_flags } {}
+      m_element_buffer { 0 }, m_draw_mode { draw_mode }, m_creation_thread { 0 }, m_flags { default_mesh_flags } {}
 
 template <VertexType V>
 Mesh<V>::~Mesh() {
@@ -84,7 +84,7 @@ Mesh<V>::Mesh( Mesh && mesh ) noexcept : m_vertices { std::move( mesh.m_vertices
                                          m_element_buffer { std::exchange( mesh.m_element_buffer, 0 ) },
                                          m_draw_mode { std::exchange( mesh.m_draw_mode, GL_TRIANGLES ) },
                                          m_creation_thread { mesh.m_creation_thread },
-                                         m_flags { std::exchange( mesh.m_flags, s_default_flags ) } {}
+                                         m_flags { std::exchange( mesh.m_flags, default_mesh_flags ) } {}
 
 template <VertexType V>
 Mesh<V> & Mesh<V>::operator=( Mesh && mesh ) noexcept {
@@ -97,7 +97,7 @@ Mesh<V> & Mesh<V>::operator=( Mesh && mesh ) noexcept {
     m_element_buffer = std::exchange( mesh.m_element_buffer, 0 );
     m_draw_mode = std::exchange( mesh.m_draw_mode, GL_TRIANGLES );
     m_creation_thread = mesh.m_creation_thread;
-    m_flags = std::exchange( mesh.m_flags, s_default_flags );
+    m_flags = std::exchange( mesh.m_flags, default_mesh_flags );
     return *this;
 }
 
@@ -152,19 +152,19 @@ void Mesh<V>::draw() const {
 
 template <VertexType V>
 bool Mesh<V>::get_flag( MeshFlag const flag ) const {
-    assert( flag < NumberFlags );
+    assert( flag < NumberMeshFlags );
     return m_flags[flag];
 }
 
 template <VertexType V>
 void Mesh<V>::set_flag( MeshFlag const flag ) {
-    assert( flag < NumberFlags );
+    assert( flag < NumberMeshFlags );
     m_flags[flag] = true;
 }
 
 template <VertexType V>
 void Mesh<V>::unset_flag( MeshFlag const flag ) {
-    assert( flag < NumberFlags );
+    assert( flag < NumberMeshFlags );
     m_flags[flag] = false;
 }
 

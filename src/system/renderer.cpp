@@ -83,6 +83,9 @@ void Renderer::run() {
         EntityID const entity { iterator.get_entity() };
         Drawable & drawable { iterator.get_component() };
 
+        if ( drawable.mesh->get_flag( IsHidden ) )
+            continue;
+
         Location const * position { nullptr };
         if ( m_ecs->entities.has_flags( entity, position_flag ) )
             position = &components.get_component<Location>( entity );

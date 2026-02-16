@@ -5,7 +5,6 @@
 #include <glm/gtc/quaternion.hpp>
 
 #include <bitset>
-#include <map>
 
 
 class Shader;

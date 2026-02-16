@@ -97,6 +97,9 @@ add_executable(demo_td
         src/system/movement.hpp
         src/system/controller.cpp
         src/system/controller.hpp
+        src/entity/tile_highlight.cpp
+        src/entity/tile_highlight.hpp
+        src/entity/entity.cpp
 )
 
 # Link the necessary libraries

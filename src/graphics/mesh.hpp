@@ -62,12 +62,15 @@ std::ostream & operator<<( std::ostream & stream, V const & vertex );
 
 enum MeshFlag : unsigned char {
     IsInitialised,
+    IsHidden,
     IsLightSource,
     IsInstanced,
     HasIndex,
     HasUpdated,
-    NumberFlags // Must be the last enum value; indicates the number of flags but is not a valid flag index itself
+    NumberMeshFlags // Must be the last enum value; indicates the number of flags but is not a valid flag index itself
 };
+
+constexpr std::bitset<NumberMeshFlags> default_mesh_flags { 0x00 };
 
 
 /** A mesh consisting of vertices and faces, optionally defined by vertex indices. This class holds some OpenGL objects,
@@ -125,8 +128,7 @@ protected: // Using protected to allow InstancedMesh<> to draw everything itself
 
     std::thread::id m_creation_thread;
 
-    std::bitset<NumberFlags> m_flags;
-    static constexpr std::bitset<NumberFlags> s_default_flags { 0b0000 };
+    std::bitset<NumberMeshFlags> m_flags;
 };
 
 
