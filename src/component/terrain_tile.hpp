@@ -45,6 +45,10 @@ SkewedCoordinate constexpr position_to_tile( float const x, float const z ) {
     return { static_cast<int>(x_floor), static_cast<int>(z_floor), half };
 }
 
+SkewedCoordinate constexpr position_to_tile( glm::vec3 const & position ) {
+    return position_to_tile( position.x, position.z );
+}
+
 /** Returns the world coordinate of the 'bottom left' corner of the tile. */
 glm::vec3 constexpr tile_position( SkewedCoordinate const & tile_id ) {
     float constexpr G { 0.5f - std::numbers::sqrt3_v<float> / 6.f };

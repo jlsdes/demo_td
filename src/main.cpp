@@ -10,6 +10,7 @@
 
 #include "entity/tile_factory.hpp"
 #include "entity/tower_factory.hpp"
+#include "entity/tile_highlight.hpp"
 
 
 int main() {
@@ -32,6 +33,11 @@ int main() {
     std::array<EntityID, g_chunk_size> chunk_1 { tile_factory.build_chunk( { 0, 0, 0 } ) };
     std::array<EntityID, g_chunk_size> chunk_2 { tile_factory.build_chunk( { 0, 0, 1 } ) };
 
+    TileHighlight highlight { &ecs };
+
+    unsigned int frame_count { 0 };
+    double last_report { Time::get_time() };
+
     auto const window { context.get_window() };
     while ( not window->is_closing() ) {
         Time::loop_start();
@@ -42,6 +48,16 @@ int main() {
         ecs.systems.run_group( Render );
 
         window->render();
+
+        ++frame_count;
+        double const current_time { Time::get_time() };
+        double const elapsed_time { current_time - last_report };
+        if ( elapsed_time >= 1. ) {
+            Log::debug( "Elapsed time since last report = ", elapsed_time );
+            Log::debug( "Frames rendered = ", frame_count, " at ", frame_count / elapsed_time, " FPS" );
+            frame_count = 0;
+            last_report = current_time;
+        }
     }
 
     return 0;
