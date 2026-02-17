@@ -5,7 +5,7 @@
 #include "graphics/mesh.hpp"
 
 #include <glm/glm.hpp>
-#include <glm/gtc/quaternion.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 
 class Shader;
@@ -28,7 +28,7 @@ struct Drawable : Component {
     Mesh<ColourVertex> * mesh { nullptr };
     Shader * shader { nullptr };
 
-    glm::quat orientation {};
+    glm::mat3 orientation { glm::identity<glm::mat3>()};
     glm::vec3 scale { 1.f };
 
     PriorityHint priority { Opaque };

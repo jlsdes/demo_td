@@ -33,6 +33,9 @@ void initialise_glfw() {
     glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 6 );
     glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
     glfwWindowHint( GLFW_SAMPLES, 8 ); // Enable MSAA (anti-aliasing)
+
+    // Experiment: transparent window
+    // glfwWindowHint( GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE );
 }
 
 void initialise_glad() {
@@ -40,7 +43,12 @@ void initialise_glad() {
         glfwTerminate();
         throw std::runtime_error( "Failed to initialise GLAD." );
     }
-    glClearColor( 0.1f, 0.1f, 0.1f, 1.0f );
+    // If the window is transparent, make it fully transparent, otherwise use a dark grey background
+    if ( glfwGetWindowAttrib( glfwGetCurrentContext(), GLFW_TRANSPARENT_FRAMEBUFFER ) )
+        glClearColor( 0.f, 0.f, 0.f, 0.f );
+    else
+        glClearColor( 0.1f, 0.1f, 0.1f, 1.0f );
+
     glDepthFunc( GL_LESS );
     glEnable( GL_DEPTH_TEST );
     glCullFace( GL_BACK );
@@ -52,10 +60,6 @@ void initialise_glad() {
 // Camera initialisation constants
 glm::vec3 constexpr initial_position { -3.f, 0.f, 0.f };
 glm::vec3 constexpr initial_target { 0.f, 0.f, 0.f };
-Location const initial_location {
-    .position = initial_position,
-    .orientation = glm::quatLookAt( initial_target - initial_position, glm::vec3 { 0.f, 1.f, 0.f } )
-};
 
 
 TopContext::TopContext() : Context { nullptr }, m_window { nullptr },
@@ -65,6 +69,12 @@ TopContext::TopContext() : Context { nullptr }, m_window { nullptr },
     m_window = std::make_unique<Window>();
     initialise_glad();
     InputManager & input_manager { m_window->get_input_manager() };
+
+    // When using the default swap interval, where GLFW synchronises the framerate with the screen's refresh rate, I get
+    // quite a lot of dropped frames when moving the mouse around (only when using the default cursor mode). I'm not
+    // sure why this happens, and why it doesn't happen when setting the cursor mode to GLFW_CURSOR_DISABLED, but it
+    // does. As such, I've decided to just handle the frame rate limiting myself.
+    glfwSwapInterval( 0 );
 
     m_ecs->components.create_store<Drawable>();
     m_ecs->components.create_store<Location>();

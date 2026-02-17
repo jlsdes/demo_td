@@ -12,6 +12,8 @@
 #include "entity/tower_factory.hpp"
 #include "entity/tile_highlight.hpp"
 
+#include <thread>
+
 
 int main() {
     auto const main_dir { get_main_dir() };
@@ -38,16 +40,22 @@ int main() {
     unsigned int frame_count { 0 };
     double last_report { Time::get_time() };
 
+    double constexpr desired_fps { 60. };
+    double constexpr desired_loop_length { 1. / desired_fps };
+    double loop_length { 0. };
+
     auto const window { context.get_window() };
     while ( not window->is_closing() ) {
-        Time::loop_start();
-        window->clear();
+        std::this_thread::sleep_for( std::chrono::duration<double> { (desired_loop_length - loop_length) * 0.995 } );
 
+        double const loop_start { Time::loop_start() };
         glfwPollEvents();
+        window->clear();
         ecs.systems.run_group( General );
         ecs.systems.run_group( Render );
-
         window->render();
+        double const loop_end { Time::get_time() };
+        loop_length = loop_end - loop_start;
 
         ++frame_count;
         double const current_time { Time::get_time() };

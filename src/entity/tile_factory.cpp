@@ -43,9 +43,10 @@ MeshBuilder create_tile_builder( std::vector<glm::vec3> vertices ) {
 EntityID TileFactory::build( SkewedCoordinate const tile_id ) const {
     static InstancedMesh mesh { create_tile_builder( { bottom_left, top_left, top_right } ).get_mesh() };
 
-    glm::quat orientation {};
+    glm::quat rotation {};
     if ( tile_id.half )
-        orientation = glm::quat { glm::vec3 { 0.f, std::numbers::pi_v<float> / 3.f, 0.f } };
+        rotation = glm::quat { glm::vec3 { 0.f, std::numbers::pi_v<float> / 3.f, 0.f } };
+    glm::mat3 const orientation { glm::mat3_cast( rotation ) };
 
     Drawable const drawable { .mesh = &mesh, .orientation = orientation, .priority = Terrain };
     Location const position { .position = tile_position( tile_id.x, tile_id.y ) };

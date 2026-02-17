@@ -46,7 +46,7 @@ glm::mat4 compute_transformation( Drawable const & drawable, Location const * co
     if ( position )
         transformation = glm::translate( transformation, position->position );
     transformation = glm::scale( transformation, drawable.scale );
-    transformation *= glm::mat4_cast( drawable.orientation );
+    transformation *= glm::mat4( drawable.orientation );
     return transformation;
 }
 
