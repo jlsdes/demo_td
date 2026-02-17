@@ -17,7 +17,6 @@
 
 Renderer::Renderer( ECS * const ecs, Window & window, Camera & camera )
     : System { ecs }, m_window { window }, m_camera { camera }, m_shaders {} {
-
     glm::vec3 constexpr ambient_light { 0.01f };
     glm::vec3 constexpr sun_light { 1.f };
     glm::vec3 constexpr sun_direction { -0.2f, 1.f, -0.5f };
@@ -39,15 +38,6 @@ Renderer::Renderer( ECS * const ecs, Window & window, Camera & camera )
         shader.set_uniform( "projection", glm::perspective( fov, 1200.f / 800.f, 0.1f, 100.f ) );
         shader.set_uniform( "is_light_source", false );
     }
-}
-
-glm::mat4 compute_transformation( Drawable const & drawable, Location const * const position ) {
-    auto transformation { glm::identity<glm::mat4>() };
-    if ( position )
-        transformation = glm::translate( transformation, position->position );
-    transformation = glm::scale( transformation, drawable.scale );
-    transformation *= glm::mat4( drawable.orientation );
-    return transformation;
 }
 
 struct QueueItem {
@@ -94,10 +84,12 @@ void Renderer::run() {
             auto const mesh { dynamic_cast<InstancedMesh<ColourVertex> *>(drawable.mesh) };
             bool const first_instance { not instanced_meshes.contains( mesh ) };
 
-            // The list of instances should be cleared between every render loop, and then each instance is added again
-            if ( first_instance )
-                mesh->reset_data();
-            mesh->update( compute_transformation( drawable, position ) );
+            // For 'dynamic' instanced meshes, clear the instances each loop and add them again
+            if ( mesh->get_flag( IsDynamic ) ) {
+                if ( first_instance )
+                    mesh->clear_instances();
+                mesh->add_instance( drawable.scale, drawable.orientation, position ? position->position : origin );
+            }
 
             // If this is the first instance, add the mesh to the render queue, and add it to the set of seen meshes
             if ( not first_instance )
@@ -118,7 +110,9 @@ void Renderer::run() {
         if ( not mesh->get_flag( IsInstanced ) ) {
             shader = &m_shaders.get_shader( "main" );
 
-            glm::mat4 const transformation { compute_transformation( *drawable, position ) };
+            glm::mat4 const transformation {
+                compute_transformation( drawable->scale, drawable->orientation, position ? position->position : origin )
+            };
             shader->set_uniform( "model", transformation );
             shader->set_uniform( "normal_transform", glm::mat3 { glm::transpose( glm::inverse( transformation ) ) } );
         } else {

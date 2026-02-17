@@ -5,6 +5,8 @@
 
 #include <utility>
 
+#include <glm/gtc/matrix_transform.hpp>
+
 
 template <glm::length_t size, typename Number>
 std::ostream & operator<<( std::ostream & stream, glm::vec<size, Number> const & vector ) {
@@ -142,7 +144,7 @@ void Mesh<V>::set_draw_mode( int const mode ) {
 }
 
 template <VertexType V>
-void Mesh<V>::draw() const {
+void Mesh<V>::draw() {
     glBindVertexArray( m_vertex_array );
     if ( get_flag( HasIndex ) )
         glDrawElements( m_draw_mode, static_cast<int>(m_indices.size()), GL_UNSIGNED_INT, nullptr );
@@ -191,13 +193,13 @@ InstancedMesh<V>::~InstancedMesh() {
 
 template <VertexType V>
 InstancedMesh<V>::InstancedMesh( InstancedMesh && mesh ) noexcept
-    : Mesh<V> { mesh }, m_instance_array { std::move( mesh.m_instance_array ) },
+    : Mesh<V> { std::move( mesh ) }, m_instance_array { std::move( mesh.m_instance_array ) },
       m_nr_instances { std::exchange( mesh.m_nr_instances, 0 ) },
       m_instance_buffer { std::exchange( mesh.m_instance_buffer, 0 ) } {}
 
 template <VertexType V>
 InstancedMesh<V> & InstancedMesh<V>::operator=( InstancedMesh && mesh ) noexcept {
-    Mesh<V>::operator=( mesh );
+    Mesh<V>::operator=( std::move( mesh ) );
     m_instance_array = std::move( mesh.m_instance_array );
     m_nr_instances = std::exchange( mesh.m_nr_instances, 0 );
     m_instance_buffer = std::exchange( mesh.m_instance_buffer, 0 );
@@ -243,24 +245,35 @@ unsigned int InstancedMesh<V>::get_nr_instances() const {
 }
 
 template <VertexType V>
-void InstancedMesh<V>::reset_data() {
+void InstancedMesh<V>::clear_instances() {
     if ( m_nr_instances )
         Mesh<V>::set_flag( HasUpdated );
     m_nr_instances = 0;
 }
 
-template <VertexType V>
-void InstancedMesh<V>::update( glm::mat4 const & transformation ) {
-    glm::mat3 const normal_transformation { glm::mat3 { glm::transpose( glm::inverse( transformation ) ) } };
-    m_instance_array[m_nr_instances] = { transformation, normal_transformation };
-    ++m_nr_instances;
+inline glm::mat4 compute_transformation( glm::vec3 const & scale,
+                                         glm::mat3 const & orientation,
+                                         glm::vec3 const & position ) {
+    return glm::scale( glm::translate( glm::identity<glm::mat4>(), position ), scale ) * glm::mat4 { orientation };
 }
 
 template <VertexType V>
-void InstancedMesh<V>::draw() const {
+void InstancedMesh<V>::add_instance( glm::vec3 const & scale,
+                                     glm::mat3 const & orientation,
+                                     glm::vec3 const & position ) {
+    glm::mat4 const transformation { compute_transformation( scale, orientation, position ) };
+    glm::mat3 const normal_transformation { glm::transpose( glm::inverse( transformation ) ) };
+    m_instance_array[m_nr_instances] = { transformation, normal_transformation };
+    ++m_nr_instances;
+    Mesh<V>::set_flag( HasUpdated );
+}
+
+template <VertexType V>
+void InstancedMesh<V>::draw() {
     if ( Mesh<V>::get_flag( HasUpdated ) ) {
         glBindBuffer( GL_ARRAY_BUFFER, m_instance_buffer );
         glBufferSubData( GL_ARRAY_BUFFER, 0, m_nr_instances * sizeof( InstanceData ), m_instance_array.data() );
+        Mesh<V>::unset_flag( HasUpdated );
     }
 
     glBindVertexArray( Mesh<V>::m_vertex_array );

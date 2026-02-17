@@ -11,6 +11,9 @@
 #include <vector>
 
 
+glm::vec3 constexpr origin { 0.f };
+
+
 /** A variable that may not exist, primarily as a utility struct for the Vertex_ implementation. If 'exists' is true,
  *  then this struct has a single member 'value' with type 'T', but if it's false then this struct is empty. This can be
  *  useful if [[no_unique_address]] is used, as the compiler can then hide the Optional<...> member within another data
@@ -65,6 +68,7 @@ enum MeshFlag : unsigned char {
     IsHidden,
     IsLightSource,
     IsInstanced,
+    IsDynamic, // Indicates that an instanced mesh has constantly updating instances
     HasIndex,
     HasUpdated,
     NumberMeshFlags // Must be the last enum value; indicates the number of flags but is not a valid flag index itself
@@ -107,7 +111,7 @@ public:
 
     /** Draws the mesh using the given draw mode, or its default draw mode if none is given. The default draw mode for
      * this mesh can be changed using set_draw_mode(). */
-    virtual void draw() const;
+    virtual void draw();
 
     [[nodiscard]] bool get_flag( MeshFlag flag ) const;
     void set_flag( MeshFlag flag );
@@ -167,11 +171,11 @@ public:
 
     [[nodiscard]] unsigned int get_nr_instances() const;
 
+    void clear_instances();
     /** Updates a single instance's transformation matrix. */
-    void reset_data();
-    void update( glm::mat4 const & transformation );
+    void add_instance( glm::vec3 const & scale, glm::mat3 const & orientation, glm::vec3 const & position );
 
-    void draw() const override;
+    void draw() override;
 
 private:
     struct InstanceData {
