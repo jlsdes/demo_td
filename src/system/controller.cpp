@@ -1,8 +1,10 @@
 #include "controller.hpp"
 
+#include "component/drawable.hpp"
+#include "component/location.hpp"
+#include "entity/tile_highlight.hpp"
 #include "graphics/entity_component_system.hpp"
 #include "graphics/input_manager.hpp"
-#include "component/location.hpp"
 #include "utils/config.hpp"
 
 #include <string>
@@ -25,15 +27,14 @@ Controller::Controller( ECS * const ecs, InputManager & input_manager, Camera & 
         auto const key { Config::get<int>( "Controls", config_names[action] ) };
         auto const key_callback {
             [this, action]( int, int const key_action ) {
-                if ( key_action != GLFW_REPEAT )
-                    handle_camera_key( static_cast<Camera::Action>(action), key_action == GLFW_PRESS );
+                handle_camera_key( static_cast<Camera::Action>(action), key_action );
             }
         };
         m_callback_ids[action] = m_input_manager.observe_input<KeyboardInput>( key_callback, key );
     }
 
-    auto const cursor_callback { [this]( double const x, double const y ) { handle_camera_rotation( x, y ); } };
-    m_callback_ids[CameraRotate] = m_input_manager.observe_input<CursorInput>( cursor_callback );
+    auto const cursor_callback { [this]( double const x, double const y ) { handle_cursor_movement( x, y ); } };
+    m_callback_ids[CursorMove] = m_input_manager.observe_input<CursorInput>( cursor_callback );
 
     auto const mouse_callback { [this]( int, int const action ) { m_flags[IsCameraRotating] = action == GLFW_PRESS; } };
     m_callback_ids[CameraEnableRotate] = m_input_manager.observe_input<MouseButtonInput>(
@@ -53,11 +54,13 @@ Controller::~Controller() {
 
 void Controller::run() {}
 
-void Controller::handle_camera_key( Camera::Action const action, bool const is_pressing ) const {
-    m_camera.toggle_movement( action, is_pressing );
+void Controller::handle_camera_key( Camera::Action const camera_action, int const key_action ) const {
+    if ( key_action == GLFW_REPEAT )
+        return;
+    m_camera.toggle_movement( camera_action, key_action == GLFW_PRESS );
 }
 
-void Controller::handle_camera_rotation( double const x, double const y ) const {
+void Controller::handle_cursor_movement( double const x, double const y ) const {
     static glm::vec2 previous_position { x, y };
 
     glm::vec2 const position { x, y };

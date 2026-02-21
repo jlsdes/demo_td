@@ -46,23 +46,26 @@ int main() {
 
     auto const window { context.get_window() };
     while ( not window->is_closing() ) {
-        std::this_thread::sleep_for( std::chrono::duration<double> { (desired_loop_length - loop_length) * 0.995 } );
+        std::this_thread::sleep_for( std::chrono::duration<double> { (desired_loop_length - loop_length) * 0.9925 } );
 
         double const loop_start { Time::loop_start() };
+
         glfwPollEvents();
-        window->clear();
         ecs.systems.run_group( General );
+        window->clear();
         ecs.systems.run_group( Render );
         window->render();
+
         double const loop_end { Time::get_time() };
         loop_length = loop_end - loop_start;
 
         ++frame_count;
         double const current_time { Time::get_time() };
-        double const elapsed_time { current_time - last_report };
-        if ( elapsed_time >= 1. ) {
-            Log::debug( "Elapsed time since last report = ", elapsed_time );
-            Log::debug( "Frames rendered = ", frame_count, " at ", frame_count / elapsed_time, " FPS" );
+        if ( double const elapsed_time { current_time - last_report }; elapsed_time >= 1. ) {
+            double const fps { static_cast<double>(frame_count) / elapsed_time };
+            auto const new_title { std::format( "Demo TD\t[FPS={:.5}]", fps ) };
+            glfwSetWindowTitle( glfwGetCurrentContext(), new_title.c_str() );
+
             frame_count = 0;
             last_report = current_time;
         }

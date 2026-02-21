@@ -116,7 +116,16 @@ void EntityManager::set_entity_name( std::string const & name, EntityID const id
     m_named_entities.insert_or_assign( name, id );
 }
 
+void EntityManager::remove_name( std::string const & name ) {
+    assert( name_exists( name ) );
+    m_named_entities.erase( name );
+}
+
+bool EntityManager::name_exists( std::string const & name ) const {
+    return m_named_entities.contains( name );
+}
+
 EntityID EntityManager::get_entity_id( std::string const & name ) const {
-    assert( m_named_entities.contains( name ) );
+    assert( name_exists( name ) );
     return m_named_entities.at( name );
 }

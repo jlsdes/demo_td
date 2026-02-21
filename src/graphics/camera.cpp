@@ -26,7 +26,7 @@ inline glm::vec3 compute_up( glm::vec3 const & forward, glm::vec3 const & right 
 
 Camera::Camera( glm::vec3 const & position, glm::vec3 const & target )
     : m_position { position }, m_yaw {}, m_pitch {}, m_forward { glm::normalize( target - position ) },
-      m_right { compute_right( m_forward ) }, m_up { compute_up( m_forward, m_right ) }, m_movement {},
+      m_right { compute_right( m_forward ) }, m_up { compute_up( m_forward, m_right ) }, m_view {}, m_movement {},
       m_speed { 1.f }, m_sensitivity { 1.f } {
     // Try to load attributes from the config, and if it fails just continue with the default values
     try {
@@ -84,6 +84,10 @@ void Camera::rotate( glm::vec2 const & mouse_offset ) {
     set_rotation( m_yaw, m_pitch );
 }
 
+glm::vec3 Camera::get_position() const {
+    return m_position;
+}
+
 glm::vec3 Camera::get_forward() const {
     return m_forward;
 }
@@ -130,9 +134,10 @@ void Camera::update() {
     }
 }
 
-void Camera::update_shader( Shader const & shader ) const {
+void Camera::update_shader( Shader const & shader ) {
     shader.set_uniform( "camera_position", m_position );
-    shader.set_uniform( "view", glm::lookAt( m_position, m_position + m_forward, m_up ) );
+    m_view = glm::lookAt( m_position, m_position + m_forward, m_up );
+    shader.set_uniform( "view", m_view );
 }
 
 void Camera::toggle_movement( Action const action, bool const is_pressing ) {

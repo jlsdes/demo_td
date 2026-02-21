@@ -21,8 +21,8 @@ public:
     void run() override;
 
 private:
-    void handle_camera_key( Camera::Action action, bool is_pressing ) const;
-    void handle_camera_rotation( double x, double y ) const;
+    void handle_camera_key( Camera::Action camera_action, int key_action ) const;
+    void handle_cursor_movement( double x, double y ) const;
     void toggle_camera_mode();
 
     InputManager & m_input_manager;
@@ -31,8 +31,8 @@ private:
     enum Action {
         // The first values are reserved for the Camera::Action enum values
         CameraEnableRotate = Camera::NumberActions,
-        CameraRotate,
         CameraFreeView,
+        CursorMove,
         NumberActions ///< Not a valid action; must remain the final enum value to indicate the total number of actions.
     };
 
@@ -44,9 +44,10 @@ private:
     enum Flag {
         IsCameraRotating,
         IsCameraFreeView,
+        NumberFlags // Not a valid flag; must be the last enum value to correctly indicate the total number of flags
     };
 
-    std::bitset<2> m_flags;
+    std::bitset<NumberFlags> m_flags;
 };
 
 

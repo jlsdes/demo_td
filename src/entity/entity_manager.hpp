@@ -76,6 +76,8 @@ public:
     /** Assigns the ID to the name. If the name was already registered, then the old value is overwritten. In this case
      *  a warning will be logged unless 'ignore_existing' is set to true. */
     void set_entity_name( std::string const & name, EntityID id, bool ignore_existing = false );
+    void remove_name( std::string const & name );
+    bool name_exists( std::string const & name ) const;
     /** Returns the entity ID associated with the given name. Throws an exception if the name isn't registered. */
     [[nodiscard]] EntityID get_entity_id( std::string const & name ) const;
 

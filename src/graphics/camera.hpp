@@ -30,7 +30,8 @@ public:
     void set_rotation( float yaw, float pitch );
     void rotate( glm::vec2 const & mouse_offset );
 
-    /** Directional vectors related to the orientation of the camera. */
+    /** Vectors related to the position/orientation of the camera. */
+    [[nodiscard]] glm::vec3 get_position() const;
     [[nodiscard]] glm::vec3 get_forward() const;
     [[nodiscard]] glm::vec3 get_right() const;
     [[nodiscard]] glm::vec3 get_up() const;
@@ -46,7 +47,7 @@ public:
     /** Updates the camera's internal data. */
     void update();
     /** Updates the given shader using the camera's (updated) data. */
-    void update_shader( Shader const & shader ) const;
+    void update_shader( Shader const & shader );
 
     /// The keyboard-related actions that affect the camera.
     enum Action : unsigned char {
@@ -75,6 +76,9 @@ private:
     glm::vec3 m_forward;
     glm::vec3 m_right;
     glm::vec3 m_up;
+
+    /// The view and projection matrices used in rendering.
+    glm::mat4 m_view;
 
     /// For the camera in 'free-view' mode
     /// Toggles for keeping track of whether the user is currently holding down a movement key.
