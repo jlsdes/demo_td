@@ -74,7 +74,7 @@ void SystemManager::set_group( unsigned int const group_type, unsigned int prior
     if ( priority == 0 )
         priority = old_priority;
     if ( not m_groups.contains( group_type ) )
-        m_groups.emplace( PriorityCompare { this } );
+        m_groups.emplace( group_type, PriorityCompare { this } );
 
     m_groups.at( old_group ).erase( type );
     m_groups.at( group_type ).emplace( type );
