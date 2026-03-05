@@ -1,5 +1,14 @@
 #version 460 core
 
+// Some constants, these should become material attributes at some point
+// No ambient factor; this can be changed by scaling the ambient_light uniform
+#define diffuse_factor 0.2f
+#define specular_factor 0.01f
+#define shininess 32
+
+#define max_nr_lights 8
+
+
 // Interpolated values received from the vertex shader
 in vec3 position;
 in vec3 normal;
@@ -11,17 +20,19 @@ uniform vec3 sun_light;
 uniform vec3 sun_direction;
 uniform vec3 camera_position;
 
+struct PointLight {
+    vec3 position;
+    vec3 attenuation;
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+};
+uniform PointLight lights[max_nr_lights];
+uniform uint nr_lights;
 uniform bool is_light_source;
 
 // The end result: the fragment's colour
 out vec4 fragment_colour;
-
-
-// Some constants, these should become material attributes at some point
-// No ambient factor; this can be changed by scaling the ambient_light uniform
-#define diffuse_factor 0.2f
-#define specular_factor 0.01f
-#define shininess 32
 
 
 /// Returns the diffuse colour contribution of a given light source on the current fragment. This function requires the
@@ -34,21 +45,41 @@ vec3 diffuse_colour( vec3 light_direction, vec3 light_colour ) {
 
 /// Returns the specular colour contribution of a given light source on the current fragment. This function requires the
 /// direction the light source is in relative to the fragment, and the colour of the light.
-vec3 specular_colour( vec3 light_direction, vec3 light_colour ) {
-    vec3 view_direction = normalize( camera_position - position );
+vec3 specular_colour( vec3 light_direction, vec3 light_colour, vec3 view_direction ) {
     vec3 reflect_direction = reflect( -light_direction, normalize( normal ) );
     float specular_sun_strength = pow( max( dot( view_direction, reflect_direction ), 0.0f ), shininess );
     return specular_factor * specular_sun_strength * sun_light;
 }
 
 
+/// Computes the lighting contribution for the fragment from a single point light.
+vec3 compute_point_light( PointLight light, vec3 view_direction ) {
+    float dist = distance( light.position, position );
+    float attenuation = 1.f / ( light.attenuation[0] + ( light.attenuation[1] + light.attenuation[2] * dist ) * dist );
+    if ( attenuation < 0.001 )
+        return vec3( 0.f );
+
+    vec3 light_direction = normalize( light.position - position );
+    vec3 diffuse = diffuse_colour( light_direction, light.diffuse );
+    vec3 specular = specular_colour( light_direction, light.specular, view_direction );
+
+    return ( light.ambient + diffuse + specular ) * colour * attenuation;
+}
+
+
 void main() {
+    vec3 view_direction = normalize( camera_position - position );
+
     vec3 sun_diffuse = diffuse_colour( sun_direction, sun_light );
-    vec3 sun_specular = specular_colour( sun_direction, sun_light );
+    vec3 sun_specular = specular_colour( sun_direction, sun_light, view_direction );
     vec3 result = ( ambient_light + sun_diffuse + sun_specular ) * colour;
 
-    if ( is_light_source )
+    if ( is_light_source ) {
         result = colour;
+    } else {
+        for ( uint i = 0; i < nr_lights; ++i )
+            result += compute_point_light( lights[i], view_direction );
+    }
 
     // Gamma correction
     result = pow( result, vec3( 1.f / 2.2f ) );

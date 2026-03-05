@@ -36,6 +36,7 @@ Renderer::Renderer( ECS * const ecs, Window & window, Camera & camera )
         shader.set_uniform( "sun_light", sun_light );
         shader.set_uniform( "sun_direction", sun_direction );
         shader.set_uniform( "projection", glm::perspective( fov, 1200.f / 800.f, 0.1f, 100.f ) );
+        shader.set_uniform( "nr_lights", 0 );
         shader.set_uniform( "is_light_source", false );
     }
 }
