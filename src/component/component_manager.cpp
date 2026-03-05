@@ -32,7 +32,7 @@ void ComponentManager::remove_component( EntityID const entity, ComponentTypeID 
     assert( has_store( type_id ) );
     assert( entity_has_component( entity, type_id ) );
 
-    m_stores.at( type_id )->remove( type_id );
+    m_stores.at( type_id )->remove( entity );
     m_entities.unset_flag( entity, type_id );
 }
 
