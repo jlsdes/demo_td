@@ -2,7 +2,7 @@
 #include "component/drawable.hpp"
 #include "component/location.hpp"
 #include "component/terrain_tile.hpp"
-#include "graphics/entity_component_system.hpp"
+#include "core/entity_component_system.hpp"
 
 
 Mesh<ColourVertex> create_mesh() {

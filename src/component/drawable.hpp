@@ -2,7 +2,7 @@
 #define DEMO_TD_DRAWABLE_HPP
 
 #include "component.hpp"
-#include "graphics/mesh.hpp"
+#include "core/mesh.hpp"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>

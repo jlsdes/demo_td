@@ -1,5 +1,5 @@
 #include "tower_factory.hpp"
-#include "graphics/entity_component_system.hpp"
+#include "core/entity_component_system.hpp"
 #include "component/entity_type.hpp"
 #include "component/location.hpp"
 

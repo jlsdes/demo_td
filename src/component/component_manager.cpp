@@ -2,7 +2,7 @@
 
 #include <cassert>
 
-#include "graphics/entity_component_system.hpp"
+#include "core/entity_component_system.hpp"
 
 
 ComponentManager::ComponentManager( ECS * const ecs ) : m_entities { ecs->entities }, m_systems { ecs->systems },

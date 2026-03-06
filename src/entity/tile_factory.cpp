@@ -1,9 +1,9 @@
 #include "tile_factory.hpp"
 #include "component/drawable.hpp"
 #include "component/location.hpp"
-#include "graphics/entity_component_system.hpp"
-#include "graphics/mesh.hpp"
-#include "graphics/mesh_builder.hpp"
+#include "core/entity_component_system.hpp"
+#include "core/mesh.hpp"
+#include "core/mesh_builder.hpp"
 
 #include <numbers>
 #include <vector>

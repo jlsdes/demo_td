@@ -6,9 +6,9 @@
 #include "component/location.hpp"
 #include "component/tower_data.hpp"
 
-#include "graphics/mesh.hpp"
-#include "graphics/mesh_builder.hpp"
-#include "graphics/shader.hpp"
+#include "core/mesh.hpp"
+#include "core/mesh_builder.hpp"
+#include "core/shader.hpp"
 
 #include "utils/config.hpp"
 

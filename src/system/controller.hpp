@@ -2,7 +2,7 @@
 #define DEMO_TD_CONTROLLER_HPP
 
 #include "system.hpp"
-#include "graphics/camera.hpp"
+#include "core/camera.hpp"
 
 #include <array>
 #include <bitset>

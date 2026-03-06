@@ -1,7 +1,7 @@
 #include "movement.hpp"
 
 #include "component/location.hpp"
-#include "graphics/entity_component_system.hpp"
+#include "core/entity_component_system.hpp"
 #include "utils/time.hpp"
 
 

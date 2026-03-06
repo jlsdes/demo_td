@@ -2,9 +2,9 @@
 #define DEMO_TD_RENDERER_HPP
 
 #include "system/system.hpp"
-#include "graphics/camera.hpp"
-#include "graphics/shader.hpp"
-#include "graphics/window.hpp"
+#include "core/camera.hpp"
+#include "core/shader.hpp"
+#include "core/window.hpp"
 
 
 /** Renders all drawable components. */
