@@ -30,9 +30,8 @@ int main() {
         towers.at( type ) = Tower::make( static_cast<TowerData::Type>(type), position, &ecs );
     }
 
-    TileFactory const tile_factory { &ecs };
-    std::array<EntityID, g_chunk_size> chunk_1 { tile_factory.build_chunk( { 0, 0, 0 } ) };
-    std::array<EntityID, g_chunk_size> chunk_2 { tile_factory.build_chunk( { 0, 0, 1 } ) };
+    std::array<EntityID, g_chunk_size> chunk_1 { Tile::make_chunk( { 0, 0, 0 }, &ecs ) };
+    std::array<EntityID, g_chunk_size> chunk_2 { Tile::make_chunk( { 0, 0, 1 }, &ecs ) };
 
     TileHighlight highlight { &ecs };
 

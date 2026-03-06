@@ -1,6 +1,8 @@
 #include "tile_factory.hpp"
-#include "component/drawable.hpp"
+
+#include "component/entity_type.hpp"
 #include "component/location.hpp"
+
 #include "core/entity_component_system.hpp"
 #include "core/mesh.hpp"
 #include "core/mesh_builder.hpp"
@@ -10,8 +12,6 @@
 
 #include <glm/glm.hpp>
 
-
-TileFactory::TileFactory( ECS * const ecs ) : m_ecs { ecs } {}
 
 glm::vec3 constexpr bottom_left { tile_position( 0, 0 ) };
 glm::vec3 constexpr bottom_right { tile_position( 1, 0 ) };
@@ -41,7 +41,7 @@ InstancedMesh<ColourVertex> create_tile_mesh() {
     return InstancedMesh<ColourVertex> { builder.get_mesh() };
 }
 
-EntityID TileFactory::build( SkewedCoordinate const tile_id ) const {
+EntityID Tile::make( SkewedCoordinate const tile_id, ECS * const ecs ) {
     static auto mesh { create_tile_mesh() };
     mesh.set_flag( HasUpdated );
 
@@ -50,18 +50,17 @@ EntityID TileFactory::build( SkewedCoordinate const tile_id ) const {
         rotation = glm::quat { glm::vec3 { 0.f, std::numbers::pi_v<float> / 3.f, 0.f } };
     glm::mat3 const orientation { glm::mat3_cast( rotation ) };
 
-    Drawable const drawable { .mesh = &mesh, .orientation = orientation, .priority = Terrain };
-    Location const position { .position = tile_position( tile_id.x, tile_id.y ) };
+    auto const position { tile_position( tile_id.x, tile_id.y ) };
 
-    mesh.add_instance( drawable.scale, drawable.orientation, position.position );
+    mesh.add_instance( glm::vec3 { 1.f }, orientation, position );
 
-    EntityID const entity { m_ecs->entities.create() };
-    m_ecs->components.insert_component( entity, drawable );
-    m_ecs->components.insert_component( entity, position );
+    EntityID const entity { ecs->entities.create() };
+    ecs->components.insert_component<EntityType>( entity, { .type_id = EntityType::Tile } );
+    ecs->components.insert_component<Location>( entity, { .position = position } );
     return entity;
 }
 
-std::array<EntityID, g_chunk_size> TileFactory::build_chunk( SkewedCoordinate const chunk_id ) const {
+std::array<EntityID, g_chunk_size> Tile::make_chunk( SkewedCoordinate const chunk_id, ECS * const ecs ) {
     std::array<EntityID, g_chunk_size> entities {};
     unsigned int index { 0 };
 
@@ -72,13 +71,13 @@ std::array<EntityID, g_chunk_size> TileFactory::build_chunk( SkewedCoordinate co
     // Iterating over all triangles by the barycentric coordinates (u, v) of their "bottom-left" corner
     // w is not used here and is thus omitted; the full barycentric coordinates are (u, v, 16-u-v)
     for ( int u { 0 }; u < g_chunk_length; ++u ) {
-        entities.at( index++ ) = build( { base_x + u, base_y + u, chunk_id.half } );
+        entities.at( index++ ) = make( { base_x + u, base_y + u, chunk_id.half }, ecs );
 
         for ( int v { u + 1 }; v < g_chunk_length; ++v ) {
             int const x { base_x + (1 - half) * u + half * v };
             int const y { base_y + (1 - half) * v + half * u };
-            entities.at( index++ ) = build( { x, y, 0 } );
-            entities.at( index++ ) = build( { x, y, 1 } );
+            entities.at( index++ ) = make( { x, y, 0 }, ecs );
+            entities.at( index++ ) = make( { x, y, 1 }, ecs );
         }
     }
 

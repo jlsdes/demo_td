@@ -4,6 +4,7 @@
 #include "component/drawable.hpp"
 #include "component/entity_type.hpp"
 #include "component/location.hpp"
+#include "component/terrain_tile.hpp"
 #include "component/tower_data.hpp"
 
 #include "core/mesh.hpp"
@@ -47,6 +48,39 @@ Renderer::Renderer( ECS * const ecs, Window & window, Camera & camera )
     }
 }
 
+static InstancedMesh<ColourVertex> build_tile_mesh() {
+    glm::vec3 constexpr y_offset { 0.f, 0.001f, 0.f };
+    float constexpr main_weight { 0.95f };
+    float constexpr centre_weight { 1.f - main_weight };
+
+    std::vector<glm::vec3> vertices { tile_position( 0, 0 ), tile_position( 0, 1 ), tile_position( 1, 1 ) };
+    glm::vec3 const centre { (vertices[0] + vertices[1] + vertices[2]) / 3.f };
+    vertices.emplace_back( main_weight * vertices[0] + centre_weight * centre + y_offset );
+    vertices.emplace_back( main_weight * vertices[1] + centre_weight * centre + y_offset );
+    vertices.emplace_back( main_weight * vertices[2] + centre_weight * centre + y_offset );
+
+    std::vector<std::vector<unsigned int>> const faces { { 0, 1, 2 }, { 3, 4, 5 } };
+
+    glm::vec3 constexpr main_colour { 0.5f, 0.5f, 0.5f };
+    glm::vec3 constexpr border_colour { 0.2f, 0.2f, 0.2f };
+    std::vector const colours { border_colour, border_colour, border_colour, main_colour, main_colour, main_colour };
+
+    MeshBuilder builder { vertices, faces, {}, colours };
+    builder.generate_face_normals();
+    return InstancedMesh<ColourVertex> { builder.get_mesh() };
+}
+
+static void render_tile( EntityID const entity, ECS * const ecs, ShaderStore & shader_store ) {
+    static InstancedMesh<ColourVertex> mesh { build_tile_mesh() };
+
+    Shader const & shader { shader_store.get_shader( "instanced" ) };
+    shader.set_uniform( "nr_instances", mesh.get_nr_instances() );
+
+    if ( not mesh.get_flag( IsInitialised ) )
+        mesh.initialise_gl_objects();
+    mesh.draw();
+}
+
 /// Returns an array of meshes, where each tower type can find its meshes at indices 2*type and 2*type+1.
 static std::array<std::unique_ptr<Mesh<ColourVertex>>, TowerData::NumberTypes * 2> constexpr build_tower_meshes() {
     Log::info( "Generating tower meshes." );
@@ -72,7 +106,7 @@ static std::array<std::unique_ptr<Mesh<ColourVertex>>, TowerData::NumberTypes * 
 }
 
 /// Renders a single tower.
-static void render_tower( EntityID const entity, ECS * ecs, ShaderStore & shader_store ) {
+static void render_tower( EntityID const entity, ECS * const ecs, ShaderStore & shader_store ) {
     static auto const meshes { build_tower_meshes() };
 
     Location const & location { ecs->components.get_component<Location>( entity ) };
@@ -98,28 +132,25 @@ static void render_tower( EntityID const entity, ECS * ecs, ShaderStore & shader
 }
 
 /// Renders a single entity.
-static void render_entity( EntityID const entity,
-                           EntityType::TypeID const type,
-                           ECS * const ecs,
-                           ShaderStore & shader_store ) {
-    switch ( type ) {
+static void render_entity( EntityID const entity, EntityType const type, ECS * const ecs, ShaderStore & shader_store ) {
+    switch ( auto const type_id { type.type_id } ) {
     case EntityType::Tile:
-    case EntityType::Enemy:
+
         break;
     case EntityType::Tower:
         render_tower( entity, ecs, shader_store );
         break;
+    case EntityType::Enemy:
     case EntityType::Projectile:
     case EntityType::Ui:
     case EntityType::Skybox:
     case EntityType::Other:
-        break;
     default:
         // Report unrecognised entity types, but only once
         static bool unrecognised_types[256] { false };
-        if ( not unrecognised_types[type] ) {
-            Log::warning( "Entity type ", type, " is not recognised by the renderer." );
-            unrecognised_types[type] = true;
+        if ( not unrecognised_types[type_id] ) {
+            Log::warning( "Entity type ", type_id, " is not recognised by the renderer." );
+            unrecognised_types[type_id] = true;
         }
     }
 }
@@ -219,6 +250,6 @@ void Renderer::run() {
     }
 
     for ( auto iterator { components.begin<EntityType>() }; iterator != components.end<EntityType>(); ++iterator ) {
-        render_entity( iterator.get_entity(), iterator.get_component().type_id, m_ecs, m_shaders );
+        render_entity( iterator.get_entity(), iterator.get_component(), m_ecs, m_shaders );
     }
 }

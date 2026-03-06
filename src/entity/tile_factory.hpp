@@ -16,10 +16,8 @@ unsigned int constexpr g_chunk_length { 16 };
 unsigned int constexpr g_chunk_size { g_chunk_length * g_chunk_length };
 
 
-class TileFactory {
+class Tile {
 public:
-    explicit TileFactory( ECS * ecs );
-
     /** Creates a single tile of the triangular grid.
      *
      * The tile ID is the coordinate of the "bottom left" corner of the tile after a skewing operation. This skewing
@@ -36,13 +34,10 @@ public:
      * +--+  1 indicates the bottom right triangle.
      * ^ The tile ID's (x, y) coordinate points at this corner.
      */
-    [[nodiscard]] EntityID build( SkewedCoordinate tile_id ) const;
+    [[nodiscard]] static EntityID make( SkewedCoordinate tile_id, ECS * ecs );
 
     /** Builds a triangular chunk of triangles, with the chunks laid out in the same pattern as the individual tiles. */
-    [[nodiscard]] std::array<EntityID, g_chunk_size> build_chunk( SkewedCoordinate chunk_id ) const;
-
-private:
-    ECS * const m_ecs;
+    [[nodiscard]] static std::array<EntityID, g_chunk_size> make_chunk( SkewedCoordinate chunk_id, ECS * ecs );
 };
 
 
