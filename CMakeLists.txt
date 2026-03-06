@@ -100,6 +100,7 @@ add_executable(demo_td
         src/entity/tile_highlight.cpp
         src/entity/tile_highlight.hpp
         src/entity/entity.cpp
+        src/component/entity_type.hpp
 )
 
 # Link the necessary libraries

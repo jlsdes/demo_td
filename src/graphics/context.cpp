@@ -3,6 +3,7 @@
 #include "entity_component_system.hpp"
 #include "window.hpp"
 
+#include "component/entity_type.hpp"
 #include "component/drawable.hpp"
 #include "component/location.hpp"
 #include "component/terrain_tile.hpp"
@@ -77,6 +78,7 @@ TopContext::TopContext() : Context { nullptr }, m_window { nullptr },
     glfwSwapInterval( 0 );
 
     m_ecs->components.create_store<Drawable>();
+    m_ecs->components.create_store<EntityType>();
     m_ecs->components.create_store<Location>();
 
     m_ecs->systems.insert_system( std::make_unique<Renderer>( m_ecs.get(), *m_window, *m_camera ), Render );
