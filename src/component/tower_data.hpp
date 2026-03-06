@@ -3,6 +3,8 @@
 
 #include "component.hpp"
 
+#include <glm/glm.hpp>
+
 
 struct TowerData : Component {
 
@@ -14,6 +16,15 @@ struct TowerData : Component {
         Melee,
         Status,
         NumberTypes // Valid tower type values go from 0 to NumberTypes
+    };
+
+    static constexpr glm::vec3 colours[NumberTypes] {
+        glm::vec3 { 0.f, 0.f, 1.f },
+        glm::vec3 { 0.f, 1.f, 0.f },
+        glm::vec3 { 1.f, 0.f, 0.f },
+        glm::vec3 { 1.f, 1.f, 0.f },
+        glm::vec3 { 1.f, 0.f, 1.f },
+        glm::vec3 { 0.f, 1.f, 1.f },
     };
 
     Type type;

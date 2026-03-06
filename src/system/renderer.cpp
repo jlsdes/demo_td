@@ -1,9 +1,15 @@
 #include "renderer.hpp"
+
 #include "component/component_manager.hpp"
 #include "component/drawable.hpp"
+#include "component/entity_type.hpp"
 #include "component/location.hpp"
+#include "component/tower_data.hpp"
+
 #include "graphics/mesh.hpp"
+#include "graphics/mesh_builder.hpp"
 #include "graphics/shader.hpp"
+
 #include "utils/config.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -38,6 +44,83 @@ Renderer::Renderer( ECS * const ecs, Window & window, Camera & camera )
         shader.set_uniform( "projection", glm::perspective( fov, 1200.f / 800.f, 0.1f, 100.f ) );
         shader.set_uniform( "nr_lights", 0 );
         shader.set_uniform( "is_light_source", false );
+    }
+}
+
+/// Returns an array of meshes, where each tower type can find its meshes at indices 2*type and 2*type+1.
+static std::array<std::unique_ptr<Mesh<ColourVertex>>, TowerData::NumberTypes * 2> constexpr build_tower_meshes() {
+    Log::info( "Generating tower meshes." );
+
+    static glm::vec3 constexpr base_scale { 0.3f, 0.1f, 0.3f };
+    static glm::vec3 constexpr crystal_scale { 0.1f, 0.3f, 0.1f };
+    static glm::vec3 constexpr crystal_offset { 0.f, 0.5f, 0.f };
+
+    MeshBuilder base { MeshBuilder::cube() };
+    base.transform( glm::scale( glm::identity<glm::mat4>(), base_scale ) );
+
+    MeshBuilder crystal { MeshBuilder::octahedron() };
+    crystal.transform( glm::scale( glm::identity<glm::mat4>(), crystal_scale ) );
+    crystal.translate( crystal_offset );
+
+    std::array<std::unique_ptr<Mesh<ColourVertex>>, TowerData::NumberTypes * 2> meshes { nullptr };
+    auto iter { meshes.begin() };
+    for ( unsigned int i { 0 }; i < TowerData::NumberTypes; ++i ) {
+        *(iter++) = std::make_unique<Mesh<ColourVertex>>( base.colour( TowerData::colours[i] ).get_mesh() );
+        *(iter++) = std::make_unique<Mesh<ColourVertex>>( crystal.colour( TowerData::colours[i] ).get_mesh() );
+    }
+    return meshes;
+}
+
+/// Renders a single tower.
+static void render_tower( EntityID const entity, ECS * ecs, ShaderStore & shader_store ) {
+    static auto const meshes { build_tower_meshes() };
+
+    Location const & location { ecs->components.get_component<Location>( entity ) };
+    glm::mat4 const transformation { glm::translate( glm::identity<glm::mat4>(), location.position ) };
+
+    auto const & shader { shader_store.get_shader( "main" ) };
+    shader.set_uniform( "model", transformation );
+    shader.set_uniform( "normal_transform", glm::mat3 { glm::transpose( glm::inverse( transformation ) ) } );
+
+    TowerData const & tower { ecs->components.get_component<TowerData>( entity ) };
+    auto const & base_mesh { meshes.at( tower.type * 2 ) };
+    auto const & crystal_mesh { meshes.at( tower.type * 2 + 1 ) };
+
+    if ( not base_mesh->get_flag( IsInitialised ) ) {
+        base_mesh->initialise_gl_objects();
+        crystal_mesh->initialise_gl_objects();
+    }
+
+    base_mesh->draw();
+    shader.set_uniform( "is_light_source", true );
+    crystal_mesh->draw();
+    shader.set_uniform( "is_light_source", false );
+}
+
+/// Renders a single entity.
+static void render_entity( EntityID const entity,
+                           EntityType::TypeID const type,
+                           ECS * const ecs,
+                           ShaderStore & shader_store ) {
+    switch ( type ) {
+    case EntityType::Tile:
+    case EntityType::Enemy:
+        break;
+    case EntityType::Tower:
+        render_tower( entity, ecs, shader_store );
+        break;
+    case EntityType::Projectile:
+    case EntityType::Ui:
+    case EntityType::Skybox:
+    case EntityType::Other:
+        break;
+    default:
+        // Report unrecognised entity types, but only once
+        static bool unrecognised_types[256] { false };
+        if ( not unrecognised_types[type] ) {
+            Log::warning( "Entity type ", type, " is not recognised by the renderer." );
+            unrecognised_types[type] = true;
+        }
     }
 }
 
@@ -133,5 +216,9 @@ void Renderer::run() {
 
         if ( light_source )
             shader->set_uniform( "is_light_source", false );
+    }
+
+    for ( auto iterator { components.begin<EntityType>() }; iterator != components.end<EntityType>(); ++iterator ) {
+        render_entity( iterator.get_entity(), iterator.get_component().type_id, m_ecs, m_shaders );
     }
 }
