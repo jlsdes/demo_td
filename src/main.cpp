@@ -9,7 +9,7 @@
 #include "core/entity_component_system.hpp"
 
 #include "entity/tile_factory.hpp"
-#include "entity/tower_factory.hpp"
+#include "entity/tower.hpp"
 #include "entity/tile_highlight.hpp"
 
 #include <thread>
@@ -24,11 +24,10 @@ int main() {
     ECS & ecs { *context.get_ecs() };
 
     LevelContext level { &context };
-    TowerFactory const tower_factory { &ecs };
     std::array<EntityID, TowerData::NumberTypes> towers {};
     for ( unsigned char type { 0 }; type < TowerData::NumberTypes; ++type ) {
         glm::vec3 const position { 0.f, 0.f, -3.f + static_cast<float>(type) };
-        towers.at( type ) = tower_factory.build( static_cast<TowerData::Type>(type), position );
+        towers.at( type ) = Tower::make( static_cast<TowerData::Type>(type), position, &ecs );
     }
 
     TileFactory const tile_factory { &ecs };

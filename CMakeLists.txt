@@ -85,8 +85,8 @@ add_executable(demo_td
         src/core/mesh.ipp
         src/core/context.cpp
         src/core/context.hpp
-        src/entity/tower_factory.cpp
-        src/entity/tower_factory.hpp
+        src/entity/tower.cpp
+        src/entity/tower.hpp
         src/component/tower_data.hpp
         src/component/terrain_tile.hpp
         src/entity/tile_factory.cpp

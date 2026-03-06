@@ -10,15 +10,9 @@
 struct ECS;
 
 
-class TowerFactory {
+class Tower {
 public:
-
-    explicit TowerFactory( ECS * ecs );
-
-    [[nodiscard]] EntityID build( TowerData::Type type, glm::vec3 const & position ) const;
-
-private:
-    ECS * const m_ecs;
+    [[nodiscard]] static EntityID make( TowerData::Type type, glm::vec3 const & position, ECS * ecs );
 };
 
 
