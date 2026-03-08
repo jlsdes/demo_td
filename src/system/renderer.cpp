@@ -22,51 +22,48 @@
 #include <sstream>
 
 
-/// Generates the mesh used to draw the tiles.
-static InstancedMesh<ColourVertex> build_tile_mesh() {
-    glm::vec3 constexpr y_offset { 0.f, 0.001f, 0.f };
-    float constexpr main_weight { 0.95f };
-    float constexpr centre_weight { 1.f - main_weight };
-
-    std::vector<glm::vec3> vertices { tile_position( 0, 0 ), tile_position( 0, 1 ), tile_position( 1, 1 ) };
-    glm::vec3 const centre { (vertices[0] + vertices[1] + vertices[2]) / 3.f };
-    vertices.emplace_back( main_weight * vertices[0] + centre_weight * centre + y_offset );
-    vertices.emplace_back( main_weight * vertices[1] + centre_weight * centre + y_offset );
-    vertices.emplace_back( main_weight * vertices[2] + centre_weight * centre + y_offset );
-
-    std::vector<std::vector<unsigned int>> const faces { { 0, 1, 2 }, { 3, 4, 5 } };
-
-    glm::vec3 constexpr main_colour { 0.5f, 0.5f, 0.5f };
-    glm::vec3 constexpr border_colour { 0.2f, 0.2f, 0.2f };
-    std::vector const colours { border_colour, border_colour, border_colour, main_colour, main_colour, main_colour };
-
-    MeshBuilder builder { vertices, faces, {}, colours };
-    builder.generate_face_normals();
-
-    InstancedMesh<ColourVertex> result { builder.get_mesh() };
-    result.initialise_gl_objects();
-    return result;
-}
-
-/// Helper class to draw specifically tiles.
+/** Sub-renderer for specifically tiles. */
 class TileRenderer : public SubRenderer {
 public:
-    explicit TileRenderer( Renderer * const renderer ) : SubRenderer { renderer }, m_mesh { build_tile_mesh() } {}
+    /** Constructs the sub-renderer, and initialises the instanced mesh to be used to draw the tiles. */
+    explicit TileRenderer( Renderer * const renderer ) : SubRenderer { renderer }, m_mesh { nullptr } {
+        glm::vec3 constexpr y_offset { 0.f, 0.001f, 0.f };
+        float constexpr main_weight { 0.95f };
+        float constexpr centre_weight { 1.f - main_weight };
 
-    /// To be called before every render loop. Sets all flags to their correct initial value.
+        std::vector<glm::vec3> vertices { tile_position( 0, 0 ), tile_position( 0, 1 ), tile_position( 1, 1 ) };
+        glm::vec3 const centre { (vertices[0] + vertices[1] + vertices[2]) / 3.f };
+        vertices.emplace_back( main_weight * vertices[0] + centre_weight * centre + y_offset );
+        vertices.emplace_back( main_weight * vertices[1] + centre_weight * centre + y_offset );
+        vertices.emplace_back( main_weight * vertices[2] + centre_weight * centre + y_offset );
+
+        std::vector<std::vector<unsigned int>> const faces { { 0, 1, 2 }, { 3, 4, 5 } };
+
+        glm::vec3 constexpr main_colour { 0.5f, 0.5f, 0.5f };
+        glm::vec3 constexpr border_colour { 0.2f, 0.2f, 0.2f };
+        std::vector const colours { border_colour, border_colour, border_colour, main_colour, main_colour, main_colour };
+
+        MeshBuilder builder { vertices, faces, {}, colours };
+        builder.generate_face_normals();
+
+        m_mesh = std::make_unique<InstancedMesh<ColourVertex>>( builder.get_mesh() );
+        m_mesh->initialise_gl_objects();
+    }
+
+    /** Sets the flags to their appropriate values. */
     void start() override {
         m_first_tile = true;
         m_updating_tiles = m_parent->m_ecs->systems.get_system<TileManager>()->has_updated();
     }
 
-    /// Updates the tile mesh data if necessary.
-    void update( EntityID const entity ) override {
+    /** Updates the mesh instances if required; does not actually draw anything directly. */
+    void draw( EntityID const entity ) override {
         if ( not m_updating_tiles )
             return;
 
         if ( m_first_tile ) {
             m_first_tile = false;
-            m_mesh.clear_instances();
+            m_mesh->clear_instances();
         }
 
         static std::array<glm::mat3, 2> const orientations {
@@ -75,25 +72,27 @@ public:
         };
 
         auto const & tile { m_parent->m_ecs->components.get_component<TerrainTile>( entity ) };
-        m_mesh.add_instance( glm::vec3 { 1.f }, orientations[tile.tile_id.half], tile_position( tile.tile_id ) );
+        m_mesh->add_instance( glm::vec3 { 1.f }, orientations[tile.tile_id.half], tile_position( tile.tile_id ) );
     }
 
-    /// Draws all tiles at once.
+    /** Draws all tiles at once. */
     void finish() override {
         auto const & shader { m_parent->m_shaders.get_shader( "instanced" ) };
-        shader.set_uniform( "nr_instances", m_mesh.get_nr_instances() );
-        m_mesh.draw();
+        shader.set_uniform( "nr_instances", m_mesh->get_nr_instances() );
+        m_mesh->draw();
     }
 
 private:
-    InstancedMesh<ColourVertex> m_mesh;
+    std::unique_ptr<InstancedMesh<ColourVertex>> m_mesh;
 
     bool m_first_tile { true };
     bool m_updating_tiles { false };
 };
 
+/** Sub-renderer for specifically towers. */
 class TowerRenderer : public SubRenderer {
 public:
+    /** Constructs the sub-renderer, and initialises the meshes for drawing the towers. */
     explicit TowerRenderer( Renderer * const renderer ) : SubRenderer { renderer }, m_meshes { nullptr } {
         Log::info( "Generating tower meshes." );
 
@@ -118,7 +117,8 @@ public:
         }
     }
 
-    void update( EntityID const entity ) override {
+    /** Draws a tower. */
+    void draw( EntityID const entity ) override {
         Location const & location { m_parent->m_ecs->components.get_component<Location>( entity ) };
         glm::mat4 const transformation { glm::translate( glm::identity<glm::mat4>(), location.position ) };
 
@@ -186,20 +186,11 @@ void Renderer::run() {
 
     // TODO reintroduce the render queue
     for ( auto iterator { components.begin<EntityType>() }; iterator != components.end<EntityType>(); ++iterator ) {
-        auto const & entity { iterator.get_entity() };
-        auto const & type { iterator.get_component() };
+        auto const type_id { iterator.get_component().type_id };
 
-        switch ( auto const type_id { type.type_id } ) {
-        case EntityType::Tile:
-        case EntityType::Tower:
-            m_sub_renderers[type_id]->update( entity );
-            break;
-        case EntityType::Enemy:
-        case EntityType::Projectile:
-        case EntityType::Ui:
-        case EntityType::Skybox:
-        case EntityType::Other:
-        default:
+        if ( m_sub_renderers[type_id] )
+            m_sub_renderers[type_id]->draw( iterator.get_entity() );
+        else {
             // Report unrecognised entity types, but only once
             static bool unrecognised_types[256] { false };
             if ( not unrecognised_types[type_id] ) {

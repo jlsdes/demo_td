@@ -34,19 +34,21 @@ private:
 };
 
 
+/** Base class for sub-renderers that handle specific entity type rendering. */
 class SubRenderer {
 public:
     explicit SubRenderer( Renderer * parent = nullptr ) : m_parent { parent } {}
     virtual ~SubRenderer() = default;
 
+    /** Called at the start of every render loop; does nothing unless overridden by a derived class. */
     virtual void start() {}
-    virtual void update( EntityID entity ) {}
+    /** Called for every entity that should be handled by the sub-renderer; does nothing unless overridden. */
+    virtual void draw( EntityID entity ) {}
+    /** Called after every render loop; does nothing unless overridden. */
     virtual void finish() {}
 
 protected:
     Renderer * const m_parent;
-
-    friend class Renderer;
 };
 
 
