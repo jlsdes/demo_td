@@ -143,8 +143,11 @@ static std::array<std::unique_ptr<Mesh<ColourVertex>>, TowerData::NumberTypes * 
     std::array<std::unique_ptr<Mesh<ColourVertex>>, TowerData::NumberTypes * 2> meshes { nullptr };
     auto iter { meshes.begin() };
     for ( unsigned int i { 0 }; i < TowerData::NumberTypes; ++i ) {
-        *(iter++) = std::make_unique<Mesh<ColourVertex>>( base.colour( TowerData::colours[i] ).get_mesh() );
-        *(iter++) = std::make_unique<Mesh<ColourVertex>>( crystal.colour( TowerData::colours[i] ).get_mesh() );
+        iter[0] = std::make_unique<Mesh<ColourVertex>>( base.colour( TowerData::colours[i] ).get_mesh() );
+        iter[0]->initialise_gl_objects();
+        iter[1] = std::make_unique<Mesh<ColourVertex>>( crystal.colour( TowerData::colours[i] ).get_mesh() );
+        iter[1]->initialise_gl_objects();
+        iter += 2;
     }
     return meshes;
 }
@@ -164,39 +167,10 @@ void Renderer::render_tower( EntityID const entity ) {
     auto const & base_mesh { meshes.at( tower.type * 2 ) };
     auto const & crystal_mesh { meshes.at( tower.type * 2 + 1 ) };
 
-    if ( not base_mesh->get_flag( IsInitialised ) ) {
-        base_mesh->initialise_gl_objects();
-        crystal_mesh->initialise_gl_objects();
-    }
-
     base_mesh->draw();
     shader.set_uniform( "is_light_source", true );
     crystal_mesh->draw();
     shader.set_uniform( "is_light_source", false );
-}
-
-/// Renders a single entity.
-void Renderer::render_entity( EntityID const entity, EntityType const type ) {
-    switch ( auto const type_id { type.type_id } ) {
-    case EntityType::Tile:
-        m_tile_renderer->update_tile( entity );
-        break;
-    case EntityType::Tower:
-        render_tower( entity );
-        break;
-    case EntityType::Enemy:
-    case EntityType::Projectile:
-    case EntityType::Ui:
-    case EntityType::Skybox:
-    case EntityType::Other:
-    default:
-        // Report unrecognised entity types, but only once
-        static bool unrecognised_types[256] { false };
-        if ( not unrecognised_types[type_id] ) {
-            Log::warning( "Entity type ", type_id, " is not recognised by the renderer." );
-            unrecognised_types[type_id] = true;
-        }
-    }
 }
 
 void Renderer::run() {
@@ -211,7 +185,29 @@ void Renderer::run() {
 
     // TODO reintroduce the render queue
     for ( auto iterator { components.begin<EntityType>() }; iterator != components.end<EntityType>(); ++iterator ) {
-        render_entity( iterator.get_entity(), iterator.get_component() );
+        auto const & entity { iterator.get_entity() };
+        auto const & type { iterator.get_component() };
+
+        switch ( auto const type_id { type.type_id } ) {
+        case EntityType::Tile:
+            m_tile_renderer->update_tile( entity );
+            break;
+        case EntityType::Tower:
+            render_tower( entity );
+            break;
+        case EntityType::Enemy:
+        case EntityType::Projectile:
+        case EntityType::Ui:
+        case EntityType::Skybox:
+        case EntityType::Other:
+        default:
+            // Report unrecognised entity types, but only once
+            static bool unrecognised_types[256] { false };
+            if ( not unrecognised_types[type_id] ) {
+                Log::warning( "Entity type ", type_id, " is not recognised by the renderer." );
+                unrecognised_types[type_id] = true;
+            }
+        }
     }
 
     m_tile_renderer->draw_tiles();
