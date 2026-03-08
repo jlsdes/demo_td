@@ -4,7 +4,6 @@
 
 #include "component/component_manager.hpp"
 #include "component/drawable.hpp"
-#include "component/entity_type.hpp"
 #include "component/location.hpp"
 #include "component/terrain_tile.hpp"
 #include "component/tower_data.hpp"
@@ -50,12 +49,12 @@ static InstancedMesh<ColourVertex> build_tile_mesh() {
 }
 
 /// Helper class to draw specifically tiles.
-class Renderer::TileRenderer {
+class TileRenderer : public SubRenderer {
 public:
-    explicit TileRenderer( Renderer * const renderer ) : m_parent { renderer }, m_mesh { build_tile_mesh() } {}
+    explicit TileRenderer( Renderer * const renderer ) : SubRenderer { renderer }, m_mesh { build_tile_mesh() } {}
 
     /// Updates the tile mesh data if necessary.
-    void update_tile( EntityID const entity ) {
+    void update( EntityID const entity ) override {
         if ( not m_updating_tiles )
             return;
 
@@ -74,20 +73,19 @@ public:
     }
 
     /// Draws all tiles at once.
-    void draw_tiles() {
+    void finish() override {
         auto const & shader { m_parent->m_shaders.get_shader( "instanced" ) };
         shader.set_uniform( "nr_instances", m_mesh.get_nr_instances() );
         m_mesh.draw();
     }
 
     /// To be called before every render loop. Sets all flags to their correct initial value.
-    void reset() {
+    void start() override {
         m_first_tile = true;
         m_updating_tiles = m_parent->m_ecs->systems.get_system<TileManager>()->has_updated();
     }
 
 private:
-    Renderer * m_parent;
     InstancedMesh<ColourVertex> m_mesh;
 
     bool m_first_tile { true };
@@ -95,8 +93,7 @@ private:
 };
 
 Renderer::Renderer( ECS * const ecs, Window & window, Camera & camera )
-    : System { ecs }, m_window { window }, m_camera { camera }, m_shaders {},
-      m_tile_renderer { new TileRenderer { this } } {
+    : System { ecs }, m_window { window }, m_camera { camera }, m_shaders {}, m_sub_renderers { nullptr } {
     glm::vec3 constexpr ambient_light { 0.01f };
     glm::vec3 constexpr sun_light { 1.f };
     glm::vec3 constexpr sun_direction { -0.2f, 1.f, -0.5f };
@@ -119,11 +116,11 @@ Renderer::Renderer( ECS * const ecs, Window & window, Camera & camera )
         shader.set_uniform( "nr_lights", 0 );
         shader.set_uniform( "is_light_source", false );
     }
+
+    m_sub_renderers[EntityType::Tile] = std::make_unique<TileRenderer>( this );
 }
 
-Renderer::~Renderer() {
-    delete m_tile_renderer;
-}
+Renderer::~Renderer() = default;
 
 /// Returns an array of meshes, where each tower type can find its meshes at indices 2*type and 2*type+1.
 static std::array<std::unique_ptr<Mesh<ColourVertex>>, TowerData::NumberTypes * 2> constexpr build_tower_meshes() {
@@ -181,7 +178,10 @@ void Renderer::run() {
     for ( auto const & shader : std::views::values( m_shaders ) )
         m_camera.update_shader( shader );
 
-    m_tile_renderer->reset();
+    for ( unsigned int i { 0 }; i < EntityType::NrTypes; ++i ) {
+        if ( m_sub_renderers[i] )
+            m_sub_renderers[i]->start();
+    }
 
     // TODO reintroduce the render queue
     for ( auto iterator { components.begin<EntityType>() }; iterator != components.end<EntityType>(); ++iterator ) {
@@ -190,7 +190,7 @@ void Renderer::run() {
 
         switch ( auto const type_id { type.type_id } ) {
         case EntityType::Tile:
-            m_tile_renderer->update_tile( entity );
+            m_sub_renderers[type_id]->update( entity );
             break;
         case EntityType::Tower:
             render_tower( entity );
@@ -210,5 +210,8 @@ void Renderer::run() {
         }
     }
 
-    m_tile_renderer->draw_tiles();
+    for ( unsigned int i { 0 }; i < EntityType::NrTypes; ++i ) {
+        if ( m_sub_renderers[i] )
+            m_sub_renderers[i]->finish();
+    }
 }
