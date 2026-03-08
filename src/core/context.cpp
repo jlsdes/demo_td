@@ -12,6 +12,7 @@
 #include "system/controller.hpp"
 #include "system/movement.hpp"
 #include "system/renderer.hpp"
+#include "system/tile_manager.hpp"
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
@@ -90,12 +91,19 @@ TopContext::~TopContext() = default;
 
 LevelContext::LevelContext( Context const * const parent ) : Context { parent } {
     assert( parent );
-    parent->get_ecs()->components.create_store<TowerData>();
-    parent->get_ecs()->components.create_store<TerrainTile>();
+    ECS * const ecs { parent->get_ecs() };
+
+    ecs->components.create_store<TowerData>();
+    ecs->components.create_store<TerrainTile>();
+
+    ecs->systems.insert_system( std::make_unique<TileManager>( ecs ), Setup );
 }
 
 LevelContext::~LevelContext() {
-    ECS * ecs { Context::get_ecs() };
+    ECS * const ecs { Context::get_ecs() };
+
+    ecs->systems.remove_system<TileManager>();
+
     ecs->components.remove_store( ecs->components.get_type_id<TowerData>() );
     ecs->components.remove_store( ecs->components.get_type_id<TerrainTile>() );
 }

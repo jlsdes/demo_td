@@ -1,13 +1,9 @@
-#ifndef DEMO_TD_TILE_FACTORY_HPP
-#define DEMO_TD_TILE_FACTORY_HPP
+#ifndef DEMO_TD_TILE_MANAGER_HPP
+#define DEMO_TD_TILE_MANAGER_HPP
 
-#include "entity.hpp"
+#include "system.hpp"
+
 #include "component/terrain_tile.hpp"
-
-#include <array>
-
-
-struct ECS;
 
 
 /// The length of the chunk as in the number of individual tile borders that make up one chunk border.
@@ -16,8 +12,13 @@ unsigned int constexpr g_chunk_length { 16 };
 unsigned int constexpr g_chunk_size { g_chunk_length * g_chunk_length };
 
 
-class Tile {
+class TileManager : public System {
 public:
+    explicit TileManager( ECS * ecs );
+    ~TileManager() override = default;
+
+    void run() override;
+
     /** Creates a single tile of the triangular grid.
      *
      * The tile ID is the coordinate of the "bottom left" corner of the tile after a skewing operation. This skewing
@@ -34,11 +35,20 @@ public:
      * +--+  1 indicates the bottom right triangle.
      * ^ The tile ID's (x, y) coordinate points at this corner.
      */
-    [[nodiscard]] static EntityID make( SkewedCoordinate tile_id, ECS * ecs );
+    void add_tile( SkewedCoordinate tile_id );
 
     /** Builds a triangular chunk of triangles, with the chunks laid out in the same pattern as the individual tiles. */
-    [[nodiscard]] static std::array<EntityID, g_chunk_size> make_chunk( SkewedCoordinate chunk_id, ECS * ecs );
+    void add_chunk( SkewedCoordinate chunk_id );
+
+    /** Mechanism for signalling to the renderer that the tiles have been updated. Only the renderer should be calling
+     *  clear_updates(). */
+    [[nodiscard]] bool has_updated() const;
+    void clear_updates();
+
+private:
+    /// Set after any changes to the tiles, and cleared once the renderer has updated its view.
+    bool m_updated;
 };
 
 
-#endif //DEMO_TD_TILE_FACTORY_HPP
+#endif //DEMO_TD_TILE_MANAGER_HPP

@@ -44,21 +44,20 @@ void SystemManager::remove_system() {
         return;
     }
 
-    auto const group { m_group_data.at( type ).first };
-    m_systems.erase( type );
+    m_groups.at( m_group_data.at( type ).first ).erase( type );
     m_group_data.erase( type );
-    m_groups.at( group ).erase( type );
+    m_systems.erase( type );
 }
 
 template <SubSystem SystemType>
 SystemType * SystemManager::get_system() {
     std::type_index const type { typeid( SystemType ) };
     if ( not m_systems.contains( type ) ) {
-        std::string constexpr name { typeid( SystemType ).name() };
+        std::string const name { typeid( SystemType ).name() };
         throw std::logic_error( std::format( "Attempted to access a system {} that wasn't registered.", name ) );
     }
 
-    return m_systems.at( type ).get();
+    return dynamic_cast<SystemType *>( m_systems.at( type ).get() );
 }
 
 template <SubSystem SystemType>

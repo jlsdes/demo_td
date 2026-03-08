@@ -89,8 +89,6 @@ add_executable(demo_td
         src/entity/tower.hpp
         src/component/tower_data.hpp
         src/component/terrain_tile.hpp
-        src/entity/tile_factory.cpp
-        src/entity/tile_factory.hpp
         src/utils/image.cpp
         src/utils/image.hpp
         src/system/movement.cpp
@@ -101,6 +99,8 @@ add_executable(demo_td
         src/entity/tile_highlight.hpp
         src/entity/entity.cpp
         src/component/entity_type.hpp
+        src/system/tile_manager.cpp
+        src/system/tile_manager.hpp
 )
 
 # Link the necessary libraries

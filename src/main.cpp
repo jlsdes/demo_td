@@ -8,9 +8,9 @@
 #include "core/context.hpp"
 #include "core/entity_component_system.hpp"
 
-#include "entity/tile_factory.hpp"
 #include "entity/tower.hpp"
 #include "entity/tile_highlight.hpp"
+#include "system/tile_manager.hpp"
 
 #include <thread>
 
@@ -30,8 +30,11 @@ int main() {
         towers.at( type ) = Tower::make( static_cast<TowerData::Type>(type), position, &ecs );
     }
 
-    std::array<EntityID, g_chunk_size> chunk_1 { Tile::make_chunk( { 0, 0, 0 }, &ecs ) };
-    std::array<EntityID, g_chunk_size> chunk_2 { Tile::make_chunk( { 0, 0, 1 }, &ecs ) };
+    // std::array<EntityID, g_chunk_size> chunk_1 { Tile::make_chunk( { 0, 0, 0 }, &ecs ) };
+    // std::array<EntityID, g_chunk_size> chunk_2 { Tile::make_chunk( { 0, 0, 1 }, &ecs ) };
+    auto const tiles { ecs.systems.get_system<TileManager>() };
+    tiles->add_chunk( { 0, 0, 0 } );
+    tiles->add_chunk( { 0, 0, 1 } );
 
     TileHighlight highlight { &ecs };
 
@@ -41,6 +44,8 @@ int main() {
     double constexpr desired_fps { 60. };
     double constexpr desired_loop_length { 1. / desired_fps };
     double loop_length { 0. };
+
+    ecs.systems.run_group( Setup );
 
     auto const window { context.get_window() };
     while ( not window->is_closing() ) {
