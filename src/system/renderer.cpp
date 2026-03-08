@@ -53,6 +53,12 @@ class TileRenderer : public SubRenderer {
 public:
     explicit TileRenderer( Renderer * const renderer ) : SubRenderer { renderer }, m_mesh { build_tile_mesh() } {}
 
+    /// To be called before every render loop. Sets all flags to their correct initial value.
+    void start() override {
+        m_first_tile = true;
+        m_updating_tiles = m_parent->m_ecs->systems.get_system<TileManager>()->has_updated();
+    }
+
     /// Updates the tile mesh data if necessary.
     void update( EntityID const entity ) override {
         if ( not m_updating_tiles )
@@ -79,17 +85,59 @@ public:
         m_mesh.draw();
     }
 
-    /// To be called before every render loop. Sets all flags to their correct initial value.
-    void start() override {
-        m_first_tile = true;
-        m_updating_tiles = m_parent->m_ecs->systems.get_system<TileManager>()->has_updated();
-    }
-
 private:
     InstancedMesh<ColourVertex> m_mesh;
 
     bool m_first_tile { true };
     bool m_updating_tiles { false };
+};
+
+class TowerRenderer : public SubRenderer {
+public:
+    explicit TowerRenderer( Renderer * const renderer ) : SubRenderer { renderer }, m_meshes { nullptr } {
+        Log::info( "Generating tower meshes." );
+
+        static glm::vec3 constexpr base_scale { 0.3f, 0.1f, 0.3f };
+        static glm::vec3 constexpr crystal_scale { 0.1f, 0.3f, 0.1f };
+        static glm::vec3 constexpr crystal_offset { 0.f, 0.5f, 0.f };
+
+        MeshBuilder base { MeshBuilder::cube() };
+        base.transform( glm::scale( glm::identity<glm::mat4>(), base_scale ) );
+
+        MeshBuilder crystal { MeshBuilder::octahedron() };
+        crystal.transform( glm::scale( glm::identity<glm::mat4>(), crystal_scale ) );
+        crystal.translate( crystal_offset );
+
+        auto iter { m_meshes.begin() };
+        for ( unsigned int i { 0 }; i < TowerData::NumberTypes; ++i ) {
+            iter[0] = std::make_unique<Mesh<ColourVertex>>( base.colour( TowerData::colours[i] ).get_mesh() );
+            iter[0]->initialise_gl_objects();
+            iter[1] = std::make_unique<Mesh<ColourVertex>>( crystal.colour( TowerData::colours[i] ).get_mesh() );
+            iter[1]->initialise_gl_objects();
+            iter += 2;
+        }
+    }
+
+    void update( EntityID const entity ) override {
+        Location const & location { m_parent->m_ecs->components.get_component<Location>( entity ) };
+        glm::mat4 const transformation { glm::translate( glm::identity<glm::mat4>(), location.position ) };
+
+        auto const & shader { m_parent->m_shaders.get_shader( "main" ) };
+        shader.set_uniform( "model", transformation );
+        shader.set_uniform( "normal_transform", glm::mat3 { glm::transpose( glm::inverse( transformation ) ) } );
+
+        TowerData const & tower { m_parent->m_ecs->components.get_component<TowerData>( entity ) };
+        auto const & base_mesh { m_meshes.at( tower.type * 2 ) };
+        auto const & crystal_mesh { m_meshes.at( tower.type * 2 + 1 ) };
+
+        base_mesh->draw();
+        shader.set_uniform( "is_light_source", true );
+        crystal_mesh->draw();
+        shader.set_uniform( "is_light_source", false );
+    }
+
+private:
+    std::array<std::unique_ptr<Mesh<ColourVertex>>, TowerData::NumberTypes * 2> m_meshes;
 };
 
 Renderer::Renderer( ECS * const ecs, Window & window, Camera & camera )
@@ -118,57 +166,10 @@ Renderer::Renderer( ECS * const ecs, Window & window, Camera & camera )
     }
 
     m_sub_renderers[EntityType::Tile] = std::make_unique<TileRenderer>( this );
+    m_sub_renderers[EntityType::Tower] = std::make_unique<TowerRenderer>( this );
 }
 
 Renderer::~Renderer() = default;
-
-/// Returns an array of meshes, where each tower type can find its meshes at indices 2*type and 2*type+1.
-static std::array<std::unique_ptr<Mesh<ColourVertex>>, TowerData::NumberTypes * 2> constexpr build_tower_meshes() {
-    Log::info( "Generating tower meshes." );
-
-    static glm::vec3 constexpr base_scale { 0.3f, 0.1f, 0.3f };
-    static glm::vec3 constexpr crystal_scale { 0.1f, 0.3f, 0.1f };
-    static glm::vec3 constexpr crystal_offset { 0.f, 0.5f, 0.f };
-
-    MeshBuilder base { MeshBuilder::cube() };
-    base.transform( glm::scale( glm::identity<glm::mat4>(), base_scale ) );
-
-    MeshBuilder crystal { MeshBuilder::octahedron() };
-    crystal.transform( glm::scale( glm::identity<glm::mat4>(), crystal_scale ) );
-    crystal.translate( crystal_offset );
-
-    std::array<std::unique_ptr<Mesh<ColourVertex>>, TowerData::NumberTypes * 2> meshes { nullptr };
-    auto iter { meshes.begin() };
-    for ( unsigned int i { 0 }; i < TowerData::NumberTypes; ++i ) {
-        iter[0] = std::make_unique<Mesh<ColourVertex>>( base.colour( TowerData::colours[i] ).get_mesh() );
-        iter[0]->initialise_gl_objects();
-        iter[1] = std::make_unique<Mesh<ColourVertex>>( crystal.colour( TowerData::colours[i] ).get_mesh() );
-        iter[1]->initialise_gl_objects();
-        iter += 2;
-    }
-    return meshes;
-}
-
-/// Renders a single tower.
-void Renderer::render_tower( EntityID const entity ) {
-    static auto const meshes { build_tower_meshes() };
-
-    Location const & location { m_ecs->components.get_component<Location>( entity ) };
-    glm::mat4 const transformation { glm::translate( glm::identity<glm::mat4>(), location.position ) };
-
-    auto const & shader { m_shaders.get_shader( "main" ) };
-    shader.set_uniform( "model", transformation );
-    shader.set_uniform( "normal_transform", glm::mat3 { glm::transpose( glm::inverse( transformation ) ) } );
-
-    TowerData const & tower { m_ecs->components.get_component<TowerData>( entity ) };
-    auto const & base_mesh { meshes.at( tower.type * 2 ) };
-    auto const & crystal_mesh { meshes.at( tower.type * 2 + 1 ) };
-
-    base_mesh->draw();
-    shader.set_uniform( "is_light_source", true );
-    crystal_mesh->draw();
-    shader.set_uniform( "is_light_source", false );
-}
 
 void Renderer::run() {
     auto & components { m_ecs->components };
@@ -190,10 +191,8 @@ void Renderer::run() {
 
         switch ( auto const type_id { type.type_id } ) {
         case EntityType::Tile:
-            m_sub_renderers[type_id]->update( entity );
-            break;
         case EntityType::Tower:
-            render_tower( entity );
+            m_sub_renderers[type_id]->update( entity );
             break;
         case EntityType::Enemy:
         case EntityType::Projectile:

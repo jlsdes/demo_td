@@ -23,8 +23,6 @@ public:
     void run() override;
 
 private:
-    void render_tower( EntityID entity );
-
     Window & m_window;
     Camera & m_camera;
     ShaderStore m_shaders;
@@ -32,6 +30,7 @@ private:
     std::unique_ptr<SubRenderer> m_sub_renderers[EntityType::NrTypes];
 
     friend class TileRenderer;
+    friend class TowerRenderer;
 };
 
 
