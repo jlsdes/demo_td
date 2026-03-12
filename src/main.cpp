@@ -24,10 +24,10 @@ int main() {
     ECS & ecs { *context.get_ecs() };
 
     LevelContext level { &context };
-    std::array<EntityID, TowerData::NumberTypes> towers {};
-    for ( unsigned char type { 0 }; type < TowerData::NumberTypes; ++type ) {
+    std::array<EntityID, TowerType::NumberTypes> towers {};
+    for ( unsigned char type { 0 }; type < TowerType::NumberTypes; ++type ) {
         glm::vec3 const position { 0.f, 0.f, -3.f + static_cast<float>(type) };
-        towers.at( type ) = Tower::make( static_cast<TowerData::Type>(type), position, &ecs );
+        towers.at( type ) = Tower::make( static_cast<TowerType::Type>(type), position, &ecs );
     }
 
     // std::array<EntityID, g_chunk_size> chunk_1 { Tile::make_chunk( { 0, 0, 0 }, &ecs ) };

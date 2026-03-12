@@ -108,10 +108,10 @@ public:
         crystal.translate( crystal_offset );
 
         auto iter { m_meshes.begin() };
-        for ( unsigned int i { 0 }; i < TowerData::NumberTypes; ++i ) {
-            iter[0] = std::make_unique<Mesh<ColourVertex>>( base.colour( TowerData::colours[i] ).get_mesh() );
+        for ( unsigned int i { 0 }; i < TowerType::NumberTypes; ++i ) {
+            iter[0] = std::make_unique<Mesh<ColourVertex>>( base.colour( TowerType::colours[i] ).get_mesh() );
             iter[0]->initialise_gl_objects();
-            iter[1] = std::make_unique<Mesh<ColourVertex>>( crystal.colour( TowerData::colours[i] ).get_mesh() );
+            iter[1] = std::make_unique<Mesh<ColourVertex>>( crystal.colour( TowerType::colours[i] ).get_mesh() );
             iter[1]->initialise_gl_objects();
             iter += 2;
         }
@@ -126,7 +126,7 @@ public:
         shader.set_uniform( "model", transformation );
         shader.set_uniform( "normal_transform", glm::mat3 { glm::transpose( glm::inverse( transformation ) ) } );
 
-        TowerData const & tower { m_parent->m_ecs->components.get_component<TowerData>( entity ) };
+        TowerType const & tower { m_parent->m_ecs->components.get_component<TowerType>( entity ) };
         auto const & base_mesh { m_meshes.at( tower.type * 2 ) };
         auto const & crystal_mesh { m_meshes.at( tower.type * 2 + 1 ) };
 
@@ -137,7 +137,7 @@ public:
     }
 
 private:
-    std::array<std::unique_ptr<Mesh<ColourVertex>>, TowerData::NumberTypes * 2> m_meshes;
+    std::array<std::unique_ptr<Mesh<ColourVertex>>, TowerType::NumberTypes * 2> m_meshes;
 };
 
 Renderer::Renderer( ECS * const ecs, Window & window, Camera & camera )

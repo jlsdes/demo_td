@@ -6,7 +6,7 @@
 #include <glm/glm.hpp>
 
 
-struct TowerData : Component {
+struct TowerType : Component {
 
     enum Type : unsigned char {
         Basic,
@@ -14,7 +14,7 @@ struct TowerData : Component {
         Sniper,
         Multi,
         Melee,
-        Status,
+        Slow,
         NumberTypes // Valid tower type values go from 0 to NumberTypes
     };
 

@@ -93,7 +93,7 @@ LevelContext::LevelContext( Context const * const parent ) : Context { parent } 
     assert( parent );
     ECS * const ecs { parent->get_ecs() };
 
-    ecs->components.create_store<TowerData>();
+    ecs->components.create_store<TowerType>();
     ecs->components.create_store<TerrainTile>();
 
     ecs->systems.insert_system( std::make_unique<TileManager>( ecs ), Setup );
@@ -104,7 +104,7 @@ LevelContext::~LevelContext() {
 
     ecs->systems.remove_system<TileManager>();
 
-    ecs->components.remove_store( ecs->components.get_type_id<TowerData>() );
+    ecs->components.remove_store( ecs->components.get_type_id<TowerType>() );
     ecs->components.remove_store( ecs->components.get_type_id<TerrainTile>() );
 }
 
