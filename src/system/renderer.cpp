@@ -8,10 +8,12 @@
 #include "component/terrain_tile.hpp"
 #include "component/tower_data.hpp"
 
-#include "core/entity_component_system.hpp"
+#include "core/camera.hpp"
 #include "core/mesh.hpp"
 #include "core/mesh_builder.hpp"
 #include "core/shader.hpp"
+
+#include "system/system_manager.hpp"
 
 #include "utils/config.hpp"
 
@@ -27,7 +29,9 @@
 class TileRenderer : public SubRenderer {
 public:
     /** Constructs the sub-renderer, and initialises the instanced mesh to be used to draw the tiles. */
-    explicit TileRenderer( Renderer * const renderer ) : SubRenderer { renderer }, m_mesh { nullptr } {
+    explicit TileRenderer( Context const & context, ShaderStore & shaders )
+        : SubRenderer { context, shaders }, m_mesh { nullptr } {
+
         glm::vec3 constexpr y_offset { 0.f, 0.001f, 0.f };
         float constexpr main_weight { 0.95f };
         float constexpr centre_weight { 1.f - main_weight };
@@ -42,7 +46,9 @@ public:
 
         glm::vec3 constexpr main_colour { 0.5f, 0.5f, 0.5f };
         glm::vec3 constexpr border_colour { 0.2f, 0.2f, 0.2f };
-        std::vector const colours { border_colour, border_colour, border_colour, main_colour, main_colour, main_colour };
+        std::vector const colours {
+            border_colour, border_colour, border_colour, main_colour, main_colour, main_colour
+        };
 
         MeshBuilder builder { vertices, faces, {}, colours };
         builder.generate_face_normals();
@@ -54,7 +60,7 @@ public:
     /** Sets the flags to their appropriate values. */
     void start() override {
         m_first_tile = true;
-        m_updating_tiles = m_parent->m_ecs->systems.get_system<TileManager>()->has_updated();
+        m_updating_tiles = m_context.systems->get_system<TileManager>()->has_updated();
     }
 
     /** Updates the mesh instances if required; does not actually draw anything directly. */
@@ -72,13 +78,13 @@ public:
             glm::mat3_cast( glm::quat { glm::vec3 { 0.f, std::numbers::pi_v<float> / 3.f, 0.f } } )
         };
 
-        auto const & tile { m_parent->m_ecs->components.get_component<TerrainTile>( entity ) };
+        auto const & tile { m_context.components->get_component<TerrainTile>( entity ) };
         m_mesh->add_instance( glm::vec3 { 1.f }, orientations[tile.tile_id.half], tile_position( tile.tile_id ) );
     }
 
     /** Draws all tiles at once. */
     void finish() override {
-        auto const & shader { m_parent->m_shaders.get_shader( "instanced" ) };
+        auto const & shader { m_shaders.get_shader( "instanced" ) };
         shader.set_uniform( "nr_instances", m_mesh->get_nr_instances() );
         m_mesh->draw();
     }
@@ -94,7 +100,9 @@ private:
 class TowerRenderer : public SubRenderer {
 public:
     /** Constructs the sub-renderer, and initialises the meshes for drawing the towers. */
-    explicit TowerRenderer( Renderer * const renderer ) : SubRenderer { renderer }, m_meshes { nullptr } {
+    explicit TowerRenderer( Context const & context, ShaderStore & shaders )
+        : SubRenderer { context, shaders }, m_meshes { nullptr } {
+
         Log::info( "Generating tower meshes." );
 
         static glm::vec3 constexpr base_scale { 0.3f, 0.1f, 0.3f };
@@ -120,14 +128,14 @@ public:
 
     /** Draws a tower. */
     void draw( EntityID const entity ) override {
-        Location const & location { m_parent->m_ecs->components.get_component<Location>( entity ) };
+        Location const & location { m_context.components->get_component<Location>( entity ) };
         glm::mat4 const transformation { glm::translate( glm::identity<glm::mat4>(), location.position ) };
 
-        auto const & shader { m_parent->m_shaders.get_shader( "main" ) };
+        auto const & shader { m_shaders.get_shader( "main" ) };
         shader.set_uniform( "model", transformation );
         shader.set_uniform( "normal_transform", glm::mat3 { glm::transpose( glm::inverse( transformation ) ) } );
 
-        TowerType const & tower { m_parent->m_ecs->components.get_component<TowerType>( entity ) };
+        TowerType const & tower { m_context.components->get_component<TowerType>( entity ) };
         auto const & base_mesh { m_meshes.at( tower.type * 2 ) };
         auto const & crystal_mesh { m_meshes.at( tower.type * 2 + 1 ) };
 
@@ -141,8 +149,8 @@ private:
     std::array<std::unique_ptr<Mesh<ColourVertex>>, TowerType::NumberTypes * 2> m_meshes;
 };
 
-Renderer::Renderer( ECS * const ecs, Window & window, Camera & camera )
-    : System { ecs }, m_window { window }, m_camera { camera }, m_shaders {}, m_sub_renderers { nullptr } {
+Renderer::Renderer( Context const & context, Window & window, Camera & camera )
+    : System { context }, m_shaders {}, m_sub_renderers { nullptr } {
     glm::vec3 constexpr ambient_light { 0.01f };
     glm::vec3 constexpr sun_light { 1.f };
     glm::vec3 constexpr sun_direction { -0.2f, 1.f, -0.5f };
@@ -166,19 +174,19 @@ Renderer::Renderer( ECS * const ecs, Window & window, Camera & camera )
         shader.set_uniform( "is_light_source", false );
     }
 
-    m_sub_renderers[EntityType::Tile] = std::make_unique<TileRenderer>( this );
-    m_sub_renderers[EntityType::Tower] = std::make_unique<TowerRenderer>( this );
+    m_sub_renderers[EntityType::Tile] = std::make_unique<TileRenderer>( m_context, m_shaders );
+    m_sub_renderers[EntityType::Tower] = std::make_unique<TowerRenderer>( m_context, m_shaders );
 }
 
 Renderer::~Renderer() = default;
 
 void Renderer::run() {
-    auto & components { m_ecs->components };
+    auto & components { *m_context.components };
 
     // Update the camera attributes, and make sure all shaders are synchronised on this
-    m_camera.update();
+    m_context.camera->update();
     for ( auto const & shader : std::views::values( m_shaders ) )
-        m_camera.update_shader( shader );
+        m_context.camera->update_shader( shader );
 
     for ( unsigned int i { 0 }; i < EntityType::NrTypes; ++i ) {
         if ( m_sub_renderers[i] )

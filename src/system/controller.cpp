@@ -21,8 +21,8 @@ std::string constexpr config_names[] {
 };
 
 
-Controller::Controller( ECS * const ecs, InputManager & input_manager, Camera & camera )
-    : System { ecs }, m_input_manager { input_manager }, m_camera { camera }, m_callback_ids {}, m_flags { 0 } {
+Controller::Controller( Context const & context, InputManager & input_manager, Camera & camera )
+    : System { context }, m_input_manager { input_manager }, m_camera { camera }, m_callback_ids {}, m_flags { 0 } {
     for ( unsigned char action { 0 }; action < static_cast<unsigned char>(Camera::NumberActions); ++action ) {
         auto const key { Config::get<int>( "Controls", config_names[action] ) };
         auto const key_callback {

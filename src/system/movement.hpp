@@ -7,7 +7,7 @@
 /** The movement system for all entities, whether it's the enemies, bullets, or the player. */
 class Movement : public System {
 public:
-    explicit Movement( ECS * ecs );
+    explicit Movement( Context const & context );
     ~Movement() override = default;
 
     void run() override;

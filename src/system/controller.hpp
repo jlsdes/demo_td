@@ -2,6 +2,7 @@
 #define DEMO_TD_CONTROLLER_HPP
 
 #include "system.hpp"
+
 #include "core/camera.hpp"
 
 #include <array>
@@ -15,7 +16,7 @@ struct ECS;
 /** Handles (most) player input, which it receives through GLFW's callback functions. */
 class Controller : public System {
 public:
-    Controller( ECS * ecs, InputManager & input_manager, Camera & camera );
+    Controller( Context const & context, InputManager & input_manager, Camera & camera );
     ~Controller() override;
 
     void run() override;

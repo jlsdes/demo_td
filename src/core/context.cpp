@@ -94,9 +94,9 @@ TopContext::TopContext() : Context { nullptr }, m_window { nullptr },
     components->create_store<EntityType>();
     components->create_store<Location>();
 
-    systems->insert_system( std::make_unique<Renderer>( m_ecs.get(), *m_window, *m_camera ), Render );
-    systems->insert_system( std::make_unique<Movement>( m_ecs.get() ), General );
-    systems->insert_system( std::make_unique<Controller>( m_ecs.get(), input_manager, *m_camera ), General );
+    systems->insert_system( std::make_unique<Renderer>( *this, *m_window, *m_camera ), Render );
+    systems->insert_system( std::make_unique<Movement>( *this ), General );
+    systems->insert_system( std::make_unique<Controller>( *this, input_manager, *m_camera ), General );
 }
 
 
@@ -108,7 +108,7 @@ LevelContext::LevelContext( Context const * const parent ) : Context { parent } 
     components->create_store<TowerType>();
     components->create_store<TerrainTile>();
 
-    systems->insert_system( std::make_unique<TileManager>( ecs ), Setup );
+    systems->insert_system( std::make_unique<TileManager>( *this ), Setup );
 }
 
 

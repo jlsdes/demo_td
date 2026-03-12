@@ -6,14 +6,14 @@
 #include "component/terrain_tile.hpp"
 
 
-TileManager::TileManager( ECS * const ecs ) : System { ecs }, m_updated { false } {}
+TileManager::TileManager( Context const & context ) : System { context }, m_updated { false } {}
 
 void TileManager::run() {}
 
 void TileManager::add_tile( SkewedCoordinate const tile_id ) {
-    EntityID const entity { m_ecs->entities.create() };
-    m_ecs->components.insert_component<EntityType>( entity, { .type_id = EntityType::Tile } );
-    m_ecs->components.insert_component<TerrainTile>( entity, { .tile_id = tile_id } );
+    EntityID const entity { m_context.entities->create() };
+    m_context.components->insert_component<EntityType>( entity, { .type_id = EntityType::Tile } );
+    m_context.components->insert_component<TerrainTile>( entity, { .tile_id = tile_id } );
 
     m_updated = true;
 }

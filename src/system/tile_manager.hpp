@@ -14,7 +14,7 @@ unsigned int constexpr g_chunk_size { g_chunk_length * g_chunk_length };
 
 class TileManager : public System {
 public:
-    explicit TileManager( ECS * ecs );
+    explicit TileManager( Context const & context );
     ~TileManager() override = default;
 
     void run() override;

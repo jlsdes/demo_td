@@ -1,31 +1,28 @@
 #ifndef DEMO_TD_SYSTEM_HPP
 #define DEMO_TD_SYSTEM_HPP
 
+#include "core/context.hpp"
+
 #include <type_traits>
-
-
-class EntityManager;
-class ComponentManager;
-struct ECS;
 
 
 /** A system operates on all components of (a) certain type(s). */
 class System {
 public:
-    explicit System( ECS * const ecs ) : m_ecs { ecs } {}
+    explicit System( Context const & context ) : m_context { context } {}
     virtual ~System() = default;
 
     System( System const & ) = delete;
-    System & operator = ( System const & ) = delete;
+    System & operator =( System const & ) = delete;
 
     System( System && ) noexcept = default;
-    System & operator= ( System && ) noexcept = delete;
+    System & operator=( System && ) noexcept = delete;
 
     /** Abstract function where derived types should implement their functionality. */
     virtual void run() = 0;
 
 protected:
-    ECS * const m_ecs;
+    Context const & m_context;
 };
 
 
