@@ -8,6 +8,7 @@
 #include "component/terrain_tile.hpp"
 #include "component/tower_data.hpp"
 
+#include "core/entity_component_system.hpp"
 #include "core/mesh.hpp"
 #include "core/mesh_builder.hpp"
 #include "core/shader.hpp"

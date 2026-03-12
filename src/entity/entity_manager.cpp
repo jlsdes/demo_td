@@ -1,15 +1,13 @@
 #include "entity_manager.hpp"
 
-#include "core/entity_component_system.hpp"
 #include "utils/log.hpp"
 
 #include <bit>
 #include <cassert>
 
 
-EntityManager::EntityManager( ECS * ecs ) : m_components { ecs->components }, m_systems { ecs->systems },
-                                            m_component_flags { 0 }, m_existing { 0 }, m_nr_entities { 0 },
-                                            m_next_entity { 0 } {}
+EntityManager::EntityManager()
+    : m_component_flags { 0 }, m_existing { 0 }, m_nr_entities { 0 }, m_next_entity { 0 } {}
 
 EntityID EntityManager::create() {
     assert( m_nr_entities < g_max_entities );

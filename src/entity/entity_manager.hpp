@@ -9,15 +9,10 @@
 #include <string>
 
 
-struct ECS;
-class ComponentManager;
-class SystemManager;
-
-
 /** Manages all entities; mainly handles the assignment of entity IDs. */
 class EntityManager {
 public:
-    explicit EntityManager( ECS * ecs );
+    EntityManager();
     ~EntityManager() = default;
 
     EntityManager( EntityManager const & other ) = delete;
@@ -77,15 +72,12 @@ public:
      *  a warning will be logged unless 'ignore_existing' is set to true. */
     void set_entity_name( std::string const & name, EntityID id, bool ignore_existing = false );
     void remove_name( std::string const & name );
-    bool name_exists( std::string const & name ) const;
+    [[nodiscard]] bool name_exists( std::string const & name ) const;
+
     /** Returns the entity ID associated with the given name. Throws an exception if the name isn't registered. */
     [[nodiscard]] EntityID get_entity_id( std::string const & name ) const;
 
 private:
-    /// The ECS object contains this object, and the partnered ComponentManager and SystemManager objects.
-    ComponentManager & m_components;
-    SystemManager & m_systems;
-
     /// The components that each entity consists of.
     std::array<ComponentFlags, g_max_entities> m_component_flags;
 

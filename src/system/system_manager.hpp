@@ -9,7 +9,7 @@
 #include <typeindex>
 
 
-struct ECS;
+struct Context;
 
 
 /** The two main groups of systems; other values can be used as well. */
@@ -24,7 +24,7 @@ enum SystemGroup : unsigned int {
 /** Manages all systems. */
 class SystemManager {
 public:
-    explicit SystemManager( ECS * ecs );
+    SystemManager() = default;
     ~SystemManager() = default;
 
     SystemManager( SystemManager const & ) = delete;
@@ -60,9 +60,6 @@ public:
     void run_group( unsigned int group_type ) const;
 
 private:
-    /// The ECS object contains this object, and the partnered EntityManager and ComponentManager objects.
-    ECS * const m_ecs;
-
     /// All systems that are currently registered.
     std::map<std::type_index, std::unique_ptr<System>> m_systems;
 

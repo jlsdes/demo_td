@@ -9,12 +9,14 @@
 // Entity-Component-System implementation based on https://austinmorlan.com/posts/entity_component_system/
 
 
+struct Context;
+
 struct ECS {
     EntityManager entities;
     ComponentManager components;
     SystemManager systems;
 
-    ECS();
+    explicit ECS( Context & context );
 };
 
 

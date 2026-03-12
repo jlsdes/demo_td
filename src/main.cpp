@@ -21,22 +21,19 @@ int main() {
     Log::info( "Loaded config ", (main_dir / "config.ini").string() );
 
     TopContext context {};
-    ECS & ecs { *context.ecs };
 
     LevelContext level { &context };
     std::array<EntityID, TowerType::NumberTypes> towers {};
     for ( unsigned char type { 0 }; type < TowerType::NumberTypes; ++type ) {
         glm::vec3 const position { 0.f, 0.f, -3.f + static_cast<float>(type) };
-        towers.at( type ) = Tower::make( static_cast<TowerType::Type>(type), position, &ecs );
+        towers.at( type ) = Tower::make( static_cast<TowerType::Type>(type), position, context.ecs );
     }
 
-    // std::array<EntityID, g_chunk_size> chunk_1 { Tile::make_chunk( { 0, 0, 0 }, &ecs ) };
-    // std::array<EntityID, g_chunk_size> chunk_2 { Tile::make_chunk( { 0, 0, 1 }, &ecs ) };
-    auto const tiles { ecs.systems.get_system<TileManager>() };
+    auto const tiles { context.systems->get_system<TileManager>() };
     tiles->add_chunk( { 0, 0, 0 } );
     tiles->add_chunk( { 0, 0, 1 } );
 
-    TileHighlight highlight { &ecs };
+    TileHighlight highlight { context.ecs };
 
     unsigned int frame_count { 0 };
     double last_report { Time::get_time() };
@@ -45,7 +42,7 @@ int main() {
     double constexpr desired_loop_length { 1. / desired_fps };
     double loop_length { 0. };
 
-    ecs.systems.run_group( Setup );
+    context.systems->run_group( Setup );
 
     auto const window { context.window };
     while ( not window->is_closing() ) {
@@ -54,9 +51,9 @@ int main() {
         double const loop_start { Time::loop_start() };
 
         glfwPollEvents();
-        ecs.systems.run_group( General );
+        context.systems->run_group( General );
         window->clear();
-        ecs.systems.run_group( Render );
+        context.systems->run_group( Render );
         window->render();
 
         double const loop_end { Time::get_time() };

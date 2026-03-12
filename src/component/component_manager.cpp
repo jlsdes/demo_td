@@ -1,18 +1,16 @@
 #include "component_manager.hpp"
 
-#include <cassert>
-
-#include "core/entity_component_system.hpp"
+#include "core/context.hpp"
 
 
-ComponentManager::ComponentManager( ECS * const ecs ) : m_entities { ecs->entities }, m_systems { ecs->systems },
-                                                        m_stores { nullptr }, m_types {}, m_used_flags { 0 } {}
+ComponentManager::ComponentManager( Context & context )
+    : m_context { context }, m_stores { nullptr }, m_types {}, m_used_flags { 0 } {}
 
 void ComponentManager::remove_store( ComponentTypeID const type_id ) {
     assert( has_store( type_id ) );
 
     ComponentFlags const flag { id_to_flag( type_id ) };
-    m_entities.unset_all( flag );
+    m_context.entities->unset_all( flag );
 
     for ( auto i { m_types.cbegin() }; i != m_types.cend(); ++i ) {
         if ( i->second == type_id ) {
@@ -33,7 +31,7 @@ void ComponentManager::remove_component( EntityID const entity, ComponentTypeID 
     assert( entity_has_component( entity, type_id ) );
 
     m_stores.at( type_id )->remove( entity );
-    m_entities.unset_flag( entity, type_id );
+    m_context.entities->unset_flag( entity, type_id );
 }
 
 bool ComponentManager::entity_has_component( EntityID const entity, ComponentTypeID const type_id ) const {

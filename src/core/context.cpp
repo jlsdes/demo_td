@@ -71,7 +71,7 @@ Context::Context( Context const * const parent ) : entities { parent ? parent->e
 
 TopContext::TopContext() : Context { nullptr }, m_window { nullptr },
                            m_camera { std::make_unique<Camera>( initial_position, initial_target ) },
-                           m_ecs { std::make_unique<ECS>() } {
+                           m_ecs { std::make_unique<ECS>( *this ) } {
     initialise_glfw();
     m_window = std::make_unique<Window>();
     initialise_glad();

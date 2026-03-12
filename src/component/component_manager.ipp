@@ -1,7 +1,8 @@
 #ifndef DEMO_TD_COMPONENT_IPP
 #define DEMO_TD_COMPONENT_IPP
 
-#include "core/entity_component_system.hpp"
+#include "core/context.hpp"
+#include "entity/entity_manager.hpp"
 
 
 template <SubComponent ComponentType>
@@ -156,7 +157,7 @@ void ComponentManager::insert_component( EntityID const entity, ComponentType co
     auto const store { m_stores.at( type_id ).get() };
     auto const array { dynamic_cast<ComponentArray<ComponentType> *>(store) };
     array->insert( entity, component );
-    m_entities.set_flag( entity, type_id );
+    m_context.entities->set_flag( entity, type_id );
 }
 
 template <SubComponent ComponentType>

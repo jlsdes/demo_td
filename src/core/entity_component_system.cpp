@@ -1,4 +1,4 @@
 #include "entity_component_system.hpp"
 
 
-ECS::ECS() : entities { this }, components { this }, systems { this } {}
+ECS::ECS( Context & context ) : entities {}, components { context }, systems {} {}

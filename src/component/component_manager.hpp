@@ -6,16 +6,13 @@
 #include "utils/log.hpp"
 
 #include <array>
-#include <bit>
 #include <cassert>
 #include <memory>
 #include <typeindex>
 #include <map>
 
 
-struct ECS;
-class EntityManager;
-class SystemManager;
+struct Context;
 
 
 /** Basic interface of all ComponentStore instances. */
@@ -107,7 +104,7 @@ private:
 /** Manages ComponentStore objects for all Component subtypes. */
 class ComponentManager {
 public:
-    explicit ComponentManager( ECS * ecs );
+    explicit ComponentManager( Context & context );
     ~ComponentManager() = default;
 
     ComponentManager( ComponentManager const & ) = delete;
@@ -153,8 +150,7 @@ public:
 
 private:
     /// The ECS object contains this object, and the partnered EntityManager and SystemManager objects.
-    EntityManager & m_entities;
-    SystemManager & m_systems;
+    Context & m_context;
 
     /// All registered component stores and their respective type identifiers.
     std::array<std::unique_ptr<ComponentStore>, g_max_component_types> m_stores;
