@@ -6,9 +6,12 @@
 #include <glm/glm.hpp>
 
 
+struct Context;
+
+
 class TileHighlight : public Entity {
 public:
-    explicit TileHighlight( ECS * ecs );
+    explicit TileHighlight( Context const & context );
     ~TileHighlight() override = default;
 
     void show() const;

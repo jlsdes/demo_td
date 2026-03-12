@@ -3,7 +3,6 @@
 #include "component/drawable.hpp"
 #include "component/location.hpp"
 #include "entity/tile_highlight.hpp"
-#include "core/entity_component_system.hpp"
 #include "core/input_manager.hpp"
 #include "utils/config.hpp"
 

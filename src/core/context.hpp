@@ -11,8 +11,6 @@ class EntityManager;
 class ComponentManager;
 class SystemManager;
 
-struct ECS;
-
 
 /** Contexts initialise any entities and systems that are required to run the associated code. When the context object
  *  is destroyed, those entities and systems are removed again.
@@ -24,12 +22,12 @@ struct Context {
     EntityManager * entities;
     ComponentManager * components;
     SystemManager * systems;
-    ECS * ecs; // TODO remove
 
     Window * window;
     Camera * camera;
 
-    explicit Context( Context const * parent = nullptr );
+    Context();
+    explicit Context( Context const * parent );
     virtual ~Context() = default;
 
 private:
@@ -46,7 +44,9 @@ public:
 private:
     std::unique_ptr<Window> m_window;
     std::unique_ptr<Camera> m_camera;
-    std::unique_ptr<ECS> m_ecs;
+    std::unique_ptr<EntityManager> m_entities;
+    std::unique_ptr<ComponentManager> m_components;
+    std::unique_ptr<SystemManager> m_systems;
 };
 
 

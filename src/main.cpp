@@ -1,16 +1,18 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
-#include "utils/config.hpp"
-#include "utils/log.hpp"
-#include "utils/time.hpp"
 #include "core/window.hpp"
 #include "core/context.hpp"
-#include "core/entity_component_system.hpp"
 
 #include "entity/tower.hpp"
 #include "entity/tile_highlight.hpp"
+
 #include "system/tile_manager.hpp"
+#include "system/system_manager.hpp"
+
+#include "utils/config.hpp"
+#include "utils/log.hpp"
+#include "utils/time.hpp"
 
 #include <thread>
 
@@ -26,14 +28,14 @@ int main() {
     std::array<EntityID, TowerType::NumberTypes> towers {};
     for ( unsigned char type { 0 }; type < TowerType::NumberTypes; ++type ) {
         glm::vec3 const position { 0.f, 0.f, -3.f + static_cast<float>(type) };
-        towers.at( type ) = Tower::make( static_cast<TowerType::Type>(type), position, context.ecs );
+        towers.at( type ) = Tower::make( static_cast<TowerType::Type>(type), position, context );
     }
 
     auto const tiles { context.systems->get_system<TileManager>() };
     tiles->add_chunk( { 0, 0, 0 } );
     tiles->add_chunk( { 0, 0, 1 } );
 
-    TileHighlight highlight { context.ecs };
+    TileHighlight highlight { context };
 
     unsigned int frame_count { 0 };
     double last_report { Time::get_time() };

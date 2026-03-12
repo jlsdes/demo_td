@@ -79,8 +79,6 @@ add_executable(demo_td
         src/component/drawable.hpp
         src/system/renderer.cpp
         src/system/renderer.hpp
-        src/core/entity_component_system.cpp
-        src/core/entity_component_system.hpp
         src/component/location.hpp
         src/core/mesh.ipp
         src/core/context.cpp

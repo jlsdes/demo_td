@@ -9,7 +9,7 @@ using EntityID = unsigned int;
 constexpr unsigned int g_max_entities = 1 << 15;
 
 
-struct ECS;
+struct Context;
 
 
 /** Base class for entities. (May or may not be removed in the future, as I'm not sure whether I want to use this.)
@@ -18,7 +18,7 @@ struct ECS;
 class Entity {
 public:
     /** The constructor creates a new entity within the provided ECS ecosystem. */
-    explicit Entity( ECS * ecs );
+    explicit Entity( Context const & context );
 
     /** The destructor removes the entity and its components from the ECS again. Derived classes can (normally) just
      *  default override this, as the ECS will be handled in this destructor regardless of the component types. */
@@ -39,8 +39,8 @@ private:
     bool m_moved { false };
 protected:
     EntityID const m_id;
-    /// The ECS that this entity is part of.
-    ECS * const m_ecs;
+    /// The context that this entity is part of.
+    Context const & m_context;
 };
 
 

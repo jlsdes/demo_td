@@ -1,26 +1,29 @@
 #include "entity.hpp"
-#include "core/entity_component_system.hpp"
+
+#include "component/component_manager.hpp"
+#include "core/context.hpp"
+#include "entity/entity_manager.hpp"
 #include "utils/log.hpp"
 
 #include <bit>
 
 
-Entity::Entity( ECS * const ecs ) : m_id { ecs->entities.create() }, m_ecs { ecs } {}
+Entity::Entity( Context const & context ) : m_id { context.entities->create() }, m_context { context } {}
 
 Entity::~Entity() {
     if ( m_moved )
         return;
 
-    ComponentFlags components { m_ecs->entities.get_flags( m_id ) };
+    ComponentFlags components { m_context.entities->get_flags( m_id ) };
     while ( components ) {
         auto const component_type { std::countr_zero( components ) };
-        m_ecs->components.remove_component( m_id, component_type );
+        m_context.components->remove_component( m_id, component_type );
         components ^= 1ull << component_type;
     }
-    m_ecs->entities.remove( m_id );
+    m_context.entities->remove( m_id );
 }
 
-Entity::Entity( Entity && other ) noexcept : m_id { other.m_id }, m_ecs { other.m_ecs } {
+Entity::Entity( Entity && other ) noexcept : m_id { other.m_id }, m_context { other.m_context } {
     if ( other.m_moved ) {
         Log::error( "Moved an already moved entity." );
         m_moved = true;

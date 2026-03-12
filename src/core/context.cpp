@@ -1,8 +1,8 @@
 #include "context.hpp"
 #include "camera.hpp"
-#include "entity_component_system.hpp"
 #include "window.hpp"
 
+#include "component/component_manager.hpp"
 #include "component/entity_type.hpp"
 #include "component/drawable.hpp"
 #include "component/location.hpp"
@@ -12,6 +12,7 @@
 #include "system/controller.hpp"
 #include "system/movement.hpp"
 #include "system/renderer.hpp"
+#include "system/system_manager.hpp"
 #include "system/tile_manager.hpp"
 
 #include <glad/gl.h>
@@ -60,27 +61,32 @@ void initialise_glad() {
 }
 
 
-Context::Context( Context const * const parent ) : entities { parent ? parent->entities : nullptr },
-                                                   components { parent ? parent->components : nullptr },
-                                                   systems { parent ? parent->systems : nullptr },
-                                                   ecs { parent ? parent->ecs : nullptr },
-                                                   window { parent ? parent->window : nullptr },
-                                                   camera { parent ? parent->camera : nullptr },
+Context::Context() : entities { nullptr }, components { nullptr }, systems { nullptr }, window { nullptr },
+                     camera { nullptr }, m_parent { nullptr } {}
+
+
+Context::Context( Context const * const parent ) : entities { parent->entities },
+                                                   components { parent->components },
+                                                   systems { parent->systems },
+                                                   window { parent->window },
+                                                   camera { parent->camera },
                                                    m_parent { parent } {}
 
 
-TopContext::TopContext() : Context { nullptr }, m_window { nullptr },
+TopContext::TopContext() : Context {}, m_window { nullptr },
                            m_camera { std::make_unique<Camera>( initial_position, initial_target ) },
-                           m_ecs { std::make_unique<ECS>( *this ) } {
+                           m_entities { std::make_unique<EntityManager>() },
+m_components { std::make_unique<ComponentManager>( *this ) },
+m_systems { std::make_unique<SystemManager>() }
+{
     initialise_glfw();
     m_window = std::make_unique<Window>();
     initialise_glad();
     InputManager & input_manager { m_window->get_input_manager() };
 
-    entities = &m_ecs->entities;
-    components = &m_ecs->components;
-    systems = &m_ecs->systems;
-    ecs = m_ecs.get();
+    entities = m_entities.get();
+    components = m_components.get();
+    systems = m_systems.get();
     window = m_window.get();
     camera = m_camera.get();
 

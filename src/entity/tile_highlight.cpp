@@ -1,8 +1,11 @@
 #include "tile_highlight.hpp"
+
+#include "component/component_manager.hpp"
 #include "component/drawable.hpp"
 #include "component/location.hpp"
 #include "component/terrain_tile.hpp"
-#include "core/entity_component_system.hpp"
+
+#include "core/context.hpp"
 
 
 Mesh<ColourVertex> create_mesh() {
@@ -30,28 +33,28 @@ Mesh<ColourVertex> create_mesh() {
     return result;
 }
 
-TileHighlight::TileHighlight( ECS * const ecs ) : Entity { ecs } {
+TileHighlight::TileHighlight( Context const & context ) : Entity { context } {
     static Mesh<ColourVertex> mesh { create_mesh() };
     glm::vec3 constexpr position { 0.f };
 
-    ecs->components.insert_component( m_id, Location { .position = position } );
-    ecs->components.insert_component( m_id, Drawable { .mesh = &mesh } );
-    ecs->components.insert_component( m_id, TerrainTile { .tile_id = position_to_tile( position ) } );
+    context.components->insert_component( m_id, Location { .position = position } );
+    context.components->insert_component( m_id, Drawable { .mesh = &mesh } );
+    context.components->insert_component( m_id, TerrainTile { .tile_id = position_to_tile( position ) } );
 }
 
 void TileHighlight::show() const {
-    auto const & drawable { m_ecs->components.get_component<Drawable>( m_id ) };
+    auto const & drawable { m_context.components->get_component<Drawable>( m_id ) };
     drawable.mesh->unset_flag( IsHidden );
 }
 
 void TileHighlight::hide() const {
-    auto const & drawable { m_ecs->components.get_component<Drawable>( m_id ) };
+    auto const & drawable { m_context.components->get_component<Drawable>( m_id ) };
     drawable.mesh->set_flag( IsHidden );
 }
 
 void TileHighlight::set_position( glm::vec3 const & position ) const {
-    auto & location { m_ecs->components.get_component<Location>( m_id ) };
-    auto & tile { m_ecs->components.get_component<TerrainTile>( m_id ) };
+    auto & location { m_context.components->get_component<Location>( m_id ) };
+    auto & tile { m_context.components->get_component<TerrainTile>( m_id ) };
 
     location.position = position;
     tile.tile_id = position_to_tile( position.x, position.z );

@@ -1,9 +1,10 @@
 #include "tile_manager.hpp"
 
-#include "core/entity_component_system.hpp"
-
 #include "component/entity_type.hpp"
 #include "component/terrain_tile.hpp"
+
+#include "entity/entity_manager.hpp"
+#include "component/component_manager.hpp"
 
 
 TileManager::TileManager( Context const & context ) : System { context }, m_updated { false } {}
