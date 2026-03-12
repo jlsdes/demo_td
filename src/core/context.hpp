@@ -6,6 +6,11 @@
 
 class Camera;
 class Window;
+
+class EntityManager;
+class ComponentManager;
+class SystemManager;
+
 struct ECS;
 
 
@@ -15,21 +20,17 @@ struct ECS;
  *  initialisation such as window creation for example, and then the LevelContext initialises level-specific stuff later
  *  on (which I haven't implemented at the time of writing). Contexts can use ancestors' functionality, and they can
  *  either extend or replace functionality as well. */
-class Context {
-protected:
-    explicit Context( Context const * parent );
+struct Context {
+    EntityManager * entities;
+    ComponentManager * components;
+    SystemManager * systems;
+    ECS * ecs; // TODO remove
 
-public:
+    Window * window;
+    Camera * camera;
+
+    explicit Context( Context const * parent = nullptr );
     virtual ~Context() = default;
-
-    [[nodiscard]] Context const * get_parent() const;
-
-    [[nodiscard]] virtual ECS * get_ecs() const { return m_parent ? m_parent->get_ecs() : nullptr; }
-
-    /** Disables all systems in this specific context, meaning that they won't be run anymore. */
-    virtual void disable_systems() = 0;
-    /** Enables all systems in this specific context. */
-    virtual void enable_systems() = 0;
 
 private:
     Context const * const m_parent;
@@ -41,13 +42,6 @@ class TopContext : public Context {
 public:
     TopContext();
     ~TopContext() override;
-
-    [[nodiscard]] ECS * get_ecs() const override { return m_ecs.get(); }
-    [[nodiscard]] Window * get_window() const { return m_window.get(); }
-
-    /** Does nothing, these systems probably shouldn't be disabled. */
-    void disable_systems() override {}
-    void enable_systems() override {}
 
 private:
     std::unique_ptr<Window> m_window;
@@ -61,9 +55,6 @@ public:
     explicit LevelContext( Context const * parent );
     ~LevelContext() override;
 
-    void disable_systems() override;
-    void enable_systems() override;
-
 private:
 };
 
@@ -72,9 +63,6 @@ class MenuContext : public Context {
 public:
     explicit MenuContext( Context const * parent );
     ~MenuContext() override;
-
-    void disable_systems() override;
-    void enable_systems() override;
 
 private:
 };

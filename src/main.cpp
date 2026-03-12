@@ -21,7 +21,7 @@ int main() {
     Log::info( "Loaded config ", (main_dir / "config.ini").string() );
 
     TopContext context {};
-    ECS & ecs { *context.get_ecs() };
+    ECS & ecs { *context.ecs };
 
     LevelContext level { &context };
     std::array<EntityID, TowerType::NumberTypes> towers {};
@@ -47,7 +47,7 @@ int main() {
 
     ecs.systems.run_group( Setup );
 
-    auto const window { context.get_window() };
+    auto const window { context.window };
     while ( not window->is_closing() ) {
         std::this_thread::sleep_for( std::chrono::duration<double> { (desired_loop_length - loop_length) * 0.9925 } );
 

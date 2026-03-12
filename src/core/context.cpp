@@ -20,11 +20,11 @@
 #include <stdexcept>
 
 
-Context::Context( Context const * const parent ) : m_parent { parent } {}
+// TODO move these somewhere better (config perhaps?)
+// Camera initialisation constants
+glm::vec3 constexpr initial_position { -3.f, 0.f, 0.f };
+glm::vec3 constexpr initial_target { 0.f, 0.f, 0.f };
 
-Context const * Context::get_parent() const {
-    return m_parent;
-}
 
 void initialise_glfw() {
     if ( not glfwInit() ) {
@@ -39,6 +39,7 @@ void initialise_glfw() {
     // Experiment: transparent window
     // glfwWindowHint( GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE );
 }
+
 
 void initialise_glad() {
     if ( not gladLoadGL( glfwGetProcAddress ) ) {
@@ -58,10 +59,14 @@ void initialise_glad() {
     glEnable( GL_CULL_FACE );
 }
 
-// TODO move these somewhere better (config perhaps?)
-// Camera initialisation constants
-glm::vec3 constexpr initial_position { -3.f, 0.f, 0.f };
-glm::vec3 constexpr initial_target { 0.f, 0.f, 0.f };
+
+Context::Context( Context const * const parent ) : entities { parent ? parent->entities : nullptr },
+                                                   components { parent ? parent->components : nullptr },
+                                                   systems { parent ? parent->systems : nullptr },
+                                                   ecs { parent ? parent->ecs : nullptr },
+                                                   window { parent ? parent->window : nullptr },
+                                                   camera { parent ? parent->camera : nullptr },
+                                                   m_parent { parent } {}
 
 
 TopContext::TopContext() : Context { nullptr }, m_window { nullptr },
@@ -72,52 +77,52 @@ TopContext::TopContext() : Context { nullptr }, m_window { nullptr },
     initialise_glad();
     InputManager & input_manager { m_window->get_input_manager() };
 
+    entities = &m_ecs->entities;
+    components = &m_ecs->components;
+    systems = &m_ecs->systems;
+    ecs = m_ecs.get();
+    window = m_window.get();
+    camera = m_camera.get();
+
     // When using the default swap interval, where GLFW synchronises the framerate with the screen's refresh rate, I get
     // quite a lot of dropped frames when moving the mouse around (only when using the default cursor mode). I'm not
     // sure why this happens, and why it doesn't happen when setting the cursor mode to GLFW_CURSOR_DISABLED, but it
     // does. As such, I've decided to just handle the frame rate limiting myself.
     glfwSwapInterval( 0 );
 
-    m_ecs->components.create_store<Drawable>();
-    m_ecs->components.create_store<EntityType>();
-    m_ecs->components.create_store<Location>();
+    components->create_store<Drawable>();
+    components->create_store<EntityType>();
+    components->create_store<Location>();
 
-    m_ecs->systems.insert_system( std::make_unique<Renderer>( m_ecs.get(), *m_window, *m_camera ), Render );
-    m_ecs->systems.insert_system( std::make_unique<Movement>( m_ecs.get() ), General );
-    m_ecs->systems.insert_system( std::make_unique<Controller>( m_ecs.get(), input_manager, *m_camera ), General );
+    systems->insert_system( std::make_unique<Renderer>( m_ecs.get(), *m_window, *m_camera ), Render );
+    systems->insert_system( std::make_unique<Movement>( m_ecs.get() ), General );
+    systems->insert_system( std::make_unique<Controller>( m_ecs.get(), input_manager, *m_camera ), General );
 }
+
 
 TopContext::~TopContext() = default;
 
+
 LevelContext::LevelContext( Context const * const parent ) : Context { parent } {
     assert( parent );
-    ECS * const ecs { parent->get_ecs() };
+    components->create_store<TowerType>();
+    components->create_store<TerrainTile>();
 
-    ecs->components.create_store<TowerType>();
-    ecs->components.create_store<TerrainTile>();
-
-    ecs->systems.insert_system( std::make_unique<TileManager>( ecs ), Setup );
+    systems->insert_system( std::make_unique<TileManager>( ecs ), Setup );
 }
+
 
 LevelContext::~LevelContext() {
-    ECS * const ecs { Context::get_ecs() };
+    systems->remove_system<TileManager>();
 
-    ecs->systems.remove_system<TileManager>();
-
-    ecs->components.remove_store( ecs->components.get_type_id<TowerType>() );
-    ecs->components.remove_store( ecs->components.get_type_id<TerrainTile>() );
+    components->remove_store( components->get_type_id<TowerType>() );
+    components->remove_store( components->get_type_id<TerrainTile>() );
 }
 
-void LevelContext::disable_systems() {}
-
-void LevelContext::enable_systems() {}
 
 MenuContext::MenuContext( Context const * const parent ) : Context { parent } {
     assert( parent );
 }
 
+
 MenuContext::~MenuContext() = default;
-
-void MenuContext::disable_systems() {}
-
-void MenuContext::enable_systems() {}
