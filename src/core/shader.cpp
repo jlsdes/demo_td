@@ -1,13 +1,14 @@
 #include "shader.hpp"
 
-#include <glad/gl.h>
-
 #include <format>
 #include <fstream>
 #include <map>
 #include <memory>
 #include <regex>
 #include <stdexcept>
+
+#include <glad/gl.h>
+#include <glm/gtc/type_ptr.hpp>
 
 
 struct ShaderSource {
@@ -112,5 +113,45 @@ std::string Shader::get_definition( std::string const & name ) const {
 
 void Shader::set_definition( std::string const & name, std::string const & value ) {
     for ( auto const & source : m_sources ) {
+        if ( source->definitions.contains( name ) )
+            source->definitions.at( name ) = value;
     }
+}
+
+void Shader::use() const {
+    static unsigned int current { 0 };
+    if ( current == m_program )
+        return;
+    current = m_program;
+    glUseProgram( m_program );
+}
+
+void Shader::set_uniform( char const * name, int value ) {
+    use();
+    glUniform1i( glGetUniformLocation( m_program, name ), value );
+}
+
+void Shader::set_uniform( char const * name, float value ) {
+    use();
+    glUniform1f( glGetUniformLocation( m_program, name ), value );
+}
+
+void Shader::set_uniform( char const * name, glm::vec3 value ) {
+    use();
+    glUniform3fv( glGetUniformLocation( m_program, name ), 1, glm::value_ptr( value ) );
+}
+
+void Shader::set_uniform( char const * name, glm::vec4 value ) {
+    use();
+    glUniform4fv( glGetUniformLocation( m_program, name ), 1, glm::value_ptr( value ) );
+}
+
+void Shader::set_uniform( char const * name, glm::mat3 value ) {
+    use();
+    glUniformMatrix3fv( glGetUniformLocation( m_program, name ), 1, GL_FALSE, glm::value_ptr( value ) );
+}
+
+void Shader::set_uniform( char const * name, glm::mat4 value ) {
+    use();
+    glUniformMatrix4fv( glGetUniformLocation( m_program, name ), 1, GL_FALSE, glm::value_ptr( value ) );
 }
