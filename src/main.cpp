@@ -5,9 +5,7 @@
 #include "core/context.hpp"
 
 #include "entity/tower.hpp"
-#include "entity/tile_highlight.hpp"
 
-#include "system/tile_manager.hpp"
 #include "system/system_manager.hpp"
 
 #include "utils/config.hpp"
@@ -31,46 +29,25 @@ int main() {
         towers.at( type ) = Tower::make( static_cast<TowerType::Type>(type), position, context );
     }
 
-    auto const tiles { context.systems->get_system<TileManager>() };
-    tiles->add_chunk( { 0, 0, 0 } );
-    tiles->add_chunk( { 0, 0, 1 } );
-
-    TileHighlight highlight { context };
-
-    unsigned int frame_count { 0 };
-    double last_report { Time::get_time() };
+    context.systems->run_group( Setup );
 
     double constexpr desired_fps { 60. };
     double constexpr desired_loop_length { 1. / desired_fps };
     double loop_length { 0. };
 
-    context.systems->run_group( Setup );
-
-    auto const window { context.window };
-    while ( not window->is_closing() ) {
-        std::this_thread::sleep_for( std::chrono::duration<double> { (desired_loop_length - loop_length) * 0.9925 } );
+    while ( not context.window->is_closing() ) {
+        std::this_thread::sleep_for( std::chrono::duration<double> { (desired_loop_length - loop_length) * 0.99 } );
 
         double const loop_start { Time::loop_start() };
 
         glfwPollEvents();
         context.systems->run_group( General );
-        window->clear();
+        context.window->clear();
         context.systems->run_group( Render );
-        window->render();
+        context.window->render();
 
         double const loop_end { Time::get_time() };
         loop_length = loop_end - loop_start;
-
-        ++frame_count;
-        double const current_time { Time::get_time() };
-        if ( double const elapsed_time { current_time - last_report }; elapsed_time >= 1. ) {
-            double const fps { static_cast<double>(frame_count) / elapsed_time };
-            auto const new_title { std::format( "Demo TD\t[FPS={:.5}]", fps ) };
-            glfwSetWindowTitle( glfwGetCurrentContext(), new_title.c_str() );
-
-            frame_count = 0;
-            last_report = current_time;
-        }
     }
 
     return 0;

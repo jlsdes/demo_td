@@ -7,7 +7,10 @@
 #include "component/component_manager.hpp"
 
 
-TileManager::TileManager( Context const & context ) : System { context }, m_updated { false } {}
+TileManager::TileManager( Context const & context ) : System { context }, m_updated { false } {
+    add_chunk( { 0, 0, 0 } );
+    add_chunk( { 0, 0, 1 } );
+}
 
 void TileManager::run() {}
 
