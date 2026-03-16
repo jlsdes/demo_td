@@ -3,9 +3,7 @@
 #include <GLFW/glfw3.h>
 // clang-format on
 
-#include <memory>
 #include <stdexcept>
-#include <vector>
 
 #include "core/shader.hpp"
 #include "core/window.hpp"

@@ -72,7 +72,7 @@ Shader::Shader( std::filesystem::path const & vertex_path, std::filesystem::path
 
     int success;
     char log[512];
-    glGetProgramiv( m_program, GL_COMPILE_STATUS, &success );
+    glGetProgramiv( m_program, GL_LINK_STATUS, &success );
     if ( not success ) {
         glGetProgramInfoLog( m_program, 512, nullptr, log );
         throw std::runtime_error( std::format( "Failed to compile shader program:\n{}", log ) );
