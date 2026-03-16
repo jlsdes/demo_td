@@ -1,53 +1,57 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
-#include "core/window.hpp"
-#include "core/context.hpp"
+#include <iostream>
+#include <print>
 
-#include "entity/tower.hpp"
 
-#include "system/system_manager.hpp"
+bool initialise_glfw() {
+    if ( not glfwInit() ) {
+        std::println( std::cerr, "Failed to initialise GLFW" );
+        return false;
+    }
+    glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, 4 );
+    glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 6 );
+    glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
+    glfwWindowHint( GLFW_SAMPLES, 8 );
+    return true;
+}
 
-#include "utils/config.hpp"
-#include "utils/log.hpp"
-#include "utils/time.hpp"
 
-#include <thread>
+bool initialise_glad() {
+    if ( not gladLoadGL( glfwGetProcAddress ) ) {
+        std::println( std::cerr, "Failed to initialise GLAD" );
+        return false;
+    }
+    glClearColor( 0.1, 0.1, 0.1, 1.0 );
+    glEnable( GL_DEPTH_TEST );
+    glEnable( GL_CULL_FACE );
+    return true;
+}
 
 
 int main() {
-    auto const main_dir { get_main_dir() };
-    Config::load_config( main_dir / "config.ini" );
-    Log::info( "Loaded config ", (main_dir / "config.ini").string() );
+    if ( not initialise_glfw() )
+        return 1;
 
-    TopContext context {};
-
-    LevelContext level { &context };
-    std::array<EntityID, TowerType::NumberTypes> towers {};
-    for ( unsigned char type { 0 }; type < TowerType::NumberTypes; ++type ) {
-        glm::vec3 const position { 0.f, 0.f, -3.f + static_cast<float>(type) };
-        towers.at( type ) = Tower::make( static_cast<TowerType::Type>(type), position, context );
+    auto const window { glfwCreateWindow( 800, 600, "Demo TD", nullptr, nullptr ) };
+    if ( not window ) {
+        std::println( std::cerr, "Failed to create window" );
+        return 1;
     }
+    glfwMakeContextCurrent( window );
 
-    context.systems->run_group( Setup );
+    if ( not initialise_glad() )
+        return 1;
 
-    double constexpr desired_fps { 60. };
-    double constexpr desired_loop_length { 1. / desired_fps };
-    double loop_length { 0. };
+    glfwSetKeyCallback( window, []( GLFWwindow * const window, int const key, int, int const action, int ) {
+        if ( key == GLFW_KEY_ESCAPE and action == GLFW_PRESS )
+            glfwSetWindowShouldClose( window, true );
+    } );
 
-    while ( not context.window->is_closing() ) {
-        std::this_thread::sleep_for( std::chrono::duration<double> { (desired_loop_length - loop_length) * 0.99 } );
-
-        double const loop_start { Time::loop_start() };
-
+    while ( not glfwWindowShouldClose( window ) ) {
         glfwPollEvents();
-        context.systems->run_group( General );
-        context.window->clear();
-        context.systems->run_group( Render );
-        context.window->render();
-
-        double const loop_end { Time::get_time() };
-        loop_length = loop_end - loop_start;
+        glfwSwapBuffers( window );
     }
 
     return 0;
