@@ -7,6 +7,7 @@
 
 
 struct ShaderSource {
+    std::string filename;
     std::map<std::string, std::string> definitions;
     std::vector<std::string> source;
 };

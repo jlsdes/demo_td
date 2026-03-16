@@ -7,8 +7,6 @@
 #include <regex>
 #include <stdexcept>
 
-#include <print>
-
 
 ShaderSource load_shader( std::filesystem::path const & path ) {
     if ( not std::filesystem::exists( path ) )
@@ -26,9 +24,8 @@ ShaderSource load_shader( std::filesystem::path const & path ) {
     // respectively.
     std::smatch match {};
 
-    ShaderSource result {};
+    ShaderSource result { .filename = path.string() };
     while ( std::getline( stream, line ) ) {
-        std::println( "{} {}", std::regex_match( line, definition_pattern ), line );
         if ( std::regex_match( line, match, definition_pattern ) )
             result.definitions.emplace( match[1], match[2] );
         else
@@ -37,10 +34,47 @@ ShaderSource load_shader( std::filesystem::path const & path ) {
     return result;
 }
 
-void compile_shader( ShaderSource const & source ) {}
+unsigned int compile_shader( ShaderSource const & source, GLenum const shader_type ) {
+    unsigned int shader_id { glCreateShader( shader_type ) };
+
+    std::string full_source { source.source[0] }; // Ensure that the #version line is at the top
+    for ( auto const & [name, value] : source.definitions )
+        full_source += std::format( "\n#define {} {}", name, value );
+    for ( auto line { source.source.cbegin() + 1 }; line != source.source.cend(); ++line )
+        full_source += '\n' + *line;
+    auto const full_c { full_source.c_str() };
+
+    glShaderSource( shader_id, 1, &full_c, nullptr );
+    glCompileShader( shader_id );
+
+    int success;
+    char log[512];
+    glGetShaderiv( shader_id, GL_COMPILE_STATUS, &success );
+    if ( not success ) {
+        glGetShaderInfoLog( shader_id, 512, nullptr, log );
+        throw std::runtime_error( std::format( "Failed to compile shader {}:\n{}", source.filename, log ) );
+    }
+
+    return shader_id;
+}
 
 Shader::Shader( std::filesystem::path const & vertex_path, std::filesystem::path const & fragment_path )
         : m_sources {}, m_program { glCreateProgram() } {
     m_sources.push_back( load_shader( vertex_path ) );
     m_sources.push_back( load_shader( fragment_path ) );
+
+    unsigned int const vertex_id { compile_shader( m_sources[0], GL_VERTEX_SHADER ) };
+    unsigned int const fragment_id { compile_shader( m_sources[1], GL_FRAGMENT_SHADER ) };
+
+    glAttachShader( m_program, vertex_id );
+    glAttachShader( m_program, fragment_id );
+    glLinkProgram( m_program );
+
+    int success;
+    char log[512];
+    glGetProgramiv( m_program, GL_COMPILE_STATUS, &success );
+    if ( not success ) {
+        glGetProgramInfoLog( m_program, 512, nullptr, log );
+        throw std::runtime_error( std::format( "Failed to compile shader program:\n{}", log ) );
+    }
 }
