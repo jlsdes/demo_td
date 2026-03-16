@@ -3,7 +3,9 @@
 #include <GLFW/glfw3.h>
 // clang-format on
 
+#include <memory>
 #include <stdexcept>
+#include <vector>
 
 #include "core/window.hpp"
 
@@ -21,11 +23,23 @@ void initialise_glfw() {
 int main() {
     initialise_glfw();
 
-    Window window {};
+    unsigned int constexpr nr_windows { 2 };
+    std::vector<std::unique_ptr<Window>> windows { nr_windows };
+    for ( unsigned int i { 0 }; i < windows.size(); ++i )
+        windows[i] = std::make_unique<Window>();
 
-    while ( not window.is_closing() ) {
-        glfwPollEvents();
-        window.draw();
+    while ( not windows.empty() ) {
+        unsigned int index { 0 };
+        while ( index < windows.size() ) {
+            windows[index]->focus();
+            glfwPollEvents();
+            windows[index]->draw();
+
+            if ( windows[index]->is_closing() )
+                windows.erase( windows.begin() + index );
+            else
+                ++index;
+        }
     }
 
     return 0;
