@@ -4,11 +4,35 @@
 
 #include <format>
 #include <fstream>
+#include <map>
+#include <memory>
 #include <regex>
 #include <stdexcept>
 
 
-ShaderSource load_shader( std::filesystem::path const & path ) {
+struct ShaderSource {
+    std::string filename;
+    unsigned int shader_id;
+
+    std::map<std::string, std::string> definitions;
+    std::vector<std::string> source;
+};
+
+Shader::Shader() : m_sources {}, m_program { glCreateProgram() } {}
+
+Shader::Shader( std::filesystem::path const & vertex_path, std::filesystem::path const & fragment_path ) : Shader {} {
+    add( vertex_path, GL_VERTEX_SHADER );
+    add( fragment_path, GL_FRAGMENT_SHADER );
+    build();
+}
+
+Shader::~Shader() {
+    for ( auto const & source : m_sources )
+        glDeleteShader( source->shader_id );
+    glDeleteProgram( m_program );
+}
+
+void Shader::add( std::filesystem::path const & path, unsigned int const shader_type ) {
     if ( not std::filesystem::exists( path ) )
         throw std::invalid_argument( std::format( "File {} does not exist.", path.string() ) );
 
@@ -24,57 +48,69 @@ ShaderSource load_shader( std::filesystem::path const & path ) {
     // respectively.
     std::smatch match {};
 
-    ShaderSource result { .filename = path.string() };
+    std::unique_ptr<ShaderSource> result { std::make_unique<ShaderSource>() };
+    result->filename = path.string();
+    result->shader_id = glCreateShader( shader_type );
+
     while ( std::getline( stream, line ) ) {
         if ( std::regex_match( line, match, definition_pattern ) )
-            result.definitions.emplace( match[1], match[2] );
+            result->definitions.emplace( match[1], match[2] );
         else
-            result.source.emplace_back( line );
+            result->source.emplace_back( line );
     }
-    return result;
+    m_sources.emplace_back( std::move( result ) );
 }
 
-unsigned int compile_shader( ShaderSource const & source, GLenum const shader_type ) {
-    unsigned int shader_id { glCreateShader( shader_type ) };
-
-    std::string full_source { source.source[0] }; // Ensure that the #version line is at the top
-    for ( auto const & [name, value] : source.definitions )
-        full_source += std::format( "\n#define {} {}", name, value );
-    for ( auto line { source.source.cbegin() + 1 }; line != source.source.cend(); ++line )
-        full_source += '\n' + *line;
-    auto const full_c { full_source.c_str() };
-
-    glShaderSource( shader_id, 1, &full_c, nullptr );
-    glCompileShader( shader_id );
-
+void Shader::build() {
     int success;
     char log[512];
-    glGetShaderiv( shader_id, GL_COMPILE_STATUS, &success );
-    if ( not success ) {
-        glGetShaderInfoLog( shader_id, 512, nullptr, log );
-        throw std::runtime_error( std::format( "Failed to compile shader {}:\n{}", source.filename, log ) );
+    std::string full_source;
+
+    for ( auto const & source : m_sources ) {
+        // Reset the source string and ensure that the "#version ..." line is at the top
+        full_source = source->source[0];
+        for ( auto const & [name, value] : source->definitions )
+            full_source += std::format( "\n#define {} {}", name, value );
+        for ( auto line { source->source.cbegin() + 1 }; line != source->source.cend(); ++line )
+            full_source += '\n' + *line;
+        auto const source_data { full_source.data() };
+
+        glShaderSource( source->shader_id, 1, &source_data, nullptr );
+        glCompileShader( source->shader_id );
+
+        glGetShaderiv( source->shader_id, GL_COMPILE_STATUS, &success );
+        if ( not success ) {
+            glGetShaderInfoLog( source->shader_id, 512, nullptr, log );
+            throw std::runtime_error( std::format( "Failed to compile shader {}:\n{}", source->filename, log ) );
+        }
+        glAttachShader( m_program, source->shader_id );
     }
-
-    return shader_id;
-}
-
-Shader::Shader( std::filesystem::path const & vertex_path, std::filesystem::path const & fragment_path )
-        : m_sources {}, m_program { glCreateProgram() } {
-    m_sources.push_back( load_shader( vertex_path ) );
-    m_sources.push_back( load_shader( fragment_path ) );
-
-    unsigned int const vertex_id { compile_shader( m_sources[0], GL_VERTEX_SHADER ) };
-    unsigned int const fragment_id { compile_shader( m_sources[1], GL_FRAGMENT_SHADER ) };
-
-    glAttachShader( m_program, vertex_id );
-    glAttachShader( m_program, fragment_id );
     glLinkProgram( m_program );
 
-    int success;
-    char log[512];
     glGetProgramiv( m_program, GL_LINK_STATUS, &success );
     if ( not success ) {
         glGetProgramInfoLog( m_program, 512, nullptr, log );
         throw std::runtime_error( std::format( "Failed to compile shader program:\n{}", log ) );
+    }
+}
+
+bool Shader::has_definition( std::string const & name ) const {
+    for ( auto const & source : m_sources ) {
+        if ( source->definitions.contains( name ) )
+            return true;
+    }
+    return false;
+}
+
+std::string Shader::get_definition( std::string const & name ) const {
+    for ( auto const & source : m_sources ) {
+        if ( source->definitions.contains( name ) )
+            return source->definitions.at( name );
+    }
+    throw std::out_of_range( std::format( "Definition {} could not be found.", name ) );
+}
+
+void Shader::set_definition( std::string const & name, std::string const & value ) {
+    for ( auto const & source : m_sources ) {
     }
 }
