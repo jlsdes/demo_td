@@ -42,7 +42,7 @@ FetchContent_MakeAvailable( glm )
 include_directories( src )
 
 # Build the main executable
-file( GLOB source src/*.cpp )
+file( GLOB_RECURSE source src/*.cpp )
 add_executable( demo_td ${source} )
 
 # Link the necessary libraries
