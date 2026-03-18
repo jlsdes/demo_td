@@ -1,6 +1,7 @@
 #include "mesh.hpp"
 
 #include <cassert>
+#include <cstddef>
 #include <thread>
 #include <vector>
 
@@ -15,7 +16,21 @@ Mesh::Mesh( std::vector<Vertex> const & vertices, std::vector<unsigned int>const
     if ( not indices.empty() )
         glGenBuffers( 1, &m_ebo );
 
+    // glBindVertexArray( m_vao );
+    // glBindBuffer( GL_ARRAY_BUFFER, m_vbo );
+    // glBufferData( GL_ARRAY_BUFFER, vertices.size() * sizeof( Vertex ), vertices.data(), GL_STATIC_DRAW );
+    //
+    // glEnableVertexAttribArray( 0 );
+    // glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, sizeof( Vertex ), (void *) offsetof( Vertex, position ) );
+    //
+    // glEnableVertexAttribArray( 1 );
+    // glVertexAttribPointer( 1, 3, GL_FLOAT, GL_FALSE, sizeof( Vertex ), (void *) offsetof( Vertex, normal ) );
+    //
+    // glEnableVertexAttribArray( 2 );
+    // glVertexAttribPointer( 2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof( Vertex ), (void *) offsetof( Vertex, colour ) );
+
     glVertexArrayVertexBuffer( m_vao, 0, m_vbo, 0, sizeof( Vertex ) );
+
     glNamedBufferData( m_vbo, vertices.size() * sizeof( Vertex ), vertices.data(), GL_STATIC_DRAW );
 
     glEnableVertexArrayAttrib( m_vao, 0 );
@@ -50,5 +65,6 @@ Mesh::~Mesh() {
 void Mesh::draw() {
     assert( std::this_thread::get_id() == m_home_thread );
 
+    glBindVertexArray( m_vao );
     glDrawArrays( GL_TRIANGLES, 0, m_count );
 }
