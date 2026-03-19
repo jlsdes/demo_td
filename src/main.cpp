@@ -4,6 +4,7 @@
 // clang-format on
 
 #include "core/camera.hpp"
+#include "core/input_manager.hpp"
 #include "core/mesh.hpp"
 #include "core/shader.hpp"
 #include "core/window.hpp"
@@ -11,6 +12,7 @@
 #include "utils/error.hpp"
 
 #include <filesystem>
+#include <print>
 #include <stdexcept>
 
 #include <glm/glm.hpp>
@@ -43,10 +45,17 @@ int main() {
 
     std::vector<Vertex> const vertices {
         { { -1.f, -1.f, 0.f }, {}, { 255, 0, 0, 255 } },
-        { { 1.f, -1.f, 0.f }, {}, { 0, 255, 0, 255 } },
-        { { 0.f, 1.f, 0.f }, {}, { 0, 0, 255, 255 } },
+        { { 1.f, -1.f, 0.f },  {}, { 0, 255, 0, 255 } },
+        { { 0.f, 1.f, 0.f },   {}, { 0, 0, 255, 255 } },
     };
     Mesh mesh { vertices };
+
+    InputManager input_manager {};
+    input_manager.add_observer(
+        Observer { KeyboardObserver { []( int const key, int const scancode, int const action, int const mods ) {
+                       std::println( "KEYBOARD ACTION {} {} {} {}", key, scancode, action, mods );
+                   } },
+                   GLFW_KEY_F } );
 
     while ( not window.is_closing() ) {
         glfwPollEvents();

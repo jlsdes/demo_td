@@ -53,6 +53,14 @@ public:
     /// Removes the observer that was registered under the given ID. This ID is returned by add_observer().
     void remove_observer( unsigned int observer_id );
 
+    /// Callback functions to be called by GLFW. Can also be called like normal functions, for whatever reason.
+    static void press_key( GLFWwindow * window, int key, int scancode, int action, int mods );
+    static void press_mouse( GLFWwindow * window, int button, int action, int mods );
+    static void move_cursor( GLFWwindow * window, double x_position, double y_position );
+    static void scroll( GLFWwindow * window, double x_offset, double y_offset );
+    static void resize( GLFWwindow * window, int width, int height );
+    static void close( GLFWwindow * window );
+
 private:
     std::vector<Observer> m_observers;
 
