@@ -19,7 +19,7 @@ public:
     ~Mesh();
 
     Mesh( Mesh const & ) = delete;
-    Mesh( Mesh && ) = delete;
+    Mesh( Mesh && );
     Mesh & operator=( Mesh const & ) = delete;
     Mesh & operator=( Mesh && ) = delete;
 
@@ -32,6 +32,6 @@ private:
 
     unsigned long m_count;
 
-    // OpenGL calls using these objects must all happen on the same thread
+    // OpenGL calls using these objects must all happen on the same thread every single time
     std::thread::id const m_home_thread;
 };

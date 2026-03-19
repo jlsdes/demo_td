@@ -1,17 +1,19 @@
 #include "mesh.hpp"
 
-#include "utils/error.hpp"
-
 #include <cassert>
 #include <cstddef>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include <glad/gl.h>
 
 
-Mesh::Mesh( std::vector<Vertex> const & vertices, std::vector<unsigned int>const & indices )
-        : m_vao { 0 }, m_vbo { 0 }, m_ebo { 0 }, m_count { vertices.size() },
+Mesh::Mesh( std::vector<Vertex> const & vertices, std::vector<unsigned int> const & indices )
+        : m_vao { 0 },
+          m_vbo { 0 },
+          m_ebo { 0 },
+          m_count { vertices.size() },
           m_home_thread { std::this_thread::get_id() } {
     glGenVertexArrays( 1, &m_vao );
     glGenBuffers( 1, &m_vbo );
@@ -52,6 +54,13 @@ Mesh::~Mesh() {
     glDeleteBuffers( 1, &m_vbo );
     glDeleteVertexArrays( 1, &m_vao );
 }
+
+Mesh::Mesh( Mesh && mesh )
+        : m_vao { std::exchange( mesh.m_vao, 0 ) },
+          m_vbo { std::exchange( mesh.m_vbo, 0 ) },
+          m_ebo { std::exchange( mesh.m_ebo, 0 ) },
+          m_count { std::exchange( mesh.m_count, 0 ) },
+          m_home_thread { mesh.m_home_thread } {}
 
 void Mesh::draw() {
     assert( std::this_thread::get_id() == m_home_thread );
