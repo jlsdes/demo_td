@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 // clang-format on
 
+#include "core/camera.hpp"
 #include "core/mesh.hpp"
 #include "core/shader.hpp"
 #include "core/window.hpp"
@@ -10,7 +11,6 @@
 #include "utils/error.hpp"
 
 #include <filesystem>
-#include <numbers>
 #include <stdexcept>
 
 #include <glm/glm.hpp>
@@ -35,9 +35,11 @@ int main() {
     Shader shader { shader_dir / "main.vert", shader_dir / "main.frag" };
     shader.use();
 
+    Camera camera {};
+    camera.update_view( shader );
+    camera.update_projection( shader );
+
     shader.set_uniform( "model", glm::identity<glm::mat4>() );
-    shader.set_uniform( "view", glm::identity<glm::mat4>() );
-    shader.set_uniform( "projection", glm::perspective( std::numbers::pi_v<float> / 4.f, 4.f / 3.f, 0.1f, 100.f ) );
 
     std::vector<Vertex> const vertices {
         { { -1.f, -1.f, 0.f }, {}, { 255, 0, 0, 255 } },
