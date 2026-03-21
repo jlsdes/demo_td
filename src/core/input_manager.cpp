@@ -127,15 +127,6 @@ static InputManager & get_manager( GLFWwindow * const window ) {
     return reinterpret_cast<WindowContext *>( glfwGetWindowUserPointer( window ) )->input_manager;
 }
 
-template <typename Callback, typename... Args> static bool try_call( Callback const & callback, Args &&... args ) {
-    try {
-        callback( args... );
-    } catch ( std::bad_function_call const & error ) {
-        return false;
-    }
-    return true;
-}
-
 static std::string constexpr get_mod_names( int const mods ) {
     std::string mod_names {};
     if ( mods & 0x01 )
@@ -153,70 +144,56 @@ static std::string constexpr get_mod_names( int const mods ) {
     return mod_names;
 }
 
-std::string constexpr actions[3] { "release", "press", "repeat" };
+std::string constexpr types[] { "keyboard", "mouse button", "cursor", "scroll", "resize", "close" };
+std::string constexpr actions[] { "release", "press", "repeat" };
+
+template <Observer::Type ObserverType, typename... Args>
+void InputManager::notify( std::unordered_set<unsigned int> const & observers, char const * const info,
+                           Args &&... args ) const {
+    for ( unsigned int const id : observers ) {
+        try {
+            std::get<ObserverType>( m_observers[id].callback )( args... );
+        } catch ( std::bad_function_call const & error ) {
+            print_error( "Failed to call {} observer {} (info: {})", types[ObserverType], id, info );
+        }
+    }
+}
 
 void InputManager::press_key( GLFWwindow * const window, int const key, int const scancode, int const action,
                               int const mods ) {
-    auto const & input_manager { get_manager( window ) };
-    for ( unsigned int const id : input_manager.m_keyboard_observers[key] ) {
-        auto const & callback { std::get<Observer::Keyboard>( input_manager.m_observers[id].callback ) };
+    auto const key_name { glfwGetKeyName( key, scancode ) };
+    std::string const print_name { key_name ? key_name : "<" + std::to_string( key ) + ">" };
+    std::string const info { std::format( "{} {}{}", actions[action], print_name, get_mod_names( mods ) ) };
 
-        if ( not try_call( callback, key, scancode, action, mods ) ) {
-            std::string const key_name { glfwGetKeyName( key, scancode ) };
-            std::string const mod_names { get_mod_names( mods ) };
-            print_error( "Failed to call keyboard observer {}: {} {}{}", id, actions[action], key_name, mod_names );
-        }
-    }
+    auto const & manager { get_manager( window ) };
+    auto const & observers { manager.m_keyboard_observers[key] };
+    manager.notify<Observer::Keyboard>( observers, info.c_str(), key, scancode, action, mods );
 }
 
 void InputManager::press_mouse( GLFWwindow * const window, int const button, int const action, int const mods ) {
-    auto const & input_manager { get_manager( window ) };
-    for ( unsigned int const id : input_manager.m_mouse_button_observers[button] ) {
-        auto const & callback { std::get<Observer::MouseButton>( input_manager.m_observers[id].callback ) };
+    std::string const info { std::format( "{} {}{}", actions[action], button, get_mod_names( mods ) ) };
 
-        if ( not try_call( callback, button, action, mods ) ) {
-            std::string const mod_names { get_mod_names( mods ) };
-            print_error( "Failed to call mouse button observer {}: {} {}{}", id, actions[action], button, mod_names );
-        }
-    }
+    auto const & manager { get_manager( window ) };
+    auto const & observers { manager.m_mouse_button_observers[button] };
+    manager.notify<Observer::MouseButton>( observers, info.c_str(), button, action, mods );
 }
 
 void InputManager::move_cursor( GLFWwindow * const window, double const x_position, double const y_position ) {
-    auto const & input_manager { get_manager( window ) };
-    for ( unsigned int const id : input_manager.m_cursor_position_observers ) {
-        auto const & callback { std::get<Observer::CursorPosition>( input_manager.m_observers[id].callback ) };
-
-        if ( not try_call( callback, x_position, y_position ) )
-            print_error( "Failed to call cursor position observer {}", id );
-    }
+    auto const & manager { get_manager( window ) };
+    manager.notify<Observer::CursorPosition>( manager.m_cursor_position_observers, "", x_position, y_position );
 }
 
 void InputManager::scroll( GLFWwindow * const window, double const x, double const y ) {
-    auto const & input_manager { get_manager( window ) };
-    for ( unsigned int const id : input_manager.m_cursor_position_observers ) {
-        auto const & callback { std::get<Observer::Scroll>( input_manager.m_observers[id].callback ) };
-
-        if ( not try_call( callback, x, y ) )
-            print_error( "Failed to call scroll observer {}", id );
-    }
+    auto const & manager { get_manager( window ) };
+    manager.notify<Observer::Scroll>( manager.m_scroll_observers, "", x, y );
 }
 
 void InputManager::resize( GLFWwindow * const window, int const width, int const height ) {
-    auto const & input_manager { get_manager( window ) };
-    for ( unsigned int const id : input_manager.m_resize_observers ) {
-        auto const & callback { std::get<Observer::Resize>( input_manager.m_observers[id].callback ) };
-
-        if ( not try_call( callback, width, height ) )
-            print_error( "Failed to call resize observer {}", id );
-    }
+    auto const & manager { get_manager( window ) };
+    manager.notify<Observer::Resize>( manager.m_resize_observers, "", width, height );
 }
 
 void InputManager::close( GLFWwindow * const window ) {
-    auto const & input_manager { get_manager( window ) };
-    for ( unsigned int const id : input_manager.m_close_observers ) {
-        auto const & callback { std::get<Observer::Close>( input_manager.m_observers[id].callback ) };
-
-        if ( not try_call( callback ) )
-            print_error( "Failed to call close observer {}", id );
-    }
+    auto const & manager { get_manager( window ) };
+    manager.notify<Observer::Close>( manager.m_close_observers, "" );
 }

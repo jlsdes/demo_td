@@ -10,7 +10,6 @@
 #include "utils/error.hpp"
 
 #include <filesystem>
-#include <print>
 #include <stdexcept>
 
 #include <glm/glm.hpp>
@@ -46,12 +45,6 @@ int main() {
         { { 0.f, 1.f, 0.f },   {}, { 0, 0, 255, 255 } },
     };
     Mesh mesh { vertices };
-
-    context.input_manager.add_observer(
-        Observer { KeyboardObserver { []( int const key, int const scancode, int const action, int const mods ) {
-                       std::println( "KEYBOARD ACTION {} {} {} {}", key, scancode, action, mods );
-                   } },
-                   GLFW_KEY_F } );
 
     while ( not context.window.is_closing() ) {
         glfwPollEvents();

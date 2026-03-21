@@ -73,4 +73,7 @@ private:
     std::unordered_set<unsigned int> m_scroll_observers;
     std::unordered_set<unsigned int> m_resize_observers;
     std::unordered_set<unsigned int> m_close_observers;
+
+    template <Observer::Type ObserverType, typename... Args>
+    void notify( std::unordered_set<unsigned int> const & observers, char const * info, Args &&... args ) const;
 };
