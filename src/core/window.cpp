@@ -10,7 +10,14 @@
 // clang-format on
 
 
-Window::Window() : m_window { glfwCreateWindow( 800, 600, "Demo TD", nullptr, nullptr ) } {
+unsigned int constexpr initial_width { 800 };
+unsigned int constexpr initial_height { 600 };
+
+
+Window::Window()
+        : m_window { glfwCreateWindow( initial_width, initial_height, "Demo TD", nullptr, nullptr ) },
+          m_width { initial_width },
+          m_height { initial_height } {
     if ( not m_window )
         throw std::runtime_error( "Failed to create a window." );
     focus();
@@ -23,6 +30,14 @@ Window::Window() : m_window { glfwCreateWindow( 800, 600, "Demo TD", nullptr, nu
 
 Window::~Window() {
     glfwDestroyWindow( m_window );
+}
+
+std::pair<unsigned int, unsigned int> Window::get_size() const {
+    return { m_width, m_height };
+}
+
+void Window::set_size( std::pair<unsigned int, unsigned int> const & size ) {
+    glfwSetWindowSize( m_window, size.first, size.second );
 }
 
 void Window::focus() const {
@@ -38,11 +53,18 @@ bool Window::is_closing() const {
 }
 
 void Window::initialise() {
-    KeyboardObserver callback { [this]( int, int, int const action, int ) {
+    auto const context { reinterpret_cast<WindowContext *>( glfwGetWindowUserPointer( m_window ) ) };
+
+    KeyboardObserver close_callback { [this]( int, int, int const action, int ) {
         glfwSetWindowShouldClose( m_window, action == GLFW_PRESS );
     } };
+    context->input_manager.add_observer( { close_callback, GLFW_KEY_ESCAPE } );
+    context->input_manager.add_observer( { close_callback, GLFW_KEY_CAPS_LOCK } );
 
-    auto const context { reinterpret_cast<WindowContext *>( glfwGetWindowUserPointer( m_window ) ) };
-    context->input_manager.add_observer( { callback, GLFW_KEY_ESCAPE } );
-    context->input_manager.add_observer( { callback, GLFW_KEY_CAPS_LOCK } );
+    ResizeObserver resize_callback { [this]( unsigned int const width, unsigned int const height ) {
+        m_width  = width;
+        m_height = height;
+        glViewport( 0, 0, m_width, m_height );
+    } };
+    context->input_manager.add_observer( { resize_callback } );
 }
