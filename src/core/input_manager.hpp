@@ -6,10 +6,7 @@
 #include <variant>
 #include <vector>
 
-// clang-format off
-#include <glad/gl.h>
-#include <GLFW/glfw3.h>
-// clang-format on
+#include <lib/gl.hpp>
 
 
 using KeyboardObserver       = std::function<void( int, int, int, int )>;

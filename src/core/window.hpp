@@ -4,6 +4,7 @@
 
 
 class GLFWwindow;
+struct WindowContext;
 
 
 class Window {
@@ -29,7 +30,7 @@ private:
 
     /// Initialises the window after the entire window context has been created.
     /// Called by WindowContext.
-    void initialise();
+    void initialise( WindowContext & context );
 
     friend struct WindowContext;
 };

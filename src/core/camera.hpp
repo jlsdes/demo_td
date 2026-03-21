@@ -4,6 +4,7 @@
 
 
 class Shader;
+struct WindowContext;
 
 
 class Camera {
@@ -16,4 +17,10 @@ public:
 private:
     glm::mat4 m_view;
     glm::mat4 m_projection;
+
+    /// Initialises the camera after the entire window context has been created.
+    /// Called by Window Context.
+    void initialise( WindowContext & context );
+
+    friend struct WindowContext;
 };

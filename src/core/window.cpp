@@ -4,10 +4,7 @@
 
 #include <stdexcept>
 
-// clang-format off
-#include <glad/gl.h>
-#include <GLFW/glfw3.h>
-// clang-format on
+#include <lib/gl.hpp>
 
 
 unsigned int constexpr initial_width { 800 };
@@ -52,19 +49,17 @@ bool Window::is_closing() const {
     return glfwWindowShouldClose( m_window );
 }
 
-void Window::initialise() {
-    auto const context { reinterpret_cast<WindowContext *>( glfwGetWindowUserPointer( m_window ) ) };
-
+void Window::initialise( WindowContext & context ) {
     KeyboardObserver close_callback { [this]( int, int, int const action, int ) {
         glfwSetWindowShouldClose( m_window, action == GLFW_PRESS );
     } };
-    context->input_manager.add_observer( { close_callback, GLFW_KEY_ESCAPE } );
-    context->input_manager.add_observer( { close_callback, GLFW_KEY_CAPS_LOCK } );
+    context.input_manager.add_observer( { close_callback, GLFW_KEY_ESCAPE } );
+    context.input_manager.add_observer( { close_callback, GLFW_KEY_CAPS_LOCK } );
 
     ResizeObserver resize_callback { [this]( unsigned int const width, unsigned int const height ) {
         m_width  = width;
         m_height = height;
         glViewport( 0, 0, m_width, m_height );
     } };
-    context->input_manager.add_observer( { resize_callback } );
+    context.input_manager.add_observer( { resize_callback } );
 }

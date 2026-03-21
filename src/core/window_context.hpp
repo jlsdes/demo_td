@@ -13,6 +13,7 @@ struct WindowContext {
     WindowContext() : window {}, input_manager {}, camera {} {
         glfwSetWindowUserPointer( glfwGetCurrentContext(), this );
 
-        window.initialise();
+        window.initialise( *this );
+        camera.initialise( *this );
     }
 };

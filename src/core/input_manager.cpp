@@ -8,8 +8,6 @@
 #include <functional>
 #include <stdexcept>
 
-#include <GLFW/glfw3.h>
-
 
 InputManager::InputManager()
         : m_observers {},
