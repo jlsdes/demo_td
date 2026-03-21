@@ -18,6 +18,10 @@ private:
     glm::mat4 m_view;
     glm::mat4 m_projection;
 
+    glm::vec3 m_forward;
+
+    glm::vec3 m_moving;
+
     /// Initialises the camera after the entire window context has been created.
     /// Called by Window Context.
     void initialise( WindowContext & context );
