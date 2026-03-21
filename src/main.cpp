@@ -3,11 +3,9 @@
 #include <GLFW/glfw3.h>
 // clang-format on
 
-#include "core/camera.hpp"
-#include "core/input_manager.hpp"
 #include "core/mesh.hpp"
 #include "core/shader.hpp"
-#include "core/window.hpp"
+#include "core/window_context.hpp"
 
 #include "utils/error.hpp"
 
@@ -31,15 +29,14 @@ void initialise_glfw() {
 
 int main() {
     initialise_glfw();
-    Window window {};
+    WindowContext context {};
 
     auto const shader_dir { ( std::filesystem::path { __FILE__ } / "../shader/" ).lexically_normal() };
     Shader shader { shader_dir / "main.vert", shader_dir / "main.frag" };
     shader.use();
 
-    Camera camera {};
-    camera.update_view( shader );
-    camera.update_projection( shader );
+    context.camera.update_view( shader );
+    context.camera.update_projection( shader );
 
     shader.set_uniform( "model", glm::identity<glm::mat4>() );
 
@@ -50,19 +47,18 @@ int main() {
     };
     Mesh mesh { vertices };
 
-    InputManager input_manager {};
-    input_manager.add_observer(
+    context.input_manager.add_observer(
         Observer { KeyboardObserver { []( int const key, int const scancode, int const action, int const mods ) {
                        std::println( "KEYBOARD ACTION {} {} {} {}", key, scancode, action, mods );
                    } },
                    GLFW_KEY_F } );
 
-    while ( not window.is_closing() ) {
+    while ( not context.window.is_closing() ) {
         glfwPollEvents();
 
         glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT );
         mesh.draw();
-        window.draw();
+        context.window.draw();
 
         report_errors();
     }

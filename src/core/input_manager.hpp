@@ -6,7 +6,10 @@
 #include <variant>
 #include <vector>
 
+// clang-format off
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
+// clang-format on
 
 
 using KeyboardObserver       = std::function<void( int, int, int, int )>;
@@ -64,10 +67,10 @@ public:
 private:
     std::vector<Observer> m_observers;
 
-    std::array<std::unordered_set<KeyboardObserver *>, GLFW_KEY_LAST + 1> m_keyboard_observers;
-    std::array<std::unordered_set<MouseButtonObserver *>, GLFW_MOUSE_BUTTON_LAST + 1> m_mouse_button_observers;
-    std::unordered_set<CursorPositionObserver *> m_cursor_position_observers;
-    std::unordered_set<ScrollObserver *> m_scroll_observers;
-    std::unordered_set<ResizeObserver *> m_resize_observers;
-    std::unordered_set<CloseObserver *> m_close_observers;
+    std::array<std::unordered_set<unsigned int>, GLFW_KEY_LAST + 1> m_keyboard_observers;
+    std::array<std::unordered_set<unsigned int>, GLFW_MOUSE_BUTTON_LAST + 1> m_mouse_button_observers;
+    std::unordered_set<unsigned int> m_cursor_position_observers;
+    std::unordered_set<unsigned int> m_scroll_observers;
+    std::unordered_set<unsigned int> m_resize_observers;
+    std::unordered_set<unsigned int> m_close_observers;
 };

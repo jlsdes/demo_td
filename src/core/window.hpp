@@ -1,9 +1,7 @@
 #pragma once
 
-// clang-format off
-#include <glad/gl.h>
-#include <GLFW/glfw3.h>
-// clang-format on
+
+class GLFWwindow;
 
 
 class Window {
@@ -18,4 +16,10 @@ public:
 
 private:
     GLFWwindow * const m_window;
+
+    /// Initialises the window after the entire window context has been created.
+    /// Called by WindowContext.
+    void initialise();
+
+    friend struct WindowContext;
 };
